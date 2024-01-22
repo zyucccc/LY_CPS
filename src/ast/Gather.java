@@ -1,6 +1,6 @@
 package ast;
 
-public class Gather {
+public abstract class Gather {
 private final int sensorId;
 	
 	public Gather(int sensorId) {

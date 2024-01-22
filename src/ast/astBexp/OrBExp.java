@@ -3,12 +3,11 @@ package ast.astBexp;
 import ast.Bexp;
 
 public class OrBExp extends Bexp{
-	private final Bexp bexp1 ;
-	private final Bexp bexp2 ;
+	private  Bexp bexp1 ;
+	private  Bexp bexp2 ;
 	
 	public OrBExp(Bexp b1,Bexp b2) {
-		this.bexp1 = b1;
-		this.bexp2 = b2;
+		super(b1,b2);
 	}
 	
 	public Bexp getBexp1() {

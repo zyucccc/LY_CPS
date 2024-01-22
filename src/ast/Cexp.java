@@ -1,5 +1,5 @@
 package ast;
 
-public class Cexp {
+public abstract class Cexp {
 
 }

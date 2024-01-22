@@ -3,10 +3,10 @@ package ast.astBexp;
 import ast.Bexp;
 
 public class NotBExp extends Bexp{
-	private final Bexp bexp;
+	private Bexp bexp;
 	
 	public NotBExp(Bexp b) {
-		this.bexp= b;
+		super(b);
 	}
 	
 	public Bexp getBexp() {
