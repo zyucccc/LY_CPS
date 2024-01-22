@@ -1,3 +1,6 @@
+package ast.astRand;
+
+import ast.Rand;
 
 public class SRand extends Rand{
 	private String sensorId;
