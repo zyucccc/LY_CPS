@@ -1,6 +1,9 @@
 package ast;
 
-public abstract class Bexp {
+import ast.interfaces.IASTvisitable;
+import ast.interfaces.IASTvisitor;
+
+public abstract class Bexp implements IASTvisitable {
 	protected Bexp bexp1;
 	protected Bexp bexp2;
 	
@@ -12,5 +15,12 @@ public abstract class Bexp {
 //	public Bexp (Bexp bexp1) {
 //		this.bexp1=bexp1;
 //	}
+	
+	 @Override
+		public <Result, Data, Anomaly extends Throwable> 
+	    Result eval(IASTvisitor<Result, Data, Anomaly> visitor, Data data)
+	            throws Anomaly {
+	        return visitor.visit(this, data);
+	    }
 
 }

@@ -1,7 +1,9 @@
 package ast;
 
+import ast.interfaces.IASTvisitable;
+import ast.interfaces.IASTvisitor;
 
-public abstract class Query<T> {
+public abstract class Query<T> implements IASTvisitable {
 	protected Cont cont;
 	protected T expr;
 	
@@ -15,6 +17,11 @@ public abstract class Query<T> {
 		return this.cont;
 	}
 	
-	
+	  @Override
+		public <Result, Data, Anomaly extends Throwable> 
+	    Result eval(IASTvisitor<Result, Data, Anomaly> visitor, Data data)
+	            throws Anomaly {
+	        return visitor.visit(this, data);
+	    }
 	
 }
