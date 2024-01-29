@@ -7,7 +7,10 @@ public class SRand extends Rand{
 	
 	public SRand (String id) {
 		this.sensorId = id;
-		
+	}
+	
+	public String getSensorId() {
+		return this.sensorId;
 	}
 
 }

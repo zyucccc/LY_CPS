@@ -6,7 +6,7 @@ public class NotBExp extends Bexp{
 	private Bexp bexp;
 	
 	public NotBExp(Bexp b) {
-		super(b);
+		this.bexp=b;
 	}
 	
 	public Bexp getBexp() {

@@ -4,13 +4,13 @@ import ast.Bexp;
 
 public class SBExp extends Bexp{
 	
-	private final int sensorId;
+	private final String sensorId;
 	
-	public SBExp(int sensorId) {
+	public SBExp(String sensorId) {
 		this.sensorId = sensorId;
 		
 	}
-	public int getSensorID() {
+	public String getSensorID() {
 		return sensorId;
 	}
 }

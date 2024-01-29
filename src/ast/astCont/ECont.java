@@ -1,5 +1,9 @@
 package ast.astCont;
 
-public class ECont {
+import ast.Cont;
 
+public class ECont extends Cont{
+	public ECont() {
+		
+	}
 }

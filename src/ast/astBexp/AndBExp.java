@@ -7,8 +7,9 @@ public class AndBExp extends Bexp{
 	private  Bexp bexp1 ;
 	private  Bexp bexp2 ;
 	
-	public AndBExp(Bexp b1,Bexp b2) {
-		super(b1,b2);
+	public AndBExp (Bexp bexp1,Bexp bexp2) {
+		this.bexp1=bexp1;
+		this.bexp2=bexp2;
 	}
 	
 	public Bexp getBexp1() {

@@ -3,10 +3,14 @@ package ast.astRand;
 import ast.Rand;
 
 public class CRand extends Rand{
-	private double val_crand;
+	private double val;
 	
 	public CRand (double val) {
-		this.val_crand = val;
+		this.val = val;
+	}
+	
+	public double getVal() {
+		return this.val;
 	}
 
 

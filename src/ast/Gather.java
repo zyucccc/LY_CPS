@@ -1,13 +1,14 @@
 package ast;
 
 public abstract class Gather {
-private final int sensorId;
 	
-	public Gather(int sensorId) {
+    protected String sensorId;
+	
+	public Gather(String sensorId) {
 		this.sensorId = sensorId;
 		
 	}
-	public int getSensorID() {
+	public String getSensorID() {
 		return sensorId;
 	}
 }
