@@ -20,11 +20,12 @@ import ast.astQuery.GQuery;
 import ast.astRand.CRand;
 import ast.astRand.SRand;
 import ast.interfaces.IASTvisitor;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
-public class Interpreter implements IASTvisitor<Object, Object, Exception> {
+public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Exception> {
 
 	 @Override
-	    public Object visit(Query<?> ast, Object data) throws Exception  {
+	    public Object visit(Query<?> ast,ExecutionStateI data) throws Exception  {
 	        // 根据Query类型进行处理
 	        if (ast instanceof GQuery) {
 	            
@@ -35,44 +36,44 @@ public class Interpreter implements IASTvisitor<Object, Object, Exception> {
 	    }
 
 	@Override
-	public Object visit(Base ast, Object data) throws Exception {
+	public Object visit(Base ast, ExecutionStateI data) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visit(Bexp ast, Object data) throws Exception {
+	public Object visit(Bexp ast, ExecutionStateI data) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visit(Cexp ast, Object data) throws Exception{
+	public Object visit(Cexp ast,ExecutionStateI data) throws Exception{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visit(Cont ast, Object data) throws Exception {
+	public Object visit(Cont ast, ExecutionStateI data) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visit(Dir ast, Object data) throws Exception{
+	public Object visit(Dir ast, ExecutionStateI data) throws Exception{
 		
 		return null;
 	}
 
 	@Override
-	public Object visit(Dirs ast, Object data) throws Exception{
+	public Object visit(Dirs ast, ExecutionStateI data) throws Exception{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 
-    public Object visit(Gather ast, Object data) throws Exception {
+    public Object visit(Gather ast, ExecutionStateI data) throws Exception {
 
         if (ast instanceof FGather) {
 
@@ -114,7 +115,7 @@ public class Interpreter implements IASTvisitor<Object, Object, Exception> {
 
     @Override
 
-    public Object visit(Rand ast, Object data) throws Exception {
+    public Object visit(Rand ast, ExecutionStateI data) throws Exception {
 
         // TODO Auto-generated method stub
 

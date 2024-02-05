@@ -9,6 +9,7 @@ import ast.Dirs;
 import ast.Gather;
 import ast.Query;
 import ast.Rand;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public interface IASTvisitor<Result, Data, Anomaly extends Throwable> {
 	Result visit(Query<?> ast, Data data) throws Anomaly;
@@ -20,6 +21,7 @@ public interface IASTvisitor<Result, Data, Anomaly extends Throwable> {
     Result visit(Dirs ast, Data data) throws Anomaly;
     Result visit(Gather ast, Data data) throws Anomaly;
     Result visit(Rand ast, Data data) throws Anomaly;
+//	Object visit(Query<?> ast, ExecutionStateI data) throws Exception;
 
 
 }
