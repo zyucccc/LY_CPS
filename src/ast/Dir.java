@@ -6,6 +6,10 @@ import ast.interfaces.IASTvisitor;
 public enum Dir implements IASTvisitable{
 	 NE, NW, SE, SW;
 	
+	public Dir getDirection() {
+        return this;
+    }
+	
 	 @Override
 		public <Result, Data, Anomaly extends Throwable> 
 	    Result eval(IASTvisitor<Result, Data, Anomaly> visitor, Data data)
