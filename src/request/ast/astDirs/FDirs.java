@@ -1,16 +1,16 @@
 package request.ast.astDirs;
 
-import request.ast.Dir;
+import request.ast.Direction;
 import request.ast.Dirs;
 
 public class FDirs extends Dirs{
-	private Dir dir;
+	private Direction dir;
 	
-	public FDirs(Dir dir) {
+	public FDirs(Direction dir) {
 		super(dir);
 		
 	}
-	public Dir getDir() {
+	public Direction getDir() {
 		return dir;
 	}
 }

@@ -3,10 +3,10 @@ package request.ast;
 import request.ast.interfaces.IASTvisitable;
 import request.ast.interfaces.IASTvisitor;
 
-public enum Dir implements IASTvisitable{
+public enum Direction implements IASTvisitable{
 	 NE, NW, SE, SW;
 	
-	public Dir getDirection() {
+	public Direction getDirection() {
         return this;
     }
 	

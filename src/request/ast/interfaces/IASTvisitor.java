@@ -6,7 +6,7 @@ import request.ast.Base;
 import request.ast.Bexp;
 import request.ast.Cexp;
 import request.ast.Cont;
-import request.ast.Dir;
+import request.ast.Direction;
 import request.ast.Dirs;
 import request.ast.Gather;
 import request.ast.Query;
@@ -58,7 +58,7 @@ public interface IASTvisitor<Result, Data, Anomaly extends Throwable> {
     Result visit(DCont ast, Data data) throws Anomaly;
     Result visit(ECont ast, Data data) throws Anomaly;
     Result visit(FCont ast, Data data) throws Anomaly;
-    Result visit(Dir ast, Data data) throws Anomaly;
+    Result visit(Direction ast, Data data) throws Anomaly;
     Result visit(Dirs ast, Data data) throws Anomaly;
     Result visit(FDirs ast, Data data) throws Anomaly;
     Result visit(RDirs ast, Data data) throws Anomaly;

@@ -4,14 +4,14 @@ import request.ast.interfaces.IASTvisitable;
 import request.ast.interfaces.IASTvisitor;
 
 public abstract class Dirs implements IASTvisitable {
-	private Dir dir;
+	private Direction dir;
 	private Dirs dirs;
 	
-	public Dirs(Dir dir,Dirs dirs) {
+	public Dirs(Direction dir,Dirs dirs) {
 		this.dir=dir;
 		this.dirs=dirs;
 	}
-	public Dirs(Dir dir) {
+	public Dirs(Direction dir) {
 		this.dir=dir;
 	}
 	

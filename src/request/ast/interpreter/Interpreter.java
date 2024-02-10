@@ -2,10 +2,11 @@ package request.ast.interpreter;
 
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
-
+import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
@@ -14,7 +15,7 @@ import request.ast.Base;
 import request.ast.Bexp;
 import request.ast.Cexp;
 import request.ast.Cont;
-import request.ast.Dir;
+import request.ast.Direction;
 import request.ast.Dirs;
 import request.ast.Gather;
 import request.ast.Query;
@@ -56,13 +57,14 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 	    @Override
 	    public Object visit(GQuery ast,ExecutionStateI data) throws Exception  {
 		        ProcessingNodeI CurrentNode = data.getProcessingNode();
-	            Cont cont = (Cont)visit(ast.getCont(),data);
 	            ArrayList<String> list_sensorid = (ArrayList<String>) visit(ast.getGather(),data);
+	            Cont cont = (Cont)visit(ast.getCont(),data);
 	            ArrayList<SensorDataI> list_result = new ArrayList<SensorDataI>();
 	            for(String sensorid : list_sensorid) {
 	            	list_result.add(CurrentNode.getSensorData(sensorid));
 	            }
 	           QueryResultI queryResult = new QueryResult(false,new ArrayList<String>(),true,list_result);
+	           data.addToCurrentResult(queryResult);
 	           return queryResult;
 	    }
 	    
@@ -76,49 +78,48 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 				list_Nodeid.add(CurrentNode.getNodeIdentifier());
 		    }
 			QueryResultI queryResult = new QueryResult(true,list_Nodeid,false,new ArrayList<SensorDataI>());
+			data.addToCurrentResult(queryResult);
 	           return queryResult;
 		}
 	 
 //dir
 	    @Override
-		public Object visit(Dir ast, ExecutionStateI data) throws Exception{
+		public Object visit(Direction ast, ExecutionStateI data) throws Exception{
 			return ast.getDirection();
 		}
 
 		@Override
 		public Object visit(Dirs ast, ExecutionStateI data) throws Exception{
-			if(ast instanceof FDirs) {
-				return visit((FDirs)ast,data);
-			}else if(ast instanceof RDirs) {
-				return visit((RDirs)ast,data);
-			}
-			throw new Exception("Unknown Dirs type");
+			return null;
 		}
 		
 		@Override
 		public Object visit(FDirs ast, ExecutionStateI data) throws Exception {
-			return ast.getDir();
+//			ArrayList<Direction> directions = new ArrayList<Direction>();
+			Set<Direction> directions = new HashSet<>();
+			directions.add((Direction)visit(ast.getDir(),data));
+			return directions;
 		}
 
 		@Override
 		public Object visit(RDirs ast, ExecutionStateI data) throws Exception {
-			   
-			    ArrayList<Object> directions = new ArrayList<Object>();		    
-			    Dir dir = ast.getDir();
+			    Set<Direction> directions = new HashSet<>();
+//			    ArrayList<Direction> directions = new ArrayList<Direction>();		    
+			    Direction dir = ast.getDir();
 			    directions.add(dir); 
-			    Dirs nextDirs = ast.getdirs();
-			    while (nextDirs instanceof RDirs) {
-			        dir = ((RDirs) nextDirs).getDir(); 
-			        directions.add(dir); 
-			        nextDirs = ((RDirs) nextDirs).getdirs(); 
-			    }	   
-			    if (nextDirs instanceof FDirs) {
-			        dir = ((FDirs) nextDirs).getDir();
-			        directions.add(dir); 
-			    }
-			    
+			    directions.addAll((Set<Direction>)visit(ast.getdirs(),data));
 			    return directions; 
 		}
+		
+//	    while (nextDirs instanceof RDirs) {
+//        dir = ((RDirs) nextDirs).getDir(); 
+//        directions.add(dir); 
+//        nextDirs = ((RDirs) nextDirs).getdirs(); 
+//    }	   
+//    if (nextDirs instanceof FDirs) {
+//        dir = ((FDirs) nextDirs).getDir();
+//        directions.add(dir); 
+//    }
 
 //gather
 		@Override
@@ -184,14 +185,13 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		
 		@Override
 		public Object visit(ABase ast, ExecutionStateI data) throws Exception {
-			
-			return null;
+			return ast.getPosition();
 		}
 
 		@Override
 		public Object visit(RBase ast, ExecutionStateI data) throws Exception {
-			
-			return null;
+			ProcessingNodeI CurrentNode = data.getProcessingNode();
+			return CurrentNode.getPosition();
 		}
 
 //Bexp
@@ -337,19 +337,35 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 
 		@Override
 		public Object visit(DCont ast, ExecutionStateI data) throws Exception {
-			// TODO Auto-generated method stub
+			 if (data.isDirectional()) {
+				 data.incrementHops();
+				 
+			 }	
+			ProcessingNodeI CurrentNode = data.getProcessingNode();
+			Set<NodeInfoI> Neighbours = CurrentNode.getNeighbours();
+			Set<Direction> directions = (Set<Direction>)visit(ast.getDirs(),data);
+			int sauts = ast.getNbSauts();
+			for (Direction direction : directions) {
+				
+				
+			}
 			return null;
 		}
 
 		@Override
 		public Object visit(ECont ast, ExecutionStateI data) throws Exception {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public Object visit(FCont ast, ExecutionStateI data) throws Exception {
-			// TODO Auto-generated method stub
+			if (data.isFlooding()) {
+				PositionI root_position = (PositionI)visit(ast.getBase(),data);
+				double maxDistance = ast.getDistanceMax();
+				ProcessingNodeI CurrentNode = data.getProcessingNode();
+				PositionI current_position = CurrentNode.getPosition();
+				
+			}
 			return null;
 		}
 

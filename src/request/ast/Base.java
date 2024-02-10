@@ -7,7 +7,7 @@ import request.ast.interfaces.IASTvisitor;
 public abstract class Base implements IASTvisitable{
 	protected PositionI position;
 	
-	public abstract PositionI getPosition() ;
+//	public abstract PositionI getPosition() ;
 	
 	 @Override
 		public <Result, Data, Anomaly extends Throwable> 

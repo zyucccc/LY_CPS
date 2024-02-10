@@ -14,7 +14,7 @@ public class DCont extends Cont{
 	public Dirs getDirs() {
 		return dirs;
 	}
-	public int getNB() {
+	public int getNbSauts() {
 		return nb;
 	}
 }
