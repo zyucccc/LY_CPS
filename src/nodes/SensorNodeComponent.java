@@ -44,7 +44,7 @@ public class SensorNodeComponent extends AbstractComponent {
 //        super(1, 0); // 1 schedule thread,0 task
 //        this.nodeinfo = new NodeInfo(nodeId, position, range, p2pEndPoint, clientEndPoint);
 //    }
-	public SensorNodeComponent(
+	protected SensorNodeComponent(
             NodeInfoI nodeInfo,
             ArrayList<Sensor> sensorlist,
             String uriPrefix,

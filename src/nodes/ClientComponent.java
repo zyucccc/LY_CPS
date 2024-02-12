@@ -20,7 +20,7 @@ import request.ast.astQuery.GQuery;
 public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_port;
 	
-	public ClientComponent(String uri, String requestingPortURI) throws Exception {
+	protected ClientComponent(String uri, String requestingPortURI) throws Exception {
         super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
 
         // init port (required interface)

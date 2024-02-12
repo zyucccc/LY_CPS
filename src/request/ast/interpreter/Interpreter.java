@@ -210,13 +210,12 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		    return ((Boolean)left)&&((Boolean)right);	
 		}
 
-		@Override
-		public Object visit(CExpBExp ast, ExecutionState data) throws Exception {
-			 Object cexp = visit( ast.getCexp(), data);
-			 Object bool=visit((Cexp)cexp,data);
-			 
-			 return ((Boolean)bool);
-		}
+		 @Override
+		  public Object visit(CExpBExp ast, ExecutionState data) throws Exception {
+		    Object cexp = visit( ast.getCexp(), data);
+		    
+		    return ((Boolean)cexp);
+		  }
 
 		@Override
 		public Object visit(NotBExp ast, ExecutionState data) throws Exception {
@@ -260,58 +259,53 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 			throw new Exception("Unknown Cexp type");
 		}
 		
-		@Override
-		public Object visit(EQCExp ast, ExecutionState data) throws Exception {
-			
-			Object rand1=visit(ast.getRand1(),data);
-			Object rand2=visit(ast.getRand2(),data);
-			Object r1=visit((Rand)rand1,data);
-			Object r2=visit((Rand)rand2,data);
-			//=
-			return ((double)r1)==((double)r2);
-			
-		}
+		 @Override
+		  public Object visit(EQCExp ast, ExecutionState data) throws Exception {
+		   
+		   Object r1=visit(ast.getRand1(),data);
+		   Object r2=visit(ast.getRand2(),data);
+		   
+		   //=
+		   return ((double)r1)==((double)r2);
+		   
+		  }
 
-		@Override
-		public Object visit(GCExp ast, ExecutionState data) throws Exception {
-			// TODO Auto-generated method stub》
-			Object rand1=visit(ast.getRand1(),data);
-			Object rand2=visit(ast.getRand2(),data);
-			Object r1=visit((Rand)rand1,data);
-			Object r2=visit((Rand)rand2,data);
-			
-			return ((double)r1)>=((double)r2);
-		}
+		  @Override
+		  public Object visit(GCExp ast, ExecutionState data) throws Exception {
+		   // TODO Auto-generated method stub》
+		   Object r1=visit(ast.getRand1(),data);
+		   Object r2=visit(ast.getRand2(),data);
+		   
+		   return ((double)r1)>=((double)r2);
+		  }
 
-		@Override
-		public Object visit(GEQCExp ast, ExecutionState data) throws Exception {
-			Object rand1=visit(ast.getRand1(),data);
-			Object rand2=visit(ast.getRand2(),data);
-			Object r1=visit((Rand)rand1,data);
-			Object r2=visit((Rand)rand2,data);
-			
-			return ((double)r1)>=((double)r2);
-		}
+		  @Override
+		  public Object visit(GEQCExp ast, ExecutionState data) throws Exception {
+		   Object r1=visit(ast.getRand1(),data);
+		   Object r2=visit(ast.getRand2(),data);
+		  
+		   
+		   return ((double)r1)>=((double)r2);
+		  }
 
-		@Override
-		public Object visit(LCExp ast, ExecutionState data) throws Exception {
-			Object rand1=visit(ast.getRand1(),data);
-			Object rand2=visit(ast.getRand2(),data);
-			Object r1=visit((Rand)rand1,data);
-			Object r2=visit((Rand)rand2,data);
-			
-			return ((double)r1)<((double)r2);
-		}
+		  @Override
+		  public Object visit(LCExp ast, ExecutionState data) throws Exception {
+		   Object r1=visit(ast.getRand1(),data);
+		   Object r2=visit(ast.getRand2(),data);
+		   
+		   
+		   return ((double)r1)<((double)r2);
+		  }
 
-		@Override
-		public Object visit(LEQCExp ast, ExecutionState data) throws Exception {
-			Object rand1=visit(ast.getRand1(),data);
-			Object rand2=visit(ast.getRand2(),data);
-			Object r1=visit((Rand)rand1,data);
-			Object r2=visit((Rand)rand2,data);
-			
-			return ((double)r1)<=((double)r2);
-		}
+		  @Override
+		  public Object visit(LEQCExp ast, ExecutionState data) throws Exception {
+		   Object r1=visit(ast.getRand1(),data);
+		   Object r2=visit(ast.getRand2(),data);
+		   
+		   
+		   return ((double)r1)<=((double)r2);
+		  }
+		  
 		
 //cont
 		@Override
