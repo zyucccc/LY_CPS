@@ -347,12 +347,11 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 
 		@Override
 		public Object visit(FCont ast, ExecutionState data) throws Exception {
-			if (data.isFlooding()) {
-				PositionI root_position = (PositionI)visit(ast.getBase(),data);
-				double maxDistance = ast.getDistanceMax();
-				ProcessingNodeI CurrentNode = data.getProcessingNode();
-				PositionI current_position = CurrentNode.getPosition();
-				
+			if(!(data.isContinuationSet())) {
+				data.setIsContinuationSet();
+				PositionI base = (PositionI) visit(ast.getBase(),data);
+	            double distanceMax = ast.getDistanceMax();					
+				data.setFlooding(true, distanceMax,base);
 			}
 			return null;
 		}
