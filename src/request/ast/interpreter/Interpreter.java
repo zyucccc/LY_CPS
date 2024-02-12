@@ -11,6 +11,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
+import request.ExecutionState;
 import request.ast.Base;
 import request.ast.Bexp;
 import request.ast.Cexp;
@@ -46,16 +47,16 @@ import request.ast.astRand.SRand;
 import request.ast.interfaces.IASTvisitor;
 import sensor_network.QueryResult;
 
-public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Exception> {
+public class Interpreter implements IASTvisitor<Object, ExecutionState, Exception> {
 
 	
 	 @Override
-	    public Object visit(Query<?> ast,ExecutionStateI data) throws Exception  {
+	    public Object visit(Query<?> ast,ExecutionState data) throws Exception  {
 		 return null; 
 	    }
 	 
 	    @Override
-	    public Object visit(GQuery ast,ExecutionStateI data) throws Exception  {
+	    public Object visit(GQuery ast,ExecutionState data) throws Exception  {
 		        ProcessingNodeI CurrentNode = data.getProcessingNode();
 	            ArrayList<String> list_sensorid = (ArrayList<String>) visit(ast.getGather(),data);
 	            Cont cont = (Cont)visit(ast.getCont(),data);
@@ -69,7 +70,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 	    }
 	    
 		@Override
-		public Object visit(BQuery ast, ExecutionStateI data) throws Exception {
+		public Object visit(BQuery ast, ExecutionState data) throws Exception {
 			ProcessingNodeI CurrentNode = data.getProcessingNode();
 			Cont cont = (Cont)visit(ast.getCont(),data);
 			Boolean bool_expr = (Boolean) visit(ast.getBexp(),data);
@@ -84,17 +85,17 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 	 
 //dir
 	    @Override
-		public Object visit(Direction ast, ExecutionStateI data) throws Exception{
+		public Object visit(Direction ast, ExecutionState data) throws Exception{
 			return ast.getDirection();
 		}
 
 		@Override
-		public Object visit(Dirs ast, ExecutionStateI data) throws Exception{
+		public Object visit(Dirs ast, ExecutionState data) throws Exception{
 			return null;
 		}
 		
 		@Override
-		public Object visit(FDirs ast, ExecutionStateI data) throws Exception {
+		public Object visit(FDirs ast, ExecutionState data) throws Exception {
 //			ArrayList<Direction> directions = new ArrayList<Direction>();
 			Set<Direction> directions = new HashSet<>();
 			directions.add((Direction)visit(ast.getDir(),data));
@@ -102,7 +103,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(RDirs ast, ExecutionStateI data) throws Exception {
+		public Object visit(RDirs ast, ExecutionState data) throws Exception {
 			    Set<Direction> directions = new HashSet<>();
 //			    ArrayList<Direction> directions = new ArrayList<Direction>();		    
 			    Direction dir = ast.getDir();
@@ -110,20 +111,10 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 			    directions.addAll((Set<Direction>)visit(ast.getdirs(),data));
 			    return directions; 
 		}
-		
-//	    while (nextDirs instanceof RDirs) {
-//        dir = ((RDirs) nextDirs).getDir(); 
-//        directions.add(dir); 
-//        nextDirs = ((RDirs) nextDirs).getdirs(); 
-//    }	   
-//    if (nextDirs instanceof FDirs) {
-//        dir = ((FDirs) nextDirs).getDir();
-//        directions.add(dir); 
-//    }
 
 //gather
 		@Override
-	    public Object visit(Gather ast, ExecutionStateI data) throws Exception {
+	    public Object visit(Gather ast, ExecutionState data) throws Exception {
 	        if (ast instanceof FGather) {
 	        	return visit((FGather)ast,data);
 	        }else if(ast instanceof RGather) {
@@ -133,12 +124,12 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 	    }
 
 		@Override
-		public Object visit(FGather ast, ExecutionStateI data) throws Exception {
+		public Object visit(FGather ast, ExecutionState data) throws Exception {
 			return ast.getSensorID();
 		}
 
 		@Override
-		public Object visit(RGather ast, ExecutionStateI data) throws Exception {
+		public Object visit(RGather ast, ExecutionState data) throws Exception {
 			ArrayList<Object> ids = new ArrayList<Object>();      
 	        Gather gathers=((RGather) ast).getGather();
 	        Object id = ast.getSensorID();
@@ -155,7 +146,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		
 //rand
 	    @Override
-	    public Object visit(Rand ast, ExecutionStateI data) throws Exception {
+	    public Object visit(Rand ast, ExecutionState data) throws Exception {
 	         if (ast instanceof SRand) {
 	        	 return visit((SRand)ast,data);
 	         }else if (ast instanceof CRand) {
@@ -165,12 +156,12 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 	    }
 	    
 		@Override
-		public Object visit(CRand ast, ExecutionStateI data) throws Exception {
+		public Object visit(CRand ast, ExecutionState data) throws Exception {
 			return ((CRand) ast).getVal();
 		}
 
 		@Override
-		public Object visit(SRand ast, ExecutionStateI data) throws Exception {
+		public Object visit(SRand ast, ExecutionState data) throws Exception {
 			ProcessingNodeI node=data.getProcessingNode();
 	        String id= ast.getSensorId();
 	        Object valeur=node.getSensorData(id);
@@ -179,24 +170,24 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		
 //base
 		@Override
-		public Object visit(Base ast, ExecutionStateI data) throws Exception {
+		public Object visit(Base ast, ExecutionState data) throws Exception {
 			return null;
 		}
 		
 		@Override
-		public Object visit(ABase ast, ExecutionStateI data) throws Exception {
+		public Object visit(ABase ast, ExecutionState data) throws Exception {
 			return ast.getPosition();
 		}
 
 		@Override
-		public Object visit(RBase ast, ExecutionStateI data) throws Exception {
+		public Object visit(RBase ast, ExecutionState data) throws Exception {
 			ProcessingNodeI CurrentNode = data.getProcessingNode();
 			return CurrentNode.getPosition();
 		}
 
 //Bexp
 		@Override
-		public Object visit(Bexp ast, ExecutionStateI data) throws Exception {
+		public Object visit(Bexp ast, ExecutionState data) throws Exception {
 			if (ast instanceof AndBExp) {
 				return visit((AndBExp)ast,data);
 	        }else if (ast instanceof CExpBExp) {
@@ -212,7 +203,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 		
 		@Override
-		public Object visit(AndBExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(AndBExp ast, ExecutionState data) throws Exception {
 			Object left = visit(ast.getBexp1(), data);
 		    Object right = visit(ast.getBexp2(), data);
 		   
@@ -220,7 +211,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(CExpBExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(CExpBExp ast, ExecutionState data) throws Exception {
 			 Object cexp = visit( ast.getCexp(), data);
 			 Object bool=visit((Cexp)cexp,data);
 			 
@@ -228,14 +219,14 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(NotBExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(NotBExp ast, ExecutionState data) throws Exception {
 			Object bo = visit( ast.getBexp(), data);
 			
 			return ((Boolean)bo);
 		}
 
 		@Override
-		public Object visit(OrBExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(OrBExp ast, ExecutionState data) throws Exception {
 			 Object left = visit(ast.getBexp1(), data);
 			 Object right = visit( ast.getBexp2(), data);
 			 
@@ -243,7 +234,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(SBExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(SBExp ast, ExecutionState data) throws Exception {
 			ProcessingNodeI node=data.getProcessingNode();
 		     String sensorId = ast.getSensorID();
 		     Object bo=node.getSensorData(sensorId);
@@ -253,7 +244,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 
 //cexp
 		@Override
-		public Object visit(Cexp ast, ExecutionStateI data) throws Exception {
+		public Object visit(Cexp ast, ExecutionState data) throws Exception {
 			if (ast instanceof EQCExp) {
 				return visit((EQCExp)ast,data);
 
@@ -270,7 +261,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 		
 		@Override
-		public Object visit(EQCExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(EQCExp ast, ExecutionState data) throws Exception {
 			
 			Object rand1=visit(ast.getRand1(),data);
 			Object rand2=visit(ast.getRand2(),data);
@@ -282,7 +273,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(GCExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(GCExp ast, ExecutionState data) throws Exception {
 			// TODO Auto-generated method stub》
 			Object rand1=visit(ast.getRand1(),data);
 			Object rand2=visit(ast.getRand2(),data);
@@ -293,7 +284,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(GEQCExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(GEQCExp ast, ExecutionState data) throws Exception {
 			Object rand1=visit(ast.getRand1(),data);
 			Object rand2=visit(ast.getRand2(),data);
 			Object r1=visit((Rand)rand1,data);
@@ -303,7 +294,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(LCExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(LCExp ast, ExecutionState data) throws Exception {
 			Object rand1=visit(ast.getRand1(),data);
 			Object rand2=visit(ast.getRand2(),data);
 			Object r1=visit((Rand)rand1,data);
@@ -313,7 +304,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(LEQCExp ast, ExecutionStateI data) throws Exception {
+		public Object visit(LEQCExp ast, ExecutionState data) throws Exception {
 			Object rand1=visit(ast.getRand1(),data);
 			Object rand2=visit(ast.getRand2(),data);
 			Object r1=visit((Rand)rand1,data);
@@ -324,7 +315,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		
 //cont
 		@Override
-		public Object visit(Cont ast, ExecutionStateI data) throws Exception {
+		public Object visit(Cont ast, ExecutionState data) throws Exception {
 			if (ast instanceof DCont) {
 				return visit((DCont)ast,data);
 	        }else if (ast instanceof ECont) {
@@ -336,29 +327,26 @@ public class Interpreter implements IASTvisitor<Object, ExecutionStateI, Excepti
 		}
 
 		@Override
-		public Object visit(DCont ast, ExecutionStateI data) throws Exception {
-			 if (data.isDirectional()) {
-				 data.incrementHops();
-				 
-			 }	
-			ProcessingNodeI CurrentNode = data.getProcessingNode();
-			Set<NodeInfoI> Neighbours = CurrentNode.getNeighbours();
-			Set<Direction> directions = (Set<Direction>)visit(ast.getDirs(),data);
-			int sauts = ast.getNbSauts();
-			for (Direction direction : directions) {
-				
-				
+		public Object visit(DCont ast, ExecutionState data) throws Exception {
+			if(!(data.isContinuationSet())) {
+				data.setIsContinuationSet();
+				int nbSauts = ast.getNbSauts();
+				Set<Direction> directions = (Set<Direction>) visit(ast.getDirs(),data);			
+				data.setDirectional(true, directions,nbSauts);
 			}
 			return null;
 		}
 
 		@Override
-		public Object visit(ECont ast, ExecutionStateI data) throws Exception {
+		public Object visit(ECont ast, ExecutionState data) throws Exception {
+			if(!(data.isContinuationSet())) {
+				data.setIsContinuationSet();
+			}
 			return null;
 		}
 
 		@Override
-		public Object visit(FCont ast, ExecutionStateI data) throws Exception {
+		public Object visit(FCont ast, ExecutionState data) throws Exception {
 			if (data.isFlooding()) {
 				PositionI root_position = (PositionI)visit(ast.getBase(),data);
 				double maxDistance = ast.getDistanceMax();

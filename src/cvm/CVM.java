@@ -117,8 +117,8 @@ public class CVM extends AbstractCVM {
         	// Create an instance of the defined component virtual machine.
             CVM cvm = new CVM();
             //execute
-            cvm.startStandardLifeCycle(20000L);
-            Thread.sleep(10000L); // 等待一段时间以观察输出
+            cvm.startStandardLifeCycle(200000L);
+            Thread.sleep(100000L); // 等待一段时间以观察输出
             System.exit(0); // 退出程序
         } catch (Exception e) {
             throw new RuntimeException(e);
