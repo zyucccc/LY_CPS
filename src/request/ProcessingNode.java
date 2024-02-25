@@ -41,7 +41,7 @@ public class ProcessingNode implements ProcessingNodeI {
         return this.sensorsData.get(sensorIdentifier);
     }
 
-    // Utility methods for managing neighbours and sensor data
+    
     public void addNeighbour(NodeInfoI neighbour) {
         this.neighbours.add(neighbour);
     }
