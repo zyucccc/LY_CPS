@@ -12,7 +12,7 @@ public class SensorNodeInboundPort extends	AbstractInboundPort implements Reques
 	private static final long serialVersionUID = 1L;
 	
 	public SensorNodeInboundPort (String uri,ComponentI owner) throws Exception{
-		super(RequestingCI.class, owner) ;
+		super(uri,RequestingCI.class, owner) ;
 		assert	uri != null && owner instanceof SensorNodeComponent ;
 	}
 	

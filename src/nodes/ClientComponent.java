@@ -15,6 +15,7 @@ import request.ast.astCont.DCont;
 import request.ast.astCont.ECont;
 import request.ast.astGather.FGather;
 import request.ast.astQuery.GQuery;
+import sensor_network.QueryResult;
 
 @RequiredInterfaces(required = {RequestingCI.class})
 public class ClientComponent extends AbstractComponent {
@@ -37,11 +38,12 @@ public class ClientComponent extends AbstractComponent {
 	
 	 @Override
 	    public void execute() throws Exception {
+		    this.logMessage("ClientComponent executed.");
 	        super.execute();	   
 	        GQuery test = new GQuery(new FGather("temperature")  ,new ECont());
 	        String requestURI = "gather-uri";	      
 	        RequestI request = new Request(requestURI,test,false,null);
-	        QueryResultI result = this.client_port.execute(request);
+	        QueryResult result = (QueryResult) this.client_port.execute(request);
 
 	    }
 	 

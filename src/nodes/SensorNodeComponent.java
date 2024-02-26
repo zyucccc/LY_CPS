@@ -56,6 +56,7 @@ public class SensorNodeComponent extends AbstractComponent {
 	    this.nodeinfo = nodeInfo;
 	    this.sensorlist = sensorlist;
 	    this.uriPrefix = uriPrefix;
+	    //lier URI
         PortI p = new SensorNodeInboundPort(sensorNodeInboundPortURI, this);
 		// publish the port
 		p.publishPort();

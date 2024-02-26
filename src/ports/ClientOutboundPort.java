@@ -5,7 +5,9 @@ import fr.sorbonne_u.components.ports.AbstractOutboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
+import nodes.ClientComponent;
 import nodes.SensorNodeComponent;
+import sensor_network.QueryResult;
 
 public class ClientOutboundPort extends	AbstractOutboundPort implements RequestingCI{
 	
@@ -13,7 +15,7 @@ public class ClientOutboundPort extends	AbstractOutboundPort implements Requesti
 	
 	public ClientOutboundPort (String uri,ComponentI owner) throws Exception{
 		super(uri,RequestingCI.class, owner) ;
-		assert	uri != null && owner instanceof SensorNodeComponent ;
+		assert	uri != null && owner instanceof  ClientComponent;
 	}
 	
 	public ClientOutboundPort (ComponentI owner) throws Exception{
@@ -23,7 +25,7 @@ public class ClientOutboundPort extends	AbstractOutboundPort implements Requesti
 
 	@Override
 	public QueryResultI execute(RequestI request) throws Exception {
-		QueryResultI result = ((RequestingCI)this.getConnector()).execute(request);
+		QueryResult result = (QueryResult) ((RequestingCI)this.getConnector()).execute(request);
 		return result;
 	}
 
