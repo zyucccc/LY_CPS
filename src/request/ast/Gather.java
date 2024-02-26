@@ -21,4 +21,5 @@ public abstract class Gather implements IASTvisitable{
 	            throws Anomaly {
 	        return visitor.visit(this, data);
 	    }
+	
 }

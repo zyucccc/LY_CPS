@@ -2,6 +2,7 @@ package request.ast.astCexp;
 
 import request.ast.Cexp;
 import request.ast.Rand;
+import request.ast.interfaces.IASTvisitor;
 
 public class LEQCExp extends Cexp{
 
@@ -10,6 +11,12 @@ public class LEQCExp extends Cexp{
 
 	}
 
+	 @Override
+		public <Result, Data, Anomaly extends Throwable> 
+	    Result eval(IASTvisitor<Result, Data, Anomaly> visitor, Data data)
+	            throws Anomaly {
+	        return visitor.visit(this, data);
+	    }
 
 
 }

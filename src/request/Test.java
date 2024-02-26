@@ -7,6 +7,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import nodes.sensor.Sensor;
 import request.ast.Direction;
+import request.ast.Query;
 import request.ast.astBase.ABase;
 import request.ast.astBase.RBase;
 import request.ast.astBexp.AndBExp;
@@ -29,18 +30,10 @@ import sensor_network.Position;
 import sensor_network.QueryResult;
 
 public class Test {
-    public static void main(String[] args) {
+    @SuppressWarnings("unchecked")
+	public static void main(String[] args) {
     	ExecutionState data = new ExecutionState();  
         Interpreter interpreter = new Interpreter();
-
-
-       
-        
-        CRand q=new CRand(3.0);
-        GQuery q3=new GQuery(new RGather("température", new FGather("fumée")), new FCont(new ABase(null),3.0));
-        GQuery q4=new GQuery(new RGather("température", new FGather("fumée")), new DCont(new RDirs(Direction.NW, new FDirs(Direction.NE)), 2));
-        GQuery q2=new GQuery(new RGather("température", new FGather("fumée")), new ECont());
-               
 
         try {
             
@@ -51,7 +44,7 @@ public class Test {
     						new CRand(15.0), new CRand(50.0)
     						)
     				);
-        	Boolean result_test_CExpBExp = (Boolean)interpreter.visit(test_CExpBExp, data);
+        	Boolean result_test_CExpBExp = (Boolean)test_CExpBExp.eval(interpreter, data);
             System.out.println("Test CExpBExp Result: " + result_test_CExpBExp);
             
             //Test Bexp
@@ -65,7 +58,8 @@ public class Test {
           //mise a jour processing node dans executionData
           executionState_bexp.updateProcessingNode(processingNode_bexp);
             SBExp test_SBExp = new SBExp("fumée");
-            Boolean result_test_SBExp = (Boolean)interpreter.visit(test_SBExp, executionState_bexp);
+            Boolean result_test_SBExp = (Boolean)test_SBExp.eval(interpreter, executionState_bexp);
+//            Boolean result_test_SBExp = (Boolean)interpreter.visit(test_SBExp, executionState_bexp);
             System.out.println("Test SBExp Result: " + result_test_SBExp);
             
             
@@ -79,13 +73,13 @@ public class Test {
     				, new CExpBExp(
     							new GEQCExp(
     									new CRand(10), new CRand(3.0))));
-            Boolean result_test_AndBExp = (Boolean)interpreter.visit(test_AndBExp, data);
+            Boolean result_test_AndBExp = (Boolean)test_AndBExp.eval(interpreter, data);
             System.out.println("Test AndBExp Result: " + result_test_AndBExp);
             
             //Test Rand
             //test CRand
             CRand test_CRand = new CRand(10);
-            double result_test_CRand = (double)interpreter.visit(test_CRand, data);
+            double result_test_CRand = (double)test_CRand.eval(interpreter, data);
             System.out.println("Test Crand Result: " + result_test_CRand);
             //test SRand
             PositionI position = new Position(0.0, 0.0);
@@ -95,39 +89,41 @@ public class Test {
             ExecutionState executionState_test = new ExecutionState(); 
             executionState_test.updateProcessingNode(processingNode);
             SRand test_SRand = new SRand("temperature");
-            double result_test_SRand = (double)interpreter.visit(test_SRand,executionState_test);
+            double result_test_SRand = (double)test_SRand.eval(interpreter, executionState_test);
+//            double result_test_SRand = (double)interpreter.visit(test_SRand,executionState_test);
             System.out.println("Test Srand Result: " + result_test_SRand);
             
             
             //Test Direction
             //test Dirs
             Direction test_direction = Direction.NE;
-            Direction result_test_Direction = (Direction)interpreter.visit(test_direction, data);
+            Direction result_test_Direction = (Direction)test_direction.eval(interpreter, data);
             System.out.println("Test Direction Result: " + result_test_Direction);
             //test RDirs
             RDirs test_RDirs = new RDirs(Direction.NW, new FDirs(Direction.NE));
-            Set<Direction> result_test_RDirs = (Set<Direction>)interpreter.visit(test_RDirs, data);
+            Set<Direction> result_test_RDirs = (Set<Direction>)test_RDirs.eval(interpreter, data);
             System.out.println("Test RDirs Result: " + result_test_RDirs);
             
             //Test Gather
             //test FGather
             FGather test_FGather = new FGather("fumée");
-            ArrayList<String> result_test_FGather = (ArrayList<String>)interpreter.visit(test_FGather, data);
+            ArrayList<String> result_test_FGather = (ArrayList<String>)test_FGather.eval(interpreter, data);
             System.out.println("Test FGather Result: " + result_test_FGather);
             //test RGather
             RGather test_RGather = new RGather("température", new FGather("fumée"));
-            ArrayList<String> result_test_RGather = (ArrayList<String>)interpreter.visit(test_RGather, data);
+            ArrayList<String> result_test_RGather = (ArrayList<String>)test_RGather.eval(interpreter, data);
             System.out.println("Test RGather Result: " + result_test_RGather);
             
             //Test Base
             //test ABase
             PositionI position1 = new Position(15.0, 6.0);
             ABase test_ABase = new ABase(position1);
-            Position result_test_ABase = (Position)interpreter.visit(test_ABase, data);
+            Position result_test_ABase = (Position)test_ABase.eval(interpreter, data);
             System.out.println("Test ABase Result: " + result_test_ABase);
             //test RBase
             RBase test_RBase = new RBase();
-            Position result_test_RBase = (Position)interpreter.visit(test_RBase,executionState_test);
+            Position result_test_RBase = (Position)test_RBase.eval(interpreter, executionState_test);
+//            Position result_test_RBase = (Position)interpreter.visit(test_RBase,executionState_test);
             System.out.println("Test RBase Result: " + result_test_RBase);
             
             //Test Query
@@ -146,14 +142,17 @@ public class Test {
 //          SBExp test_SBExp = new SBExp("fumée");
             BQuery test_BQuery=new BQuery(test_SBExp, new DCont(new FDirs(Direction.NE), 2));
 
-        	QueryResult result_test_BQuery =   (QueryResult)interpreter.visit(test_BQuery, executionState_query);
+        	QueryResult result_test_BQuery =   (QueryResult)test_BQuery.eval(interpreter, executionState_query);
             System.out.println("Test BQuery Result: \n" + result_test_BQuery);
             //test GQuery
 //          FGather test_FGather = new FGather("fumée");
             GQuery test_GQuery=new GQuery(test_FGather, new DCont(new FDirs(Direction.NE), 2));
-            QueryResult result_test_GQuery =   (QueryResult)interpreter.visit(test_GQuery, executionState_query);
+            QueryResult result_test_GQuery =   (QueryResult)test_GQuery.eval(interpreter, executionState_query);
             System.out.println("Test GQuery Result: \n" + result_test_GQuery);
-            
+            //test query
+            Query<?> test_query = test_GQuery;
+            QueryResult result_test_Query =   (QueryResult)test_query.eval(interpreter, executionState_query);
+            System.out.println("Test Query Result: \n" + result_test_Query);
             
         } catch (Exception e) {
             e.printStackTrace();

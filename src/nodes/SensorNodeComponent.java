@@ -23,6 +23,7 @@ import nodes.sensor.Sensor;
 import ports.SensorNodeInboundPort;
 import request.ExecutionState;
 import request.ProcessingNode;
+import request.ast.Gather;
 import request.ast.Query;
 import request.ast.astQuery.BQuery;
 import request.ast.astQuery.GQuery;
@@ -145,12 +146,37 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		ExecutionState data = new ExecutionState(); 
         
         data.updateProcessingNode(this.processingNode);
+        
         this.logMessage("Actuel position: " + this.processingNode.getPosition());
         this.logMessage("Actuel ProcessingNode" + this.processingNode);
         
-		QueryResult result = (QueryResult) interpreter.visit(query, data);
+        ProcessingNode processingnode2 = (ProcessingNode) data.getProcessingNode();
+        
+        this.logMessage("Test ProcessingNode" + this.processingNode);
+        
+        this.logMessage("Test1");
+
+        if(((GQuery) query).getGather() != null) {
+        	 this.logMessage("Test_Gather");
+        }
+        Gather test_RGather = ((GQuery) query).getGather();
+        ArrayList<String> result_test_RGather = (ArrayList<String>)interpreter.visit(test_RGather, data);
+        this.logMessage("Res Gather: " + result_test_RGather);
+        
+        QueryResult result = (QueryResult) query.eval(interpreter, data);
+//        QueryResult result = (QueryResult) interpreter.visit(query, data);
+        System.out.println("Test GQuery Result: \n" + result);
+		
+//		if(result.isBooleanRequest()) {
+//			this.logMessage("Bool res");
+//		}else if(result.isGatherRequest()) {
+//			this.logMessage("Gather res");
+//		}else {
+//			this.logMessage("Erreur unknown type result query");
+//		}
 		
 		this.logMessage("Calcul Fini");
+		
 		this.logMessage("Res: " + result);
 
 		return result;

@@ -2,6 +2,7 @@ package request.ast.astCexp;
 
 import request.ast.Cexp;
 import request.ast.Rand;
+import request.ast.interfaces.IASTvisitor;
 
 public class GCExp extends Cexp{
 
@@ -9,5 +10,12 @@ public class GCExp extends Cexp{
 		super(r1, r2);
 		// TODO Auto-generated constructor stub
 	}
+	
+	 @Override
+		public <Result, Data, Anomaly extends Throwable> 
+	    Result eval(IASTvisitor<Result, Data, Anomaly> visitor, Data data)
+	            throws Anomaly {
+	        return visitor.visit(this, data);
+	    }
 
 }

@@ -53,14 +53,22 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	
 	 @Override
 	    public Object visit(Query<?> ast,ExecutionState data) throws Exception  {
-		 return null; 
+//		 if (ast instanceof GQuery) {
+//	        	return visit((GQuery)ast,data);
+//	        }else if(ast instanceof BQuery) {
+//	            return visit((BQuery)ast,data);
+//	        }
+//	        throw new Exception("Unknown query type");
+		 return null;
 	    }
 	 
 	    @Override
 	    public Object visit(GQuery ast,ExecutionState data) throws Exception  {
 		        ProcessingNodeI CurrentNode = data.getProcessingNode();
-	            ArrayList<String> list_sensorid = (ArrayList<String>) visit(ast.getGather(),data);
-	            Cont cont = (Cont)visit(ast.getCont(),data);
+		        ArrayList<String> list_sensorid = (ArrayList<String>) ast.getGather().eval(this, data);
+//	            ArrayList<String> list_sensorid = (ArrayList<String>) visit(ast.getGather(),data);
+		        Cont cont = (Cont)ast.getCont().eval(this, data);
+//		        Cont cont = (Cont)visit(ast.getCont(),data);
 	            ArrayList<SensorDataI> list_result = new ArrayList<SensorDataI>();
 	            for(String sensorid : list_sensorid) {
 	            	list_result.add(CurrentNode.getSensorData(sensorid));
@@ -73,8 +81,10 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		@Override
 		public Object visit(BQuery ast, ExecutionState data) throws Exception {
 			ProcessingNodeI CurrentNode = data.getProcessingNode();
-			Cont cont = (Cont)visit(ast.getCont(),data);
-			Boolean bool_expr = (Boolean) visit(ast.getBexp(),data);
+//			Cont cont = (Cont)visit(ast.getCont(),data);
+			Cont cont = (Cont)ast.getCont().eval(this, data);
+			Boolean bool_expr = (Boolean) ast.getBexp().eval(this, data);
+//			Boolean bool_expr = (Boolean) visit(ast.getBexp(),data);
 			ArrayList<String> list_Nodeid = new ArrayList<String>();
 			if (bool_expr) {
 				list_Nodeid.add(CurrentNode.getNodeIdentifier());
@@ -92,18 +102,21 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 
 		@Override
 		public Object visit(Dirs ast, ExecutionState data) throws Exception{
-			 if (ast instanceof FDirs) {
-		        	return visit((FDirs)ast,data);
-		        }else if(ast instanceof RDirs) {
-		            return visit((RDirs)ast,data);
-		        }
-			 throw new Exception("Unknown gathers type");
+//			 if (ast instanceof FDirs) {
+//		        	return visit((FDirs)ast,data);
+//		        }else if(ast instanceof RDirs) {
+//		            return visit((RDirs)ast,data);
+//		        }
+//			 throw new Exception("Unknown gathers type");
+			return null;
 		}
 		
 		@Override
 		public Object visit(FDirs ast, ExecutionState data) throws Exception {
 			Set<Direction> directions = new HashSet<>();
-			directions.add((Direction)visit(ast.getDir(),data));
+			
+			directions.add((Direction)ast.getDir().eval(this, data));
+//			directions.add((Direction)visit(ast.getDir(),data));
 			return directions;
 		}
 
@@ -113,7 +126,8 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 //			    ArrayList<Direction> directions = new ArrayList<Direction>();		    
 			    Direction dir = ast.getDir();
 			    directions.add(dir); 
-			    Set<Direction> dirsResult = (Set<Direction>) visit(ast.getdirs(), data);
+			    Set<Direction> dirsResult = (Set<Direction>)ast.getdirs().eval(this, data) ;
+//			    Set<Direction> dirsResult = (Set<Direction>) visit(ast.getdirs(), data);
 			    if(dirsResult != null) {
 			    directions.addAll(dirsResult);
 			    }
@@ -123,12 +137,13 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 //gather
 		@Override
 	    public Object visit(Gather ast, ExecutionState data) throws Exception {
-	        if (ast instanceof FGather) {
-	        	return visit((FGather)ast,data);
-	        }else if(ast instanceof RGather) {
-	            return visit((RGather)ast,data);
-	        }
-	        throw new Exception("Unknown gathers type");
+//	        if (ast instanceof FGather) {
+//	        	return visit((FGather)ast,data);
+//	        }else if(ast instanceof RGather) {
+//	            return visit((RGather)ast,data);
+//	        }
+//	        throw new Exception("Unknown gathers type");
+			return null;
 	    }
 
 		@Override
@@ -142,7 +157,8 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		public Object visit(RGather ast, ExecutionState data) throws Exception {
 			ArrayList<String> ids = new ArrayList<String>();   		
 	        Gather gathers=ast.getGather();
-	        ArrayList<String> ids_suite =(ArrayList<String>) visit(gathers,data);	        
+	        ArrayList<String> ids_suite =(ArrayList<String>) gathers.eval(this, data);
+//	        ArrayList<String> ids_suite =(ArrayList<String>) visit(gathers,data);	        
 	        String id = ast.getSensorID();
 	        ids.add(id);
 	        ids.addAll(ids_suite);
@@ -152,12 +168,13 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 //rand
 	    @Override
 	    public Object visit(Rand ast, ExecutionState data) throws Exception {
-	         if (ast instanceof SRand) {
-	        	 return visit((SRand)ast,data);
-	         }else if (ast instanceof CRand) {
-	             return visit((CRand)ast,data);         		
-	         }
-	         throw new Exception("Unknown Rand type");
+//	         if (ast instanceof SRand) {
+//	        	 return visit((SRand)ast,data);
+//	         }else if (ast instanceof CRand) {
+//	             return visit((CRand)ast,data);         		
+//	         }
+//	         throw new Exception("Unknown Rand type");
+	    	return null;
 	    }
 	    
 		@Override
@@ -193,48 +210,51 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 //Bexp
 		@Override
 		public Object visit(Bexp ast, ExecutionState data) throws Exception {
-			if (ast instanceof AndBExp) {
-				return visit((AndBExp)ast,data);
-	        }else if (ast instanceof CExpBExp) {
-	        	return visit((CExpBExp)ast,data);	
-	        }else if (ast instanceof NotBExp) {
-	        	return visit((NotBExp)ast,data);
-	        }else if (ast instanceof OrBExp) {
-	        	return visit((OrBExp)ast,data);
-	        }else if (ast instanceof SBExp) {
-	        	return visit((SBExp)ast,data);
-	        }
-			throw new Exception("Unknown Bexp type");
+//			if (ast instanceof AndBExp) {
+//				return visit((AndBExp)ast,data);
+//	        }else if (ast instanceof CExpBExp) {
+//	        	return visit((CExpBExp)ast,data);	
+//	        }else if (ast instanceof NotBExp) {
+//	        	return visit((NotBExp)ast,data);
+//	        }else if (ast instanceof OrBExp) {
+//	        	return visit((OrBExp)ast,data);
+//	        }else if (ast instanceof SBExp) {
+//	        	return visit((SBExp)ast,data);
+//	        }
+//			throw new Exception("Unknown Bexp type");
+			return null;
 		}
 		
 		@Override
 		public Object visit(AndBExp ast, ExecutionState data) throws Exception {
-			Object left = visit(ast.getBexp1(), data);
-		    Object right = visit(ast.getBexp2(), data);
+			
+			Boolean left = (Boolean) ast.getBexp1().eval(this, data);
+		    Boolean right = (Boolean) ast.getBexp2().eval(this, data);
 		   
-		    return ((Boolean)left)&&((Boolean)right);	
+		    return left&&right;	
 		}
 
 		 @Override
 		  public Object visit(CExpBExp ast, ExecutionState data) throws Exception {
-		    Object cexp = visit( ast.getCexp(), data);
+		     Boolean cexp = (Boolean) ast.getCexp().eval(this, data);
+//			 Object cexp = visit( ast.getCexp(), data);
 		    
-		    return ((Boolean)cexp);
+		    return cexp;
 		  }
 
 		@Override
 		public Object visit(NotBExp ast, ExecutionState data) throws Exception {
-			Object bo = visit( ast.getBexp(), data);
+			Boolean bo = (Boolean) ast.getBexp().eval(this, data);
 			
-			return ((Boolean)bo);
+			return bo;
 		}
 
 		@Override
 		public Object visit(OrBExp ast, ExecutionState data) throws Exception {
-			 Object left = visit(ast.getBexp1(), data);
-			 Object right = visit( ast.getBexp2(), data);
-			 
-			 return ((Boolean)left)||((Boolean)right); 
+			Boolean left = (Boolean) ast.getBexp1().eval(this, data);
+		    Boolean right = (Boolean) ast.getBexp2().eval(this, data);
+		   
+		    return left||right;	
 		}
 
 		@Override
@@ -248,80 +268,82 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 //cexp
 		@Override
 		public Object visit(Cexp ast, ExecutionState data) throws Exception {
-			if (ast instanceof EQCExp) {
-				return visit((EQCExp)ast,data);
-
-	        }else if (ast instanceof GCExp) {
-	        	return visit((GCExp)ast,data);	
-	        }else if (ast instanceof GEQCExp) {
-	        	return visit((GEQCExp)ast,data);
-	        }else if (ast instanceof LCExp) {
-	        	return visit((LCExp)ast,data);
-	        }else if (ast instanceof LEQCExp) {
-	        	return visit((LEQCExp)ast,data);
-	        }
-			throw new Exception("Unknown Cexp type");
+//			if (ast instanceof EQCExp) {
+//				return visit((EQCExp)ast,data);
+//
+//	        }else if (ast instanceof GCExp) {
+//	        	return visit((GCExp)ast,data);	
+//	        }else if (ast instanceof GEQCExp) {
+//	        	return visit((GEQCExp)ast,data);
+//	        }else if (ast instanceof LCExp) {
+//	        	return visit((LCExp)ast,data);
+//	        }else if (ast instanceof LEQCExp) {
+//	        	return visit((LEQCExp)ast,data);
+//	        }
+//			throw new Exception("Unknown Cexp type");
+			return null;
 		}
 		
 		 @Override
 		  public Object visit(EQCExp ast, ExecutionState data) throws Exception {
 		   
-		   Object r1=visit(ast.getRand1(),data);
-		   Object r2=visit(ast.getRand2(),data);
+		   double r1=(double) ast.getRand1().eval(this, data);
+		   double r2=(double) ast.getRand2().eval(this, data);
 		   
 		   //=
-		   return ((double)r1)==((double)r2);
+		   return r1==r2;
 		   
 		  }
 
 		  @Override
 		  public Object visit(GCExp ast, ExecutionState data) throws Exception {
-		   // TODO Auto-generated method stub》
-		   Object r1=visit(ast.getRand1(),data);
-		   Object r2=visit(ast.getRand2(),data);
-		   
-		   return ((double)r1)>=((double)r2);
+			  double r1=(double) ast.getRand1().eval(this, data);
+			   double r2=(double) ast.getRand2().eval(this, data);
+			   
+			   //=
+			   return r1>r2;
 		  }
 
 		  @Override
 		  public Object visit(GEQCExp ast, ExecutionState data) throws Exception {
-		   Object r1=visit(ast.getRand1(),data);
-		   Object r2=visit(ast.getRand2(),data);
-		  
-		   
-		   return ((double)r1)>=((double)r2);
+			  double r1=(double) ast.getRand1().eval(this, data);
+			   double r2=(double) ast.getRand2().eval(this, data);
+			   
+			   //=
+			   return r1>=r2;
 		  }
 
 		  @Override
 		  public Object visit(LCExp ast, ExecutionState data) throws Exception {
-		   Object r1=visit(ast.getRand1(),data);
-		   Object r2=visit(ast.getRand2(),data);
-		   
-		   
-		   return ((double)r1)<((double)r2);
+			  double r1=(double) ast.getRand1().eval(this, data);
+			   double r2=(double) ast.getRand2().eval(this, data);
+			   
+			   //=
+			   return r1<r2;
 		  }
 
 		  @Override
 		  public Object visit(LEQCExp ast, ExecutionState data) throws Exception {
-		   Object r1=visit(ast.getRand1(),data);
-		   Object r2=visit(ast.getRand2(),data);
-		   
-		   
-		   return ((double)r1)<=((double)r2);
+			  double r1=(double) ast.getRand1().eval(this, data);
+			   double r2=(double) ast.getRand2().eval(this, data);
+			   
+			   
+			   return r1<=r2;
 		  }
 		  
 		
 //cont
 		@Override
 		public Object visit(Cont ast, ExecutionState data) throws Exception {
-			if (ast instanceof DCont) {
-				return visit((DCont)ast,data);
-	        }else if (ast instanceof ECont) {
-	        	return visit((ECont)ast,data);	
-	        }else if (ast instanceof FCont) {
-	        	return visit((FCont)ast,data);
-	        }
-			throw new Exception("Unknown Cont type");
+//			if (ast instanceof DCont) {
+//				return visit((DCont)ast,data);
+//	        }else if (ast instanceof ECont) {
+//	        	return visit((ECont)ast,data);	
+//	        }else if (ast instanceof FCont) {
+//	        	return visit((FCont)ast,data);
+//	        }
+//			throw new Exception("Unknown Cont type");
+			return null;
 		}
 
 		@Override
@@ -329,7 +351,8 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 			if(!(data.isContinuationSet())) {
 				data.setIsContinuationSet();
 				int nbSauts = ast.getNbSauts();
-				Set<Direction> directions = (Set<Direction>) visit(ast.getDirs(),data);			
+				Set<Direction> directions = (Set<Direction>) ast.getDirs().eval(this, data);
+//				Set<Direction> directions = (Set<Direction>) visit(ast.getDirs(),data);			
 				data.setDirectional(true, directions,nbSauts);
 			}
 			return null;
@@ -347,7 +370,8 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		public Object visit(FCont ast, ExecutionState data) throws Exception {
 			if(!(data.isContinuationSet())) {
 				data.setIsContinuationSet();
-				PositionI base = (PositionI) visit(ast.getBase(),data);
+				PositionI base = (PositionI) ast.getBase().eval(this, data);
+//				PositionI base = (PositionI) visit(ast.getBase(),data);
 	            double distanceMax = ast.getDistanceMax();					
 				data.setFlooding(true, distanceMax,base);
 			}

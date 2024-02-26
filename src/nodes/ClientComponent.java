@@ -38,7 +38,7 @@ public class ClientComponent extends AbstractComponent {
     }
 	public void sendRequest() throws Exception{
 		 this.logMessage("ClientComponent Sending request....");
-		GQuery test = new GQuery(new FGather("temperature")  ,new ECont());
+		GQuery test = new GQuery(new FGather("temperature"),new ECont());
         String requestURI = "gather-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
         QueryResult result = (QueryResult) this.client_port.execute(request);

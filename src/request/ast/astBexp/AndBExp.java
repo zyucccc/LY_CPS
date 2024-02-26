@@ -1,6 +1,7 @@
 package request.ast.astBexp;
 
 import request.ast.Bexp;
+import request.ast.interfaces.IASTvisitor;
 
 public class AndBExp extends Bexp{
 	
@@ -18,4 +19,11 @@ public class AndBExp extends Bexp{
 	public Bexp getBexp2() {
 		return bexp2;
 	}
+	
+	 @Override
+		public <Result, Data, Anomaly extends Throwable> 
+	    Result eval(IASTvisitor<Result, Data, Anomaly> visitor, Data data)
+	            throws Anomaly {
+	        return visitor.visit(this, data);
+	    }
 }

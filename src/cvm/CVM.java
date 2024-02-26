@@ -65,6 +65,7 @@ public class CVM extends AbstractCVM {
             Sensor SensorData_fumée = new Sensor("node1","fumée",Boolean.class,true);
      		
             HashMap<String, Sensor> sensorsData = new HashMap<String, Sensor>();
+            
             sensorsData.put("temperature",SensorData_temperature);
             sensorsData.put("fumée",SensorData_fumée);
      		
