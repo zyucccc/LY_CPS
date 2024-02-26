@@ -42,6 +42,8 @@ public class ClientComponent extends AbstractComponent {
         String requestURI = "gather-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
         QueryResult result = (QueryResult) this.client_port.execute(request);
+        this.logMessage("ClientComponentr Receive resultat de request:");
+        this.logMessage("" + result);
 	}
 	
 	@Override
