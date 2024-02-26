@@ -5,16 +5,16 @@ import request.ast.Dirs;
 
 public class RDirs extends Dirs{
 
-	private Direction dir;
-	private Dirs dirs;
+//	private Direction dir;
+//	private Dirs dirs;
 	public RDirs(Direction dir, Dirs dirs) {
 		super(dir, dirs);
 	}
 	public Direction getDir() {
-		return dir;
+		return this.dir;
 	}
 	public Dirs getdirs() {
-		return dirs;
+		return this.dirs;
 	}
 
 }

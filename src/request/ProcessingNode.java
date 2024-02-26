@@ -7,12 +7,13 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
+import nodes.sensor.Sensor;
 
 public class ProcessingNode implements ProcessingNodeI {
     private String nodeId;
     private PositionI position;
     private Set<NodeInfoI> neighbours;
-    private HashMap<String, SensorDataI> sensorsData;
+    private HashMap<String, Sensor> sensorsData;
 
     public ProcessingNode(String nodeId, PositionI position) {
         this.nodeId = nodeId;
@@ -46,7 +47,7 @@ public class ProcessingNode implements ProcessingNodeI {
         this.neighbours.add(neighbour);
     }
 
-    public void addSensorData(String sensorIdentifier, SensorDataI data) {
-        this.sensorsData.put(sensorIdentifier, data);
+    public void addSensorData(String sensorIdentifier, Sensor SensorData) {
+        this.sensorsData.put(sensorIdentifier, SensorData);
     }
 }

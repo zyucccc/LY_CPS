@@ -45,4 +45,17 @@ public class Sensor implements SensorDataI {
     public Instant getTimestamp() {
         return timestamp;
     }
+    
+//    @Override
+//    public String toString() {
+//        return String.format("Node ID: %s, Sensor ID: %s, Value: %s, Timestamp: %s", 
+//                             nodeIdentifier, sensorIdentifier, value.toString(), timestamp.toString());
+//    }
+    
+    @Override
+    public String toString() {
+        return String.format("Node ID: %s, Sensor ID: %s, Value: %s", 
+                             nodeIdentifier, sensorIdentifier, value.toString());
+    }
+    
 }

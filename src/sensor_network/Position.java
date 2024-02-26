@@ -9,13 +9,13 @@ public class Position implements PositionI {
     private double x;
     private double y;
 
-    // 构造函数，初始化位置
+    // init Position
     public Position(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
-    // 计算与另一位置的距离
+    // distance par rapport à un autre position
     @Override
     public double distance(PositionI p) {
         if (p instanceof Position) {
@@ -96,5 +96,13 @@ public class Position implements PositionI {
 
     public double getY() {
         return y;
+    }
+    
+    @Override
+    public String toString() {
+        return "Position{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
     }
 }

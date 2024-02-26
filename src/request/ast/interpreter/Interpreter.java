@@ -12,6 +12,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import request.ExecutionState;
+import request.ProcessingNode;
 import request.ast.Base;
 import request.ast.Bexp;
 import request.ast.Cexp;
@@ -91,12 +92,16 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 
 		@Override
 		public Object visit(Dirs ast, ExecutionState data) throws Exception{
-			return null;
+			 if (ast instanceof FDirs) {
+		        	return visit((FDirs)ast,data);
+		        }else if(ast instanceof RDirs) {
+		            return visit((RDirs)ast,data);
+		        }
+			 throw new Exception("Unknown gathers type");
 		}
 		
 		@Override
 		public Object visit(FDirs ast, ExecutionState data) throws Exception {
-//			ArrayList<Direction> directions = new ArrayList<Direction>();
 			Set<Direction> directions = new HashSet<>();
 			directions.add((Direction)visit(ast.getDir(),data));
 			return directions;
@@ -108,7 +113,10 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 //			    ArrayList<Direction> directions = new ArrayList<Direction>();		    
 			    Direction dir = ast.getDir();
 			    directions.add(dir); 
-			    directions.addAll((Set<Direction>)visit(ast.getdirs(),data));
+			    Set<Direction> dirsResult = (Set<Direction>) visit(ast.getdirs(), data);
+			    if(dirsResult != null) {
+			    directions.addAll(dirsResult);
+			    }
 			    return directions; 
 		}
 
@@ -125,22 +133,19 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 
 		@Override
 		public Object visit(FGather ast, ExecutionState data) throws Exception {
-			return ast.getSensorID();
+			ArrayList<String> ids = new ArrayList<String>(); 
+			ids.add(ast.getSensorID());
+			return ids;
 		}
 
 		@Override
 		public Object visit(RGather ast, ExecutionState data) throws Exception {
-			ArrayList<Object> ids = new ArrayList<Object>();      
-	        Gather gathers=((RGather) ast).getGather();
-	        Object id = ast.getSensorID();
+			ArrayList<String> ids = new ArrayList<String>();   		
+	        Gather gathers=ast.getGather();
+	        ArrayList<String> ids_suite =(ArrayList<String>) visit(gathers,data);	        
+	        String id = ast.getSensorID();
 	        ids.add(id);
-	        while(gathers instanceof RGather) {
-	            ids.add(gathers.getSensorID());
-	            gathers=((RGather) gathers).getGather();
-	        }
-	        if(gathers instanceof FGather) {
-	            ids.add(gathers.getSensorID());
-	        }
+	        ids.addAll(ids_suite);
 	        return ids;
 		}
 		
@@ -157,15 +162,15 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	    
 		@Override
 		public Object visit(CRand ast, ExecutionState data) throws Exception {
-			return ((CRand) ast).getVal();
+			return  ast.getVal();
 		}
 
 		@Override
 		public Object visit(SRand ast, ExecutionState data) throws Exception {
-			ProcessingNodeI node=data.getProcessingNode();
+			ProcessingNode node=(ProcessingNode)data.getProcessingNode();
 	        String id= ast.getSensorId();
-	        Object valeur=node.getSensorData(id);
-	        return valeur;
+	        SensorDataI sensorData = node.getSensorData(id);
+	        return sensorData.getValue();
 		}
 		
 //base
@@ -236,9 +241,8 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		public Object visit(SBExp ast, ExecutionState data) throws Exception {
 			ProcessingNodeI node=data.getProcessingNode();
 		     String sensorId = ast.getSensorID();
-		     Object bo=node.getSensorData(sensorId);
-	     
-		     return (Boolean)bo;
+		     SensorDataI sensorData = node.getSensorData(sensorId);
+		     return sensorData.getValue();
 		}
 
 //cexp

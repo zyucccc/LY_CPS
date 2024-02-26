@@ -2,6 +2,7 @@ package request.ast.astBase;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import request.ast.Base;
+import sensor_network.Position;
 
 public class ABase extends Base{
 	

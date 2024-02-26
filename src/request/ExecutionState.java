@@ -9,10 +9,11 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import request.ast.Direction;
+import sensor_network.QueryResult;
 
 public class ExecutionState implements ExecutionStateI {
-    private ProcessingNodeI processingNode;
-    private QueryResultI currentResult;
+    private ProcessingNode processingNode;
+    private QueryResult currentResult;
     private boolean isContinuationSet;
     private boolean isDirectional;
     private Set<Direction> directions;
@@ -40,7 +41,7 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public void updateProcessingNode(ProcessingNodeI pn) {
-        this.processingNode = pn;
+        this.processingNode = (ProcessingNode) pn;
     }
 
     @Override
@@ -50,8 +51,28 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public void addToCurrentResult(QueryResultI result) {
-        // 这里简单地更新当前结果，实际可能需要合并结果
-//        this.currentResult = result;
+    	// 如果当前没有结果，则直接将新结果设置为当前结果
+        if (this.currentResult == null) {
+            this.currentResult = (QueryResult) result;
+        } else {
+            // Bool query
+            if (result.isBooleanRequest()) {
+                this.currentResult.positiveSensorNodes().addAll(result.positiveSensorNodes());
+            }
+            
+            // Gather query
+            if (result.isGatherRequest()) {
+                this.currentResult.gatheredSensorsValues().addAll(result.gatheredSensorsValues());
+            }
+            
+            // mise a jour type de resultRequest
+            if( this.currentResult.isBooleanRequest() || result.isBooleanRequest()) {
+            	this.currentResult.SetBooleanRequest();
+            };
+            if( this.currentResult.isGatherRequest() || result.isGatherRequest()) {
+            	this.currentResult.SetGatherRequest();
+            };
+        }
     }
 
     @Override
