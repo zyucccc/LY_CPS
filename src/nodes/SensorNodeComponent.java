@@ -1,6 +1,7 @@
 package nodes;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
@@ -20,15 +21,23 @@ import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import nodes.sensor.Sensor;
 import ports.SensorNodeInboundPort;
+import request.ExecutionState;
+import request.ProcessingNode;
 import request.ast.Query;
+import request.ast.astQuery.BQuery;
+import request.ast.astQuery.GQuery;
 import request.ast.interfaces.IASTvisitor;
 import request.ast.interpreter.Interpreter;
+import sensor_network.Position;
+import sensor_network.QueryResult;
 
 @OfferedInterfaces(offered = {RequestingCI.class})
 public class SensorNodeComponent extends AbstractComponent {
-	protected NodeInfoI nodeinfo;
+	protected NodeInfo nodeinfo;
 	protected String uriPrefix;
-	protected ArrayList<Sensor> sensorlist;
+//	protected ArrayList<Sensor> sensorlist;
+	protected ProcessingNode processingNode;
+	
 //	protected IASTvisitor<Object, ExecutionStateI, Exception> interpreter;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
@@ -46,16 +55,25 @@ public class SensorNodeComponent extends AbstractComponent {
 //    }
 	protected SensorNodeComponent(
             NodeInfoI nodeInfo,
-            ArrayList<Sensor> sensorlist,
+//            ArrayList<Sensor> sensorlist,
             String uriPrefix,
-            String sensorNodeInboundPortURI
+            String sensorNodeInboundPortURI,
+            HashMap<String, Sensor> sensorsData
             ) throws Exception {
 		super(uriPrefix, 1, 0) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
-	    this.nodeinfo = nodeInfo;
-	    this.sensorlist = sensorlist;
+	    this.nodeinfo = (NodeInfo) nodeInfo;
+//	    this.sensorlist = sensorlist;
 	    this.uriPrefix = uriPrefix;
+	    
+	    String NodeID = this.nodeinfo.nodeIdentifier();
+		Position position = (Position) this.nodeinfo.nodePosition();
+		 System.out.println("Test Position: " + position);
+//		this.logMessage("Actuel position: " + position);
+		
+		this.processingNode = new ProcessingNode(NodeID,position,sensorsData);
+		
 	    //lier URI
         PortI p = new SensorNodeInboundPort(sensorNodeInboundPortURI, this);
 		// publish the port
@@ -104,7 +122,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	
 	 @Override
 	    public void finalise() throws Exception {
-	        // 清理资源，断开连接等...
 	        this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] stopping...");
 	        super.finalise();
 	    }
@@ -115,10 +132,26 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    }
 	 
 	public QueryResultI processRequest(RequestI request) throws Exception{
+		this.logMessage("SensorNodeComponent receive request");
+		
+		
 		Interpreter interpreter = new Interpreter();
 		Query<?> query = (Query<?>) request.getQueryCode();
-		QueryResultI result;
-		result = (QueryResultI) interpreter.visit(query, null);
+		if(query instanceof BQuery) {
+			this.logMessage("Query : BQuery");
+		} else if(query instanceof GQuery) {
+			this.logMessage("Query : GQuery");
+		}
+		ExecutionState data = new ExecutionState(); 
+        
+        data.updateProcessingNode(this.processingNode);
+        this.logMessage("Actuel position: " + this.processingNode.getPosition());
+        this.logMessage("Actuel ProcessingNode" + this.processingNode);
+        
+		QueryResult result = (QueryResult) interpreter.visit(query, data);
+		
+		this.logMessage("Calcul Fini");
+		this.logMessage("Res: " + result);
 
 		return result;
 	 }

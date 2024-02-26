@@ -2,6 +2,7 @@ package nodes;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
+import fr.sorbonne_u.components.examples.basic_cs.components.URIConsumer;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
@@ -21,14 +22,27 @@ import sensor_network.QueryResult;
 public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_port;
 	
-	protected ClientComponent(String uri, String requestingPortURI) throws Exception {
-        super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
-
+	protected ClientComponent(String uri, String outboundPortURI) throws Exception {
+//        super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
+		super(uri, 0, 1);
         // init port (required interface)
-        this.client_port = new ClientOutboundPort(requestingPortURI, this);
+        this.client_port = new ClientOutboundPort(outboundPortURI, this);
         //publish port(an outbound port is always local)
         this.client_port.localPublishPort();
+        
+        this.getTracer().setTitle("client") ;
+		this.getTracer().setRelativePosition(1, 1) ;
+        
+        AbstractComponent.checkImplementationInvariant(this);
+		AbstractComponent.checkInvariant(this);
     }
+	public void sendRequest() throws Exception{
+		 this.logMessage("ClientComponent Sending request....");
+		GQuery test = new GQuery(new FGather("temperature")  ,new ECont());
+        String requestURI = "gather-uri";	      
+        RequestI request = new Request(requestURI,test,false,null);
+        QueryResult result = (QueryResult) this.client_port.execute(request);
+	}
 	
 	@Override
     public void start() throws ComponentStartException {
@@ -39,11 +53,17 @@ public class ClientComponent extends AbstractComponent {
 	 @Override
 	    public void execute() throws Exception {
 		    this.logMessage("ClientComponent executed.");
-	        super.execute();	   
-	        GQuery test = new GQuery(new FGather("temperature")  ,new ECont());
-	        String requestURI = "gather-uri";	      
-	        RequestI request = new Request(requestURI,test,false,null);
-	        QueryResult result = (QueryResult) this.client_port.execute(request);
+		    this.runTask(
+					new AbstractComponent.AbstractTask() {
+						@Override
+						public void run() {
+							try {				
+								((ClientComponent)this.getTaskOwner()).sendRequest() ;
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+					}) ;	    
 
 	    }
 	 

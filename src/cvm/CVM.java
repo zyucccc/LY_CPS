@@ -8,9 +8,11 @@ import nodes.ClientComponent;
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
 import nodes.sensor.Sensor;
+import sensor_network.Position;
 import connectors.URIServiceConnector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class CVM extends AbstractCVM {
 	//component uri
@@ -54,17 +56,23 @@ public class CVM extends AbstractCVM {
     		// Creation phase
     		// ---------------------------------------------------------------------
      	//nodeinfo
-     		NodeInfo nodeinfo = new NodeInfo("sensor1",null,0.0,null,null);
-     		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
-     		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
-     		sensorlist.add(sensor_temperature);
+     		Position position = new Position(0.0,0.0);
+     		NodeInfo nodeinfo = new NodeInfo("node1",position,0.0,null,null);
+//     		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
+//     		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
+//     		sensorlist.add(sensor_temperature);
+            Sensor SensorData_temperature = new Sensor("node1","temperature",double.class,35.0);
+            Sensor SensorData_fumée = new Sensor("node1","fumée",Boolean.class,true);
      		
+            HashMap<String, Sensor> sensorsData = new HashMap<String, Sensor>();
+            sensorsData.put("temperature",SensorData_temperature);
+            sensorsData.put("fumée",SensorData_fumée);
      		
         // creer sensorNode Component
      		this.uriSensorNodeURI =
             AbstractComponent.createComponent(
                 SensorNodeComponent.class.getCanonicalName(),
-                new Object[]{nodeinfo,sensorlist,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI});
+                new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,sensorsData});
         assert this.isDeployedComponent(this.uriSensorNodeURI);
         this.toggleTracing(this.uriSensorNodeURI);
         this.toggleLogging(this.uriSensorNodeURI);
