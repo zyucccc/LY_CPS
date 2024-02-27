@@ -140,12 +140,12 @@ public class RegistreComponent extends AbstractComponent {
         return distance <= newNode.nodeRange() || distance <= existingNode.nodeRange();
     }
     
-    public void unregister(String nodeIdentifier) throws Exception {
+    public boolean unregister(String nodeIdentifier) throws Exception {
         if (!registered(nodeIdentifier)) {
             throw new Exception("Node is not registered: " + nodeIdentifier);
         }
         registeredNodes.remove(nodeIdentifier);
-        
+        return true;
         //这个节点移除后 它的邻居的行为逻辑需要添加
     }
 
