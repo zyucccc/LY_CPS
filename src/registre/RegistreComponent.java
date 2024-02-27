@@ -122,7 +122,7 @@ public class RegistreComponent extends AbstractComponent {
         for (Direction d : Direction.values()) {
             NodeInfoI neighbour = findNewNeighbour(nodeInfo, d);
             if (neighbour != null) {
-                neighbours.add((NodeInfo) neighbour);
+                neighbours.add(neighbour);
             }
         }
         return neighbours;
@@ -131,10 +131,27 @@ public class RegistreComponent extends AbstractComponent {
     
     
     public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
-//    	Position position = new Position(0.0,0.0);
-//    	NodeInfoI neighbour = new NodeInfo("test", position, 10.0, null, null);
-//        return neighbour; // 示例代码，需要具体实现
-    	return null;
+    	  NodeInfo closestNeighbour = null;
+          double closestDistance = Double.MAX_VALUE;
+
+          for (NodeInfoI potentialNeighbour : registeredNodes.values()) {
+              // assurer que on compare pas le node it-self
+              if (!potentialNeighbour.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
+                  Direction potentialDirection = ((Position)nodeInfo.nodePosition()).directionFrom_ast(potentialNeighbour.nodePosition());
+                 //on trouve un noeud dans la direction indique
+                  if (potentialDirection == d) {
+                      double distance = nodeInfo.nodePosition().distance(potentialNeighbour.nodePosition());
+                      // 检查是否比当前最近的邻居更近
+                      //&& distance <= nodeInfo.nodeRange() Ici on check pas le contraint de range,on le fait dans register boucle
+                      if (distance < closestDistance ) {
+                          closestNeighbour = (NodeInfo) potentialNeighbour;
+                          closestDistance = distance;
+                      }
+                  }
+              }
+          }
+
+          return closestNeighbour;
     }
 
     private boolean isConnectable(NodeInfoI newNode, NodeInfoI existingNode) {

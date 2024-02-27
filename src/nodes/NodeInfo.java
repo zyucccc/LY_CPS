@@ -54,4 +54,26 @@ public class NodeInfo implements NodeInfoI {
     public EndPointDescriptorI endPointInfo() {
         return this.clientEndPoint;
     }
+    
+    @Override
+    public String toString() {
+        return "NodeInfo{" +
+                "nodeId='" + nodeId + '\'' +
+                ", position=" + position +
+                ", range=" + range +             
+                '}';
+    }
+    
+//    @Override
+//    public String toString() {
+//        return "NodeInfo{" +
+//                "nodeId='" + nodeId + '\'' +
+//                ", position=" + position +
+//                ", range=" + range +
+//                ", p2pEndPoint=" + p2pEndPoint +
+//                ", clientEndPoint=" + clientEndPoint +
+//                '}';
+//    }
+
+
 }

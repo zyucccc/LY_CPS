@@ -206,6 +206,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
 		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
+		     
+//		     this.logMessage("neighbours: " + neighbours);
+		     this.logMessage("neighbours:");
+		     for (NodeInfoI neighbour : neighbours) {
+		         this.logMessage(((NodeInfo)neighbour).toString());
+		     }
 	}
 
 	

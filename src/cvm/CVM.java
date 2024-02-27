@@ -79,12 +79,12 @@ public class CVM extends AbstractCVM {
     		// ---------------------------------------------------------------------
      	//nodeinfo
      		Position position = new Position(0.0,0.0);
-     		NodeInfo nodeinfo = new NodeInfo("node1",position,0.0,null,null);
+     		NodeInfo nodeinfo = new NodeInfo("node1",position,50.0,null,null);
 //     		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
 //     		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
 //     		sensorlist.add(sensor_temperature);
             Sensor SensorData_temperature = new Sensor("node1","temperature",double.class,35.0);
-            Sensor SensorData_fumée = new Sensor("node1","fumée",Boolean.class,true);
+            Sensor SensorData_fumée = new Sensor("node1","fumée",Boolean.class,false);
      		
             HashMap<String, Sensor> sensorsData = new HashMap<String, Sensor>();
             
@@ -100,11 +100,25 @@ public class CVM extends AbstractCVM {
         this.toggleTracing(this.uriSensorNodeURI);
         this.toggleLogging(this.uriSensorNodeURI);
         
-        // creer sensorNode Component
+        //init donnees for 2ieme node
+    	Position position2 = new Position(5,5);
+ 		NodeInfo nodeinfo2 = new NodeInfo("node2",position2,50.0,null,null);
+// 		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
+// 		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
+// 		sensorlist.add(sensor_temperature);
+        Sensor SensorData_temperature2 = new Sensor("node2","temperature",double.class,40.0);
+        Sensor SensorData_fumée2 = new Sensor("node2","fumée",Boolean.class,true);
+ 		
+        HashMap<String, Sensor> sensorsData2 = new HashMap<String, Sensor>();
+        
+        sensorsData2.put("temperature",SensorData_temperature2);
+        sensorsData2.put("fumée",SensorData_fumée2);
+        
+        // creer 2 ieme sensorNode Component
  		this.uriSensorNodeURI2 =
         AbstractComponent.createComponent(
             SensorNodeComponent.class.getCanonicalName(),
-            new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,sensorsData});
+            new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,sensorsData2});
     assert this.isDeployedComponent(this.uriSensorNodeURI2);
     this.toggleTracing(this.uriSensorNodeURI2);
     this.toggleLogging(this.uriSensorNodeURI2);
@@ -142,9 +156,16 @@ public class CVM extends AbstractCVM {
             	CLIENT_Registre_OUTBOUND_PORT_URI,
             	Registre_LookupCI_INBOUND_PORT_URI,
                 ClientRegistreConnector.class.getCanonicalName());
+        //conection node1 to registre
         this.doPortConnection(
             	this.uriSensorNodeURI,
             	SensorNode_Registre_OUTBOUND_PORT_URI,
+            	Registre_RegistrationCI_INBOUND_PORT_URI,
+                NodeRegistreConnector.class.getCanonicalName());
+      //conection node2 to registre
+        this.doPortConnection(
+            	this.uriSensorNodeURI2,
+            	SensorNode_Registre_OUTBOUND_PORT_URI2,
             	Registre_RegistrationCI_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
 
