@@ -1,4 +1,4 @@
-package connectors;
+package nodes.connectors;
 
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;

@@ -6,10 +6,11 @@ import fr.sorbonne_u.components.helpers.CVMDebugModes;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
+import nodes.connectors.NodeClientConnector;
+import nodes.connectors.NodeRegistreConnector;
 import nodes.sensor.Sensor;
 import registre.RegistreComponent;
 import sensor_network.Position;
-import connectors.NodeClientConnector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,9 @@ public class CVM extends AbstractCVM {
 
     //SensorNode
     protected static final String SENSORNODE_COMPONENT_URI = "my-sensornode-uri";
+    
+    //SensorNode Registre
+    protected static final String SensorNode_Registre_OUTBOUND_PORT_URI = "node-registre-outbound-uri";
     
     public CVM() throws Exception {
         super();
@@ -87,7 +91,7 @@ public class CVM extends AbstractCVM {
      		this.uriSensorNodeURI =
             AbstractComponent.createComponent(
                 SensorNodeComponent.class.getCanonicalName(),
-                new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,sensorsData});
+                new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,sensorsData});
         assert this.isDeployedComponent(this.uriSensorNodeURI);
         this.toggleTracing(this.uriSensorNodeURI);
         this.toggleLogging(this.uriSensorNodeURI);
@@ -125,6 +129,11 @@ public class CVM extends AbstractCVM {
             	CLIENT_Registre_OUTBOUND_PORT_URI,
             	Registre_LookupCI_INBOUND_PORT_URI,
                 ClientRegistreConnector.class.getCanonicalName());
+        this.doPortConnection(
+            	this.uriSensorNodeURI,
+            	SensorNode_Registre_OUTBOUND_PORT_URI,
+            	Registre_RegistrationCI_INBOUND_PORT_URI,
+                NodeRegistreConnector.class.getCanonicalName());
 
         
 

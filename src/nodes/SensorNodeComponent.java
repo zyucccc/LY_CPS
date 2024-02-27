@@ -3,6 +3,7 @@ package nodes;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
@@ -22,6 +23,7 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import nodes.ports.SensorNodeInboundPort;
+import nodes.ports.SensorNodeRegistreOutboundPort;
 import nodes.sensor.Sensor;
 import request.ExecutionState;
 import request.ProcessingNode;
@@ -41,6 +43,7 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected String uriPrefix;
 //	protected ArrayList<Sensor> sensorlist;
 	protected ProcessingNode processingNode;
+	protected SensorNodeRegistreOutboundPort node_registre_port;
 	
 //	protected IASTvisitor<Object, ExecutionStateI, Exception> interpreter;
 	
@@ -62,6 +65,7 @@ public class SensorNodeComponent extends AbstractComponent {
 //            ArrayList<Sensor> sensorlist,
             String uriPrefix,
             String sensorNodeInboundPortURI,
+            String Node_Registre_outboundPortURI,
             HashMap<String, Sensor> sensorsData
             ) throws Exception {
 		super(uriPrefix, 1, 0) ;
@@ -82,6 +86,12 @@ public class SensorNodeComponent extends AbstractComponent {
         PortI p = new SensorNodeInboundPort(sensorNodeInboundPortURI, this);
 		// publish the port
 		p.publishPort();
+		
+		//node - registre - RegistrationCI
+        this.node_registre_port = new SensorNodeRegistreOutboundPort(Node_Registre_outboundPortURI,this);
+        this.node_registre_port.localPublishPort();
+		
+		
 		
 		if (AbstractCVM.isDistributed) {
 			this.getLogger().setDirectory(System.getProperty("user.dir"));
