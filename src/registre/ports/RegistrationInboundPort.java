@@ -25,37 +25,33 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
 
     @Override
     public boolean registered(String nodeIdentifier) throws Exception {
-    	return false;
-//        return this.getOwner().handleRequest(owner -> {
-//            return ((RegistreComponent) owner).registered(nodeIdentifier);
-        };
+        return this.getOwner().handleRequest(owner -> {
+            return ((RegistreComponent) owner).registered(nodeIdentifier);
+            });
+        }
     
 
     @Override
     public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
-    	
-    return null;
-//        return this.getOwner().handleRequest(owner -> {
-//            return ((RegistreComponent) owner).register(nodeInfo);
-//        });
-    };
+        return  this.getOwner().handleRequest(owner -> {
+            return ((RegistreComponent) owner).register(nodeInfo);
+        });
+    }
     
 
     @Override
     public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
-    	return null;
-    
-//        return this.getOwner().handleRequest(owner -> {
-//            return ((RegistreComponent) owner).findNewNeighbour(nodeInfo, d);
-//        });
-    };
+        return  this.getOwner().handleRequest(owner -> {
+            return ((RegistreComponent) owner).findNewNeighbour(nodeInfo, d);
+        });
+//    	return null;
+    }
 
     @Override
     public void unregister(String nodeIdentifier) throws Exception {
-    	
-//        this.getOwner().handleRequest(owner -> {
-//            ((RegistreComponent) owner).unregister(nodeIdentifier);
-//            return null;
+//    	this.getOwner().handleRequest(owner -> {
+//            return ((RegistreComponent) owner).unregister(nodeIdentifier);
 //        });
-};
+            
+}
 }
