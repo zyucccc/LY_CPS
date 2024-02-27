@@ -2,6 +2,7 @@ package nodes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
@@ -200,17 +201,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
 		  this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
 		     // 调用注册表组件的注册方法
-		     Boolean registed = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
-//		     Boolean neighbours = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
-		     //Set<NodeInfoI> connectableNodes = this.registrationOutboundPort.register(nodeInfo);
-		     // 处理返回的可连接节点信息
-		  /*
-		   * for (NodeInfoI connectableNode : connectableNodes) { // 查看都有什么连接了
-		   * this.logMessage("Connectable Node: " + connectableNode.nodeIdentifier()); }
-		   */
-		     this.logMessage("Registered? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed);
-//		     this.logMessage("Node successfully registered with ID: " + nodeInfo.nodeIdentifier()+"Boolean:"+connectableNodes);
-		 }
+		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
+		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
+		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
+		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
+		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
+	}
 
 	
 }

@@ -25,6 +25,7 @@ public class CVM extends AbstractCVM {
     
     //port
     protected static final String SENSORNODE_INBOUND_PORT_URI = "sensornode-inbound-uri";
+    protected static final String SENSORNODE_INBOUND_PORT_URI2 = "sensornode-inbound-uri2";
     protected static final String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri";
     //Registre
     protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
@@ -34,9 +35,11 @@ public class CVM extends AbstractCVM {
 
     //SensorNode
     protected static final String SENSORNODE_COMPONENT_URI = "my-sensornode-uri";
+    protected static final String SENSORNODE_COMPONENT_URI2 = "my-sensornode-uri2";
     
     //SensorNode Registre
     protected static final String SensorNode_Registre_OUTBOUND_PORT_URI = "node-registre-outbound-uri";
+    protected static final String SensorNode_Registre_OUTBOUND_PORT_URI2 = "node-registre-outbound-uri2";
     
     public CVM() throws Exception {
         super();
@@ -45,6 +48,7 @@ public class CVM extends AbstractCVM {
     /** Reference to the sensor component to share between deploy
 	 *  and shutdown.														*/
 	protected String	uriSensorNodeURI;
+	protected String	uriSensorNodeURI2;
 	/** Reference to the client component to share between deploy
 	 *  and shutdown.														*/
 	protected String	uriClientURI;
@@ -95,6 +99,15 @@ public class CVM extends AbstractCVM {
         assert this.isDeployedComponent(this.uriSensorNodeURI);
         this.toggleTracing(this.uriSensorNodeURI);
         this.toggleLogging(this.uriSensorNodeURI);
+        
+        // creer sensorNode Component
+ 		this.uriSensorNodeURI2 =
+        AbstractComponent.createComponent(
+            SensorNodeComponent.class.getCanonicalName(),
+            new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,sensorsData});
+    assert this.isDeployedComponent(this.uriSensorNodeURI2);
+    this.toggleTracing(this.uriSensorNodeURI2);
+    this.toggleLogging(this.uriSensorNodeURI2);
 
         // creer client Component
         this.uriClientURI =
