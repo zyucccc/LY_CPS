@@ -110,7 +110,7 @@ public class CVM extends AbstractCVM {
         this.uriRegistreURI =
                 AbstractComponent.createComponent(
                     RegistreComponent.class.getCanonicalName(),
-                    new Object[]{Registre_COMPONENT_URI, Registre_LookupCI_INBOUND_PORT_URI,Registre_RegistrationCI_INBOUND_PORT_URI});
+                    new Object[]{Registre_COMPONENT_URI,Registre_RegistrationCI_INBOUND_PORT_URI, Registre_LookupCI_INBOUND_PORT_URI});
             assert this.isDeployedComponent(this.uriRegistreURI);
             this.toggleTracing(this.uriRegistreURI);
             this.toggleLogging(this.uriRegistreURI);

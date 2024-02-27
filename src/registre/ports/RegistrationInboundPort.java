@@ -4,8 +4,9 @@ import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
-import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
+
 import registre.RegistreComponent;
+import registre.interfaces.RegistrationCI;
 import request.ast.Direction;
 
 import java.util.Set;
@@ -39,19 +40,13 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
         });
     }
     
+    
     @Override
-	public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, fr.sorbonne_u.cps.sensor_network.interfaces.Direction d)
-			throws Exception {
-		return null;
-	}
-    
-    
-    public NodeInfoI findNewNeighbour_new(NodeInfoI nodeInfo, Direction d) throws Exception {
+    public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
         return this.getOwner().handleRequest(owner -> {
       	  return (NodeInfoI)((RegistreComponent)owner).findNewNeighbour(nodeInfo,d);
         }
       		  );
-//  	return null;
   }
 
     @Override

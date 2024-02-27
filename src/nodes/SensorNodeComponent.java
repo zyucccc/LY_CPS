@@ -18,7 +18,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
-import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
+import registre.interfaces.RegistrationCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
@@ -131,7 +131,19 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	
 	@Override
     public void execute() throws Exception {
-        super.execute();
+		this.logMessage("SensorNodeComponent executed.");
+//        super.execute();
+        this.runTask(
+        	    new AbstractComponent.AbstractTask() {
+        	     @Override
+        	     public void run() {
+        	      try {    
+        	       ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(nodeinfo) ;
+        	      } catch (Exception e) {
+        	       e.printStackTrace();
+        	      }
+        	     }
+        	    }) ;  
     }
 	
 	 @Override
@@ -184,5 +196,21 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 
 		return result;
 	 }
+	
+	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
+		  this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
+		     // 调用注册表组件的注册方法
+		     Boolean registed = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
+//		     Boolean neighbours = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
+		     //Set<NodeInfoI> connectableNodes = this.registrationOutboundPort.register(nodeInfo);
+		     // 处理返回的可连接节点信息
+		  /*
+		   * for (NodeInfoI connectableNode : connectableNodes) { // 查看都有什么连接了
+		   * this.logMessage("Connectable Node: " + connectableNode.nodeIdentifier()); }
+		   */
+		     this.logMessage("Registered? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed);
+//		     this.logMessage("Node successfully registered with ID: " + nodeInfo.nodeIdentifier()+"Boolean:"+connectableNodes);
+		 }
+
 	
 }

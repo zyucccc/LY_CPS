@@ -2,9 +2,9 @@ package nodes.ports;
 
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractOutboundPort;
-import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
+import registre.interfaces.RegistrationCI;
+import request.ast.Direction;
 
 import java.util.Set;
 

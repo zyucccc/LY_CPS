@@ -10,9 +10,10 @@ import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
-import fr.sorbonne_u.cps.sensor_network.registry.interfaces.*;
+import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.NodeInfo;
 import registre.ports.LookupInboundPort;
+import registre.interfaces.RegistrationCI;
 //import registry.ports.RegistrationInboundPort;
 //import registry.ports.LookupInboundPort;
 import registre.ports.RegistrationInboundPort;
@@ -78,6 +79,7 @@ public class RegistreComponent extends AbstractComponent {
     //service offered : Registration
     //new
     public boolean registered(String nodeIdentifier) throws Exception {
+    	  this.logMessage("RegistreComponent receive request: registed()");
            return registeredNodes.containsKey(nodeIdentifier);
        }
     
