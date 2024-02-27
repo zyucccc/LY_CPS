@@ -10,6 +10,7 @@ import nodes.connectors.NodeClientConnector;
 import nodes.connectors.NodeRegistreConnector;
 import nodes.sensor.Sensor;
 import registre.RegistreComponent;
+import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 
 import java.util.ArrayList;
@@ -79,10 +80,11 @@ public class CVM extends AbstractCVM {
     		// ---------------------------------------------------------------------
      	//nodeinfo
      		Position position = new Position(0.0,0.0);
-     		NodeInfo nodeinfo = new NodeInfo("node1",position,50.0,null,null);
 //     		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
 //     		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
 //     		sensorlist.add(sensor_temperature);
+     		EndPointDescriptor uriinfo = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI);
+     		NodeInfo nodeinfo = new NodeInfo("node1",position,50.0,null,uriinfo);
             Sensor SensorData_temperature = new Sensor("node1","temperature",double.class,35.0);
             Sensor SensorData_fumée = new Sensor("node1","fumée",Boolean.class,false);
      		
@@ -102,7 +104,8 @@ public class CVM extends AbstractCVM {
         
         //init donnees for 2ieme node
     	Position position2 = new Position(5,5);
- 		NodeInfo nodeinfo2 = new NodeInfo("node2",position2,50.0,null,null);
+    	EndPointDescriptor uriinfo2 = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI2);
+ 		NodeInfo nodeinfo2 = new NodeInfo("node2",position2,50.0,null,uriinfo2);
 // 		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
 // 		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
 // 		sensorlist.add(sensor_temperature);

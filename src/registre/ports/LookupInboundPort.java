@@ -25,17 +25,17 @@ public class LookupInboundPort extends AbstractInboundPort implements LookupCI {
 
     @Override
     public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
-       return null;
-//    	return this.getOwner().handleRequest(owner -> {
-//            return ((RegistreComponent)owner).findByIdentifier(sensorNodeId);
-        };
+    	return this.getOwner().handleRequest(owner -> {
+            return ((RegistreComponent)owner).findByIdentifier(sensorNodeId);
+    	});
+        }
     
 
     @Override
     public Set<ConnectionInfoI> findByZone(GeographicalZoneI z) throws Exception {
-    	return null;
-//        return this.getOwner().handleRequest(owner -> {
-//            return ((RegistreComponent)owner).findByZone(z);
-        };
+        return this.getOwner().handleRequest(owner -> {
+            return ((RegistreComponent)owner).findByZone(z);
+        });
+        }
     
 }

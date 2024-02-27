@@ -9,6 +9,8 @@ import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
+import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.NodeInfo;
@@ -19,6 +21,7 @@ import registre.interfaces.RegistrationCI;
 import registre.ports.RegistrationInboundPort;
 import request.ast.Direction;
 import sensor_network.Position;
+import sensor_network.ConnectionInfo;
 
 
 @OfferedInterfaces(offered = {RegistrationCI.class, LookupCI.class})
@@ -79,11 +82,12 @@ public class RegistreComponent extends AbstractComponent {
     //service offered : Registration
     //new
     public boolean registered(String nodeIdentifier) throws Exception {
-    	  this.logMessage("RegistreComponent receive request: registed()");
+//    	  this.logMessage("RegistreComponent receive request: registed()");
            return registeredNodes.containsKey(nodeIdentifier);
        }
     
     public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
+    	 this.logMessage("RegistreComponent receive request: register()");
         // 检查前置条件
         if (nodeInfo == null || registered(nodeInfo.nodeIdentifier())) {
             throw new IllegalArgumentException("NodeInfo cannot be null and must not be already registered.");
@@ -125,6 +129,7 @@ public class RegistreComponent extends AbstractComponent {
                 neighbours.add(neighbour);
             }
         }
+        this.logMessage("RegistreComponent : register() Succes!");
         return neighbours;
     }
     
@@ -141,7 +146,6 @@ public class RegistreComponent extends AbstractComponent {
                  //on trouve un noeud dans la direction indique
                   if (potentialDirection == d) {
                       double distance = nodeInfo.nodePosition().distance(potentialNeighbour.nodePosition());
-                      // 检查是否比当前最近的邻居更近
                       //&& distance <= nodeInfo.nodeRange() Ici on check pas le contraint de range,on le fait dans register boucle
                       if (distance < closestDistance ) {
                           closestNeighbour = (NodeInfo) potentialNeighbour;
@@ -167,7 +171,28 @@ public class RegistreComponent extends AbstractComponent {
         return true;
         //这个节点移除后 它的邻居的行为逻辑需要添加
     }
+//service offered : LookupCI
+    
+    public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
+    	this.logMessage("RegistreComponent receive request: findByIdentifer() avec NodeID :"+ sensorNodeId);
+    	NodeInfo nodeInfo = registeredNodes.get(sensorNodeId);
+        if (nodeInfo != null) {
+        	this.logMessage("RegistreComponent : findByIdentifer() NodeID :"+ sensorNodeId + "NodeInfo : " + nodeInfo);
+            return new ConnectionInfo(sensorNodeId, nodeInfo.endPointInfo());
+        }
+        return null;
+    }
 
+   
+    public Set<ConnectionInfoI> findByZone(GeographicalZoneI z) throws Exception {
+        Set<ConnectionInfoI> result = new HashSet<>();
+        for (NodeInfo nodeInfo : registeredNodes.values()) {
+            if (z.in(nodeInfo.nodePosition())) {
+                result.add(new ConnectionInfo(nodeInfo.nodeIdentifier(), nodeInfo.endPointInfo()));
+            }
+        }
+        return result;
+    }
     
     
 

@@ -3,16 +3,17 @@ package nodes;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
+import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 
 public class NodeInfo implements NodeInfoI {
     private static final long serialVersionUID = 1L;
     
 	private final String nodeId; // 节点的唯一标识符
-    private final Position position; // 节点的位置
+    private  Position position; // 节点的位置
     private final double range; // 节点的通信范围
-    private final EndPointDescriptorI p2pEndPoint; // 用于P2P连接的端点信息
-    private final EndPointDescriptorI clientEndPoint; // 用于客户端连接的端点信息
+    private  EndPointDescriptorI p2pEndPoint; // 用于P2P连接的端点信息
+    private  EndPointDescriptorI clientEndPoint; // 用于客户端连接的端点信息
 
     // 构造函数
     public NodeInfo(String nodeId, PositionI position, double range, EndPointDescriptorI p2pEndPoint, EndPointDescriptorI clientEndPoint) {
@@ -54,13 +55,20 @@ public class NodeInfo implements NodeInfoI {
     public EndPointDescriptorI endPointInfo() {
         return this.clientEndPoint;
     }
+    public void Setp2pendPointInfo(EndPointDescriptor uriinfo) {
+        this.p2pEndPoint = uriinfo;
+    }
     
+    public void SetendPointInfo(EndPointDescriptor uriinfo) {
+        this.clientEndPoint = uriinfo;
+    }
     @Override
     public String toString() {
         return "NodeInfo{" +
                 "nodeId='" + nodeId + '\'' +
                 ", position=" + position +
-                ", range=" + range +             
+                ", range=" + range +   
+                ", clientEndPoint=" + clientEndPoint +
                 '}';
     }
     
