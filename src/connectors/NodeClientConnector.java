@@ -5,7 +5,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 
-public class URIServiceConnector extends AbstractConnector implements RequestingCI{
+public class NodeClientConnector extends AbstractConnector implements RequestingCI{
 
 	@Override
     public QueryResultI execute(RequestI request) throws Exception {

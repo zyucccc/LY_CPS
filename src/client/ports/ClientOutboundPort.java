@@ -1,36 +1,37 @@
-package ports;
+package client.ports;
 
+import client.ClientComponent;
 import fr.sorbonne_u.components.ComponentI;
-import fr.sorbonne_u.components.ports.AbstractInboundPort;
+import fr.sorbonne_u.components.ports.AbstractOutboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import nodes.SensorNodeComponent;
+import sensor_network.QueryResult;
 
-public class SensorNodeInboundPort extends	AbstractInboundPort implements RequestingCI{
+public class ClientOutboundPort extends	AbstractOutboundPort implements RequestingCI{
 	
 	private static final long serialVersionUID = 1L;
 	
-	public SensorNodeInboundPort (String uri,ComponentI owner) throws Exception{
+	public ClientOutboundPort (String uri,ComponentI owner) throws Exception{
 		super(uri,RequestingCI.class, owner) ;
-		assert	uri != null && owner instanceof SensorNodeComponent ;
+		assert	uri != null && owner instanceof  ClientComponent;
 	}
 	
-	public SensorNodeInboundPort (ComponentI owner) throws Exception{
+	public ClientOutboundPort (ComponentI owner) throws Exception{
 		super(RequestingCI.class, owner) ;
-		assert owner instanceof SensorNodeComponent ;
+		assert	owner != null ;
 	}
 
 	@Override
 	public QueryResultI execute(RequestI request) throws Exception {
-		return this.getOwner().handleRequest(owner -> ((SensorNodeComponent)owner).processRequest(request));
+		QueryResult result = (QueryResult) ((RequestingCI)this.getConnector()).execute(request);
+		return result;
 	}
 
 	@Override
 	public void executeAsync(RequestI request) throws Exception {
-		// TODO Auto-generated method stub
-		
+				
 	}
-	
 
 }

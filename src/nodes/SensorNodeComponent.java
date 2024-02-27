@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
@@ -16,11 +17,12 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
+import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
+import nodes.ports.SensorNodeInboundPort;
 import nodes.sensor.Sensor;
-import ports.SensorNodeInboundPort;
 import request.ExecutionState;
 import request.ProcessingNode;
 import request.ast.Gather;
@@ -32,6 +34,7 @@ import request.ast.interpreter.Interpreter;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
+@RequiredInterfaces(required = {RegistrationCI.class})
 @OfferedInterfaces(offered = {RequestingCI.class})
 public class SensorNodeComponent extends AbstractComponent {
 	protected NodeInfo nodeinfo;
@@ -86,7 +89,7 @@ public class SensorNodeComponent extends AbstractComponent {
 			this.getLogger().setDirectory(System.getProperty("user.home"));
 		}
 		this.getTracer().setTitle("SensorNode");
-		this.getTracer().setRelativePosition(1, 0);
+		this.getTracer().setRelativePosition(0, 2);
 		
 		//le methode de class courant
 		SensorNodeComponent.checkInvariant(this);

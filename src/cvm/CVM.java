@@ -4,24 +4,36 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.helpers.CVMDebugModes;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
-import nodes.ClientComponent;
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
 import nodes.sensor.Sensor;
+import registre.RegistreComponent;
 import sensor_network.Position;
-import connectors.URIServiceConnector;
+import connectors.NodeClientConnector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import client.ClientComponent;
+import client.connectors.ClientRegistreConnector;
+
 public class CVM extends AbstractCVM {
 	//component uri
-    protected static final String SENSORNODE_COMPONENT_URI = "my-sensornode-uri";
+	protected static final String Registre_COMPONENT_URI = "my-registre-uri";
     protected static final String CLIENT_COMPONENT_URI = "my-client-uri";
+    
     //port
     protected static final String SENSORNODE_INBOUND_PORT_URI = "sensornode-inbound-uri";
-    protected static final String CLIENT_OUTBOUND_PORT_URI = "client-outbound-uri";
+    protected static final String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri";
+    //Registre
+    protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
+    protected static final String Registre_RegistrationCI_INBOUND_PORT_URI = "registre-RegistrationCI-inbound-uri";
+    //Client Registre
+    protected static final String CLIENT_Registre_OUTBOUND_PORT_URI = "client-registre-outbound-uri";
 
+    //SensorNode
+    protected static final String SENSORNODE_COMPONENT_URI = "my-sensornode-uri";
+    
     public CVM() throws Exception {
         super();
     }
@@ -32,6 +44,8 @@ public class CVM extends AbstractCVM {
 	/** Reference to the client component to share between deploy
 	 *  and shutdown.														*/
 	protected String	uriClientURI;
+	
+	protected String	uriRegistreURI;
 
 	
 //	instantiate the components, publish their port and interconnect them.
@@ -82,10 +96,20 @@ public class CVM extends AbstractCVM {
         this.uriClientURI =
             AbstractComponent.createComponent(
                 ClientComponent.class.getCanonicalName(),
-                new Object[]{CLIENT_COMPONENT_URI, CLIENT_OUTBOUND_PORT_URI});
+                new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI});
         assert this.isDeployedComponent(this.uriClientURI);
         this.toggleTracing(this.uriClientURI);
         this.toggleLogging(this.uriClientURI);
+        
+        // creer registre Component
+        
+        this.uriRegistreURI =
+                AbstractComponent.createComponent(
+                    RegistreComponent.class.getCanonicalName(),
+                    new Object[]{Registre_COMPONENT_URI, Registre_LookupCI_INBOUND_PORT_URI,Registre_RegistrationCI_INBOUND_PORT_URI});
+            assert this.isDeployedComponent(this.uriRegistreURI);
+            this.toggleTracing(this.uriRegistreURI);
+            this.toggleLogging(this.uriRegistreURI);
 
 		// ---------------------------------------------------------------------
 		// Connection phase
@@ -93,9 +117,16 @@ public class CVM extends AbstractCVM {
         
         this.doPortConnection(
         	this.uriClientURI,
-            CLIENT_OUTBOUND_PORT_URI,
+            CLIENT_Node_OUTBOUND_PORT_URI,
             SENSORNODE_INBOUND_PORT_URI,
-            URIServiceConnector.class.getCanonicalName());
+            NodeClientConnector.class.getCanonicalName());
+        this.doPortConnection(
+            	this.uriClientURI,
+            	CLIENT_Registre_OUTBOUND_PORT_URI,
+            	Registre_LookupCI_INBOUND_PORT_URI,
+                ClientRegistreConnector.class.getCanonicalName());
+
+        
 
         super.deploy();
         assert this.deploymentDone();
@@ -107,7 +138,9 @@ public class CVM extends AbstractCVM {
 		// Port disconnections can be done here for static architectures
 		// otherwise, they can be done in the finalise methods of components.
 		this.doPortDisconnection(this.uriClientURI,
-				CLIENT_OUTBOUND_PORT_URI);
+				CLIENT_Node_OUTBOUND_PORT_URI);
+		this.doPortDisconnection(this.uriClientURI,
+				CLIENT_Registre_OUTBOUND_PORT_URI);
 
 		super.finalise();
 	}

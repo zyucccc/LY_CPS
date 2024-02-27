@@ -1,4 +1,7 @@
-1708987034568|ClientComponent started.
-1708987034571|ClientComponent executed.
-1708987034574|ClientComponent Sending request....
-1708987234584|stopping Client component.
+1708996231822|ClientComponent started.
+1708996231827|ClientComponent executed.
+1708996231828|ClientComponent Sending request....
+1708996231896|ClientComponentr Receive resultat de request:
+1708996231903|Gather Query Result: 
+Gathered Sensors Values: [Node ID: node1, Sensor ID: temperature, Value: 35.0]
+1708996431838|stopping Client component.
