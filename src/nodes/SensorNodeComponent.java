@@ -126,7 +126,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	//life
 	@Override
     public void start() throws ComponentStartException {
-		this.logMessage("SensorNodeComponent started.");
+		this.logMessage("SensorNodeComponent "+ this.nodeinfo.nodeIdentifier() +" started.");
         super.start();
     }
 	

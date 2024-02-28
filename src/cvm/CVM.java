@@ -149,11 +149,12 @@ public class CVM extends AbstractCVM {
 		// Connection phase
 		// ---------------------------------------------------------------------
         
-        this.doPortConnection(
-        	this.uriClientURI,
-            CLIENT_Node_OUTBOUND_PORT_URI,
-            SENSORNODE_INBOUND_PORT_URI,
-            NodeClientConnector.class.getCanonicalName());
+//        this.doPortConnection(
+//        	this.uriClientURI,
+//            CLIENT_Node_OUTBOUND_PORT_URI,
+//            SENSORNODE_INBOUND_PORT_URI,
+//            NodeClientConnector.class.getCanonicalName());
+        //connection client to registre
         this.doPortConnection(
             	this.uriClientURI,
             	CLIENT_Registre_OUTBOUND_PORT_URI,
