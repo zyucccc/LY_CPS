@@ -16,6 +16,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
@@ -37,6 +38,7 @@ import request.ast.astQuery.BQuery;
 import request.ast.astQuery.GQuery;
 import request.ast.interfaces.IASTvisitor;
 import request.ast.interpreter.Interpreter;
+import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
@@ -224,7 +226,34 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     this.logMessage("neighbours:");
 		     for (NodeInfoI neighbour : neighbours) {
 		         this.logMessage("nei!:"+((NodeInfo)neighbour).toString());
+		         this.ask4Connection(neighbour);
+		         this.logMessage("ask connecting!:"+((NodeInfo)neighbour).toString());
 		     }
+	}
+	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
+	    EndPointDescriptorI endpointDescriptorI = newNeighbour.p2pEndPointInfo();
+	    if (endpointDescriptorI instanceof EndPointDescriptor) {
+	        String neighbourP2PEndpointURI = ((EndPointDescriptor) endpointDescriptorI).getURI();
+	        
+	        
+	        NodeNodeOutboundPort newNeighbourOutPort = new NodeNodeOutboundPort(this);
+	        newNeighbourOutPort.localPublishPort();
+	        
+	        //错了
+	        newNeighbourOutPort.doConnection(neighbourP2PEndpointURI, SensorNodeP2PCI.class.getCanonicalName());
+	        
+	        // 发送连接请求
+	        newNeighbourOutPort.ask4Connection(this.nodeinfo);
+	        
+	    } else {
+	        throw new Exception("p2pEndPointInfo() did not return an instance of EndPointDescriptor");
+	    }
+	}
+
+	public QueryResultI execute(RequestContinuationI request) {
+		return null;
+		// TODO Auto-generated method stub
+		
 	}
 
 	

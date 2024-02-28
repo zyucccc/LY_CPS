@@ -27,8 +27,8 @@ public class CVM extends AbstractCVM {
     //port
     protected static final String SENSORNODE_INBOUND_PORT_URI = "sensornode-inbound-uri";
     protected static final String SENSORNODE_INBOUND_PORT_URI2 = "sensornode-inbound-uri2";
-    protected static final String NODE2_INBOUND_PORT_URI = "node2-inbound-uri";
-    protected static final String NODE2_INBOUND_PORT_URI2 = "node2-inbound-uri2";
+    protected static final String NODE1_P2P_INBOUND_PORT_URI  = "node2-inbound-uri";
+    protected static final String NODE2_P2P_INBOUND_PORT_URI  = "node2-inbound-uri2";
     protected static final String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri";
     //Registre
     protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
@@ -90,7 +90,8 @@ public class CVM extends AbstractCVM {
 //     		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
 //     		sensorlist.add(sensor_temperature);
      		EndPointDescriptor uriinfo = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI);
-     		NodeInfo nodeinfo = new NodeInfo("node1",position,50.0,null,uriinfo);
+     		EndPointDescriptor p2pEndPoint = new EndPointDescriptor(NODE1_P2P_INBOUND_PORT_URI);
+     		NodeInfo nodeinfo = new NodeInfo("node1",position,50.0,p2pEndPoint,uriinfo);
             Sensor SensorData_temperature = new Sensor("node1","temperature",double.class,35.0);
             Sensor SensorData_fumée = new Sensor("node1","fumée",Boolean.class,false);
      		
@@ -112,7 +113,7 @@ public class CVM extends AbstractCVM {
         this.uriSensorNodeURI =
                 AbstractComponent.createComponent(
                     SensorNodeComponent.class.getCanonicalName(),
-                    new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,SensorNode_Node_OUTBOUND_PORT_URI,NODE2_INBOUND_PORT_URI,sensorsData});
+                    new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,SensorNode_Node_OUTBOUND_PORT_URI,NODE1_P2P_INBOUND_PORT_URI ,sensorsData});
             assert this.isDeployedComponent(this.uriSensorNodeURI);
             this.toggleTracing(this.uriSensorNodeURI);
             this.toggleLogging(this.uriSensorNodeURI);
@@ -120,7 +121,9 @@ public class CVM extends AbstractCVM {
         //init donnees for 2ieme node
     	Position position2 = new Position(5,5);
     	EndPointDescriptor uriinfo2 = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI2);
- 		NodeInfo nodeinfo2 = new NodeInfo("node2",position2,50.0,null,uriinfo2);
+    	EndPointDescriptor p2pEndPoint2 = new EndPointDescriptor(NODE2_P2P_INBOUND_PORT_URI);
+
+ 		NodeInfo nodeinfo2 = new NodeInfo("node2",position2,50.0,p2pEndPoint2,uriinfo2);
 // 		Sensor sensor_temperature = new Sensor("sensor1","temperature",int.class,35);
 // 		ArrayList<Sensor> sensorlist = new ArrayList<Sensor>();
 // 		sensorlist.add(sensor_temperature);
@@ -144,7 +147,7 @@ public class CVM extends AbstractCVM {
     this.uriSensorNodeURI2 =
             AbstractComponent.createComponent(
                 SensorNodeComponent.class.getCanonicalName(),
-                new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,SensorNode_Node_OUTBOUND_PORT_URI2,NODE2_INBOUND_PORT_URI2,sensorsData2});
+                new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,SensorNode_Node_OUTBOUND_PORT_URI2,NODE2_P2P_INBOUND_PORT_URI ,sensorsData2});
         assert this.isDeployedComponent(this.uriSensorNodeURI2);
         this.toggleTracing(this.uriSensorNodeURI2);
         this.toggleLogging(this.uriSensorNodeURI2);
@@ -188,6 +191,8 @@ public class CVM extends AbstractCVM {
             	SensorNode_Registre_OUTBOUND_PORT_URI,
             	Registre_RegistrationCI_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
+
+
       //conection node2 to registre
         this.doPortConnection(
             	this.uriSensorNodeURI2,
@@ -195,11 +200,11 @@ public class CVM extends AbstractCVM {
             	Registre_RegistrationCI_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
         //conection node2 to node1
-        this.doPortConnection(
-            	this.uriSensorNodeURI2,
-            	SensorNode_Node_OUTBOUND_PORT_URI2,
-            	NODE2_INBOUND_PORT_URI,
-                NodeRegistreConnector.class.getCanonicalName());
+//        this.doPortConnection(
+//            	this.uriSensorNodeURI2,
+//            	SensorNode_Node_OUTBOUND_PORT_URI2,
+//            	NODE_P2P_INBOUND_PORT_URI ,
+//                NodeRegistreConnector.class.getCanonicalName());
         
     
 
