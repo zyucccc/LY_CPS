@@ -25,6 +25,8 @@ import registre.interfaces.RegistrationCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
+import nodes.connectors.NodeClientConnector;
+import nodes.connectors.NodeNodeConnector;
 import nodes.ports.NodeNodeInboundPort;
 import nodes.ports.NodeNodeOutboundPort;
 import nodes.ports.SensorNodeInboundPort;
@@ -47,13 +49,11 @@ import sensor_network.QueryResult;
 public class SensorNodeComponent extends AbstractComponent {
 	protected NodeInfo nodeinfo;
 	protected String uriPrefix;
-//	protected ArrayList<Sensor> sensorlist;
 	protected ProcessingNode processingNode;
+	//outbound port for Registre
 	protected SensorNodeRegistreOutboundPort node_registre_port;
-	//new1
-	protected NodeNodeOutboundPort node2_out_port;
-	
-//	protected IASTvisitor<Object, ExecutionStateI, Exception> interpreter;
+	//outbound port for Node2Node
+	protected NodeNodeOutboundPort node_node_port;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
 	{
@@ -64,50 +64,49 @@ public class SensorNodeComponent extends AbstractComponent {
 							+ "offer the interface URIProviderI!");
 	}
 	
-//	public SensorNodeComponent(String nodeId, PositionI position, double range, EndPointDescriptorI p2pEndPoint, EndPointDescriptorI clientEndPoint) throws Exception {
-//        super(1, 0); // 1 schedule thread,0 task
-//        this.nodeinfo = new NodeInfo(nodeId, position, range, p2pEndPoint, clientEndPoint);
-//    }
 	protected SensorNodeComponent(
             NodeInfoI nodeInfo,
-//            ArrayList<Sensor> sensorlist,
             String uriPrefix,
             String sensorNodeInboundPortURI,
-            String Node_Registre_outboundPortURI,//Node_node_outboundPortURI
-            String Node2_OutboundPortURI,//new
-            String Node2_InboundPortURI,//new
+            String node_Registre_outboundPortURI,//Node_registre_outboundPortURI
+            String node_node_OutboundPortURI,//P2P node to node outbound Port
+            String node_node_InboundPortURI,//P2P node to node Inbound Port
             HashMap<String, Sensor> sensorsData
             ) throws Exception {
+		
 		super(uriPrefix, 1, 0) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
+		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
-	    //new
-	    assert Node2_InboundPortURI != null && !Node2_InboundPortURI.isEmpty() : "InboundPortN2 URI cannot be null or empty!";
+	    //inboudporturi for node2node
+	    assert node_node_InboundPortURI != null && !node_node_InboundPortURI.isEmpty() : "InboundPortN2 URI cannot be null or empty!";
 	    this.nodeinfo = (NodeInfo) nodeInfo;
-//	    this.sensorlist = sensorlist;
 	    this.uriPrefix = uriPrefix;
 	    
 	    String NodeID = this.nodeinfo.nodeIdentifier();
 		Position position = (Position) this.nodeinfo.nodePosition();
-		 System.out.println("Test Position: " + position);
+//		System.out.println("Test Position: " + position);
 //		this.logMessage("Actuel position: " + position);
 		
 		this.processingNode = new ProcessingNode(NodeID,position,sensorsData);
 		
+		//Inbound Port publish
+		//node - client - requestingI
 	    //lier URI
         PortI p = new SensorNodeInboundPort(sensorNodeInboundPortURI, this);
-		// publish the port
+		//publish the port
 		p.publishPort();
-		
-		//node - registre - RegistrationCI
-        this.node_registre_port = new SensorNodeRegistreOutboundPort(Node_Registre_outboundPortURI,this);
-        this.node_registre_port.localPublishPort();
-        
-      //node - node - SensorNodeP2PCI
-        PortI p2p=new NodeNodeInboundPort(Node2_InboundPortURI,this);
+        //node - node - SensorNodeP2PCI
+        PortI p2p=new NodeNodeInboundPort(node_node_InboundPortURI,this);
         p2p.publishPort();
-        this.node2_out_port = new NodeNodeOutboundPort(Node2_OutboundPortURI,this);
-        this.node2_out_port.localPublishPort();
+		
+		//Outbound Port pubulish
+		//node - registre - RegistrationCI
+        this.node_registre_port = new SensorNodeRegistreOutboundPort(node_Registre_outboundPortURI,this);
+        this.node_registre_port.localPublishPort();
+        //node - node - SensorNodeP2PCI
+        this.node_node_port = new NodeNodeOutboundPort(node_node_OutboundPortURI,this);
+        this.node_node_port.localPublishPort();
 		
         if (AbstractCVM.isDistributed) {
 			this.getLogger().setDirectory(System.getProperty("user.dir"));
@@ -225,26 +224,19 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //		     this.logMessage("neighbours: " + neighbours);
 		     this.logMessage("neighbours:");
 		     for (NodeInfoI neighbour : neighbours) {
-		         this.logMessage("nei!:"+((NodeInfo)neighbour).toString());
+		         this.logMessage("neighbour :"+((NodeInfo)neighbour).toString());
 		         this.ask4Connection(neighbour);
-		         this.logMessage("ask connecting!:"+((NodeInfo)neighbour).toString());
 		     }
 	}
+	
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-	    EndPointDescriptorI endpointDescriptorI = newNeighbour.p2pEndPointInfo();
-	    if (endpointDescriptorI instanceof EndPointDescriptor) {
-	        String neighbourP2PEndpointURI = ((EndPointDescriptor) endpointDescriptorI).getURI();
-	        
-	        
-	        NodeNodeOutboundPort newNeighbourOutPort = new NodeNodeOutboundPort(this);
-	        newNeighbourOutPort.localPublishPort();
-	        
-	        //错了
-	        newNeighbourOutPort.doConnection(neighbourP2PEndpointURI, SensorNodeP2PCI.class.getCanonicalName());
-	        
-	        // 发送连接请求
-	        newNeighbourOutPort.ask4Connection(this.nodeinfo);
-	        
+	    EndPointDescriptor endpointDescriptor = (EndPointDescriptor) newNeighbour.p2pEndPointInfo();
+	    if (endpointDescriptor != null) {
+	        String neighbourInboundPortURI = endpointDescriptor.getURI();
+	        this.logMessage("SensorNodeComponent :"+ this.nodeinfo.nodeIdentifier() +" start connect : Uri obtenue to connect :" + neighbourInboundPortURI);
+	        this.logMessage("Test name class: "+NodeNodeConnector.class.getCanonicalName());
+	       this.node_node_port.doConnection(neighbourInboundPortURI,NodeNodeConnector.class.getCanonicalName());        
+	       this.logMessage("SensorNodeComponent : "+ this.nodeinfo.nodeIdentifier() + ": Connection established with Node :" + newNeighbour.nodeIdentifier());
 	    } else {
 	        throw new Exception("p2pEndPointInfo() did not return an instance of EndPointDescriptor");
 	    }
@@ -252,8 +244,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 
 	public QueryResultI execute(RequestContinuationI request) {
 		return null;
-		// TODO Auto-generated method stub
-		
 	}
 
 	

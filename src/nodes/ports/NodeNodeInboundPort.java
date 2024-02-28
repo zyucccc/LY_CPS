@@ -35,20 +35,20 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
 	    this.getOwner().handleRequest(owner -> {
 	        ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
-	        return null; // Since the method is void, we return null.
+	        return null;
 	    });
 	}
 
 
 	@Override
 	public QueryResultI execute(RequestContinuationI request) throws Exception {
-		return this.getOwner().handleRequest(owner -> {
-	        ((SensorNodeComponent) owner).execute(request);
-	        return null; // Since the method is void, we return null.
-	    });
+//		return this.getOwner().handleRequest(owner -> {
+//	        ((SensorNodeComponent) owner).execute(request);
+//	        return null; // Since the method is void, we return null.
+//	    });
 		
 
-//		return null;
+		return null;
 	}
 
 	@Override
