@@ -194,11 +194,11 @@ public class CVM extends AbstractCVM {
             	SensorNode_Registre_OUTBOUND_PORT_URI2,
             	Registre_RegistrationCI_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
-        
+        //conection node2 to node1
         this.doPortConnection(
             	this.uriSensorNodeURI2,
             	SensorNode_Node_OUTBOUND_PORT_URI2,
-            	NODE2_INBOUND_PORT_URI2,
+            	NODE2_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
         
     
