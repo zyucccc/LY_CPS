@@ -154,6 +154,29 @@ public class Test {
             QueryResult result_test_Query =   (QueryResult)test_query.eval(interpreter, executionState_query);
             System.out.println("Test Query Result: \n" + result_test_Query);
             
+            //Test Cont
+            //test ECont
+            ExecutionState data1 = new ExecutionState();
+            ECont test_ECont = new ECont();
+            System.out.println("Test ECont:  ");
+            System.out.println("Continualtion avant eval \n" + data1.toStringContinuation());
+            test_ECont.eval(interpreter, data1);
+            System.out.println("Continualtion after eval \n" + data1.toStringContinuation());
+            //test DCont
+            ExecutionState data2 = new ExecutionState();
+            DCont test_DCont = new DCont(new RDirs(Direction.NW, new FDirs(Direction.NE)),5);
+            System.out.println("Test DCont:  ");
+            System.out.println("Continualtion avant eval : " + data2.toStringContinuation());
+            test_DCont.eval(interpreter, data2);
+            System.out.println("Continualtion after eval : " + data2.toStringContinuation());
+            //test FCont
+            ExecutionState data3 = new ExecutionState();
+            FCont test_FCont = new FCont(new ABase(new Position(15.0, 6.0)),20.0);
+            System.out.println("Test FCont:  ");
+            System.out.println("Continualtion avant eval : " + data3.toStringContinuation());
+            test_FCont.eval(interpreter, data3);
+            System.out.println("Continualtion after eval : " + data3.toStringContinuation());
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

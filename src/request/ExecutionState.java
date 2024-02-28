@@ -6,21 +6,25 @@ import java.util.Set;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 //import fr.sorbonne_u.cps.sensor_network.interfaces.*;
-import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import request.ast.Direction;
+import request.interfaces.ExecutionStateI;
+import sensor_network.Position;
 import sensor_network.QueryResult;
 
 public class ExecutionState implements ExecutionStateI {
-    private ProcessingNode processingNode;
+    private static final long serialVersionUID = 1L;
+	private ProcessingNode processingNode;
     private QueryResult currentResult;
     private boolean isContinuationSet;
     private boolean isDirectional;
     private Set<Direction> directions;
     private int hops;
+    private int current_hops;
     private boolean isFlooding;
     private double maximalDistance;
-    private PositionI floodingBasePosition;
+    private Position floodingBasePosition;
 
     public ExecutionState() {
         this.processingNode = null;
@@ -86,25 +90,24 @@ public class ExecutionState implements ExecutionStateI {
         return this.isDirectional;
     }
     
-    @Override
-    public Set<fr.sorbonne_u.cps.sensor_network.interfaces.Direction> getDirections() {
-        return null;
-    }
 
-  
-    public Set<Direction> getDirections_ast() {
+    @Override
+    public Set<Direction> getDirections() {
         return this.directions;
     }
 
     @Override
     public boolean noMoreHops() {
-        // 假设最大跳数为10，这个值根据需要调整
-        return this.hops >= 10;
+        return this.current_hops >= this.hops;
+    }
+    
+    public int Hops_Left() {
+    	return this.hops-this.current_hops;
     }
 
     @Override
     public void incrementHops() {
-        this.hops++;
+        this.current_hops++;
     }
 
     @Override
@@ -114,10 +117,9 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public boolean withinMaximalDistance(PositionI p) {
-        // 这里需要实现距离计算逻辑，以下仅为示例
-//        if (this.floodingBasePosition != null) {
-//            return this.floodingBasePosition.distanceTo(p) <= this.maximalDistance;
-//        }
+        if (this.floodingBasePosition != null) {
+            return this.floodingBasePosition.distance(p) <= this.maximalDistance;
+        }
         return false;
     }
     
@@ -138,13 +140,34 @@ public class ExecutionState implements ExecutionStateI {
     	this.isContinuationSet = true;
     	this.isFlooding = isFlooding;
         this.maximalDistance = maximalDistance;
-        this.floodingBasePosition = basePosition;
+        this.floodingBasePosition = (Position) basePosition;
     }
     
     public void setIsContinuationSet() {
     	this.isContinuationSet = true;
     }
     
+    public String toStringContinuation() {
+        StringBuilder sb = new StringBuilder("Continuation Info: ");
+        if (!this.isContinuationSet) {
+            sb.append("None set.");
+        } else {
+            if (this.isDirectional) {
+                sb.append("Directional with directions ");
+                this.directions.forEach(dir -> sb.append(dir).append(" "));
+                sb.append("and hops left ").append(10 - this.hops).append(".");
+            } else if (this.isFlooding) {
+                sb.append("Flooding with maximal distance ").append(this.maximalDistance);
+                if (this.floodingBasePosition != null) {
+                    sb.append(" from base position ").append(this.floodingBasePosition.toString());
+                }
+                sb.append(".");
+            } else {
+                sb.append("Type de contionuation : ECont");
+            }
+        }
+        return sb.toString();
+    }
     
     
 }
