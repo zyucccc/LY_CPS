@@ -2,8 +2,11 @@ package nodes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import client.ClientComponent;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
@@ -54,6 +57,7 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected SensorNodeRegistreOutboundPort node_registre_port;
 	//outbound port for Node2Node
 	protected NodeNodeOutboundPort node_node_port;
+	protected Set<NodeInfoI> neighbours;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
 	{
@@ -74,7 +78,7 @@ public class SensorNodeComponent extends AbstractComponent {
             HashMap<String, Sensor> sensorsData
             ) throws Exception {
 		
-		super(uriPrefix, 1, 0) ;
+		super(uriPrefix, 1, 1) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
@@ -85,8 +89,7 @@ public class SensorNodeComponent extends AbstractComponent {
 	    
 	    String NodeID = this.nodeinfo.nodeIdentifier();
 		Position position = (Position) this.nodeinfo.nodePosition();
-//		System.out.println("Test Position: " + position);
-//		this.logMessage("Actuel position: " + position);
+		this.neighbours = new HashSet<>();
 		
 		this.processingNode = new ProcessingNode(NodeID,position,sensorsData);
 		
@@ -142,23 +145,35 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
     public void start() throws ComponentStartException {
 		this.logMessage("SensorNodeComponent "+ this.nodeinfo.nodeIdentifier() +" started.");
         super.start();
-    }
-	
-	@Override
-    public void execute() throws Exception {
-		this.logMessage("SensorNodeComponent executed.");
-//        super.execute();
         this.runTask(
         	    new AbstractComponent.AbstractTask() {
         	     @Override
         	     public void run() {
         	      try {    
-        	       ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(nodeinfo) ;
+        	       ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo) ;
         	      } catch (Exception e) {
         	       e.printStackTrace();
         	      }
         	     }
         	    }) ;  
+    }
+	
+	@Override
+    public void execute() throws Exception {
+		this.logMessage("SensorNodeComponent executed.");
+        super.execute();
+		this.scheduleTask(new AbstractComponent.AbstractTask() {
+            @Override
+            public void run() {
+                try {
+                ((SensorNodeComponent)this.getTaskOwner()).refraichir_neighbours(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
+                ((SensorNodeComponent)this.getTaskOwner()).connecterNeighbours();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 1000, TimeUnit.MILLISECONDS);
+        
     }
 	
 	 @Override
@@ -173,16 +188,10 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    }
 	 
 	public QueryResultI processRequest(RequestI request) throws Exception{
-		this.logMessage("SensorNodeComponent receive request");
-		
-		
+		this.logMessage("----------------Receive Query------------------");
+		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		Interpreter interpreter = new Interpreter();
 		Query<?> query = (Query<?>) request.getQueryCode();
-//		if(query instanceof BQuery) {
-//			this.logMessage("Query : BQuery");
-//		} else if(query instanceof GQuery) {
-//			this.logMessage("Query : GQuery");
-//		}
 		ExecutionState data = new ExecutionState(); 
         
         data.updateProcessingNode(this.processingNode);
@@ -208,25 +217,38 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("Calcul Fini: ");
 		
 		this.logMessage("Res: " + result);
+		this.logMessage("----------------------------------");
 
 		return result;
 	 }
 	
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
-		  this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
+		     this.logMessage("----------------Register------------------");
+		     this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
 		     // 调用注册表组件的注册方法
 		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
 		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
+		     this.neighbours = neighbours;
 		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
-		     
-//		     this.logMessage("neighbours: " + neighbours);
-		     this.logMessage("neighbours:");
-		     for (NodeInfoI neighbour : neighbours) {
-		         this.logMessage("neighbour :"+((NodeInfo)neighbour).toString());
-		         this.ask4Connection(neighbour);
-		     }
+		     this.logMessage("----------------------------------");
+//		     this.logMessage("neighbours:");
+//		     for (NodeInfoI neighbour : neighbours) {
+//		         this.logMessage("neighbour :"+((NodeInfo)neighbour).toString());
+//		     }
+	}
+	
+	public void refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
+		this.logMessage("--------------Actuel neighbours:--------------");
+		this.logMessage("SensorNodeComponent"+ nodeInfo.nodeIdentifier() +" : actuel neighbours: " );
+		Set<NodeInfoI> actuel_neighbours = this.node_registre_port.refraichir_neighbours(nodeInfo);
+		this.neighbours = actuel_neighbours;
+	    this.logMessage("neighbours:");
+	     for (NodeInfoI neighbour : neighbours) {
+	         this.logMessage("neighbour :"+((NodeInfo)neighbour).toString());
+	     }
+	     this.logMessage("----------------------------------");
 	}
 	
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
@@ -240,6 +262,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    } else {
 	        throw new Exception("p2pEndPointInfo() did not return an instance of EndPointDescriptor");
 	    }
+	}
+	
+	public void connecterNeighbours() throws Exception {
+		this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] start connecter ses neighbours");
+		 for (NodeInfoI neighbour : this.neighbours) {
+			 this.ask4Connection(neighbour);
+		 }
 	}
 
 	public QueryResultI execute(RequestContinuationI request) {

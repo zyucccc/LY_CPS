@@ -49,6 +49,7 @@ public class ClientComponent extends AbstractComponent {
 		AbstractComponent.checkInvariant(this);
     }
 	public void sendRequest() throws Exception{
+		this.logMessage("----------------- Query Resultat ------------------");
 		 this.logMessage("ClientComponent Sending request....");
 		GQuery test = new GQuery(new FGather("temperature"),new ECont());
         String requestURI = "gather-uri";	      
@@ -56,9 +57,11 @@ public class ClientComponent extends AbstractComponent {
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
         this.logMessage("ClientComponentr Receive resultat de request:");
         this.logMessage("" + result);
+        this.logMessage("----------------------------------");
 	}
 	
 	public void findEtConnecterByIdentifer(String NodeID) throws Exception {
+		this.logMessage("---------------Connect to Node-------------------");
 		this.logMessage("ClientComponent search and connect Node :" + NodeID);
 		ConnectionInfo connectionInfo = (ConnectionInfo) this.client_registre_port.findByIdentifier(NodeID);
 		if (connectionInfo != null) {
@@ -75,6 +78,7 @@ public class ClientComponent extends AbstractComponent {
 		}else {
 			this.logMessage("Node " + NodeID + " not found or cannot connect.");
 		}
+		this.logMessage("----------------------------------");
 	}
 	
 	@Override
@@ -85,16 +89,15 @@ public class ClientComponent extends AbstractComponent {
             @Override
             public void run() {
                 try {
-                    // 尝试连接到指定的节点
+                    // essayer de connecter de node indiquee
                     String NodeID = "node2";
                     ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
                     ((ClientComponent)this.getTaskOwner()).sendRequest() ;
-                    // 如果需要，此处可以继续执行其他任务，如发送请求等
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-        }, 1000, TimeUnit.MILLISECONDS); 
+        }, 3000, TimeUnit.MILLISECONDS); 
     }
 	
 	 @Override

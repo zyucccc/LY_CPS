@@ -40,6 +40,12 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
         });
     }
     
+    @Override
+   public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception{
+	   return  this.getOwner().handleRequest(owner -> {
+           return ((RegistreComponent) owner).refraichir_neighbours(nodeInfo);
+       });
+    }
     
     @Override
     public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {

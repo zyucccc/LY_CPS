@@ -36,6 +36,7 @@ import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
+import registre.RegistreComponent;
 import request.ast.Direction;
 
 import java.util.Set;
@@ -97,6 +98,10 @@ extends		OfferedCI,
 	public Set<NodeInfoI>	register(
 		NodeInfoI nodeInfo
 		) throws Exception;
+	
+
+	   public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception;	 
+	    
 
 	/**
 	 * find a new neighbour for the given node in the given direction and return

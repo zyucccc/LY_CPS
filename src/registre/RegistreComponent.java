@@ -87,17 +87,14 @@ public class RegistreComponent extends AbstractComponent {
        }
     
     public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
-    	 this.logMessage("RegistreComponent receive request: register()");
-        // 检查前置条件
+    	 this.logMessage("------------Receive Register Request---------------");
+    	 this.logMessage("RegistreComponent receive request: register() by: "+ nodeInfo.nodeIdentifier());
         if (nodeInfo == null || registered(nodeInfo.nodeIdentifier())) {
             throw new IllegalArgumentException("NodeInfo cannot be null and must not be already registered.");
         }
         
-        // 将新节点加入到注册表中
+        // ajoute new nodeid - nodeinfo dans hashmao
         this.registeredNodes.put(nodeInfo.nodeIdentifier(), (NodeInfo) nodeInfo);
-        
-        // 找到新节点可以连接的已注册节点
-//        Set<NodeInfo> connectableNodes = new HashSet<>();
         
         Set<NodeInfoI> neighbours_possible = findNeighboursInAllDirections((NodeInfo) nodeInfo);
         Set<NodeInfoI> neighbours = new HashSet<>();
@@ -110,7 +107,6 @@ public class RegistreComponent extends AbstractComponent {
         }
        
         
-        // 检查后置条件
         assert neighbours.stream().allMatch(n -> n != null) : "All returned nodes must be non-null.";
         assert neighbours.stream().noneMatch(n -> n.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) : "The new node must not be included in the returned set.";
         assert neighbours.stream().allMatch(n -> 
@@ -118,8 +114,36 @@ public class RegistreComponent extends AbstractComponent {
             nodeInfo.nodePosition().distance(n.nodePosition()) <= n.nodeRange())
             : "All returned nodes must be within the communication range of the new node or vice versa.";
         
+        this.logMessage("RegistreComponent : register() Succes!");
         return neighbours;
     }
+    
+    public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
+//   	 this.logMessage("RegistreComponent receive request: refraichir_register()by: "+ nodeInfo.nodeIdentifier());
+       if (nodeInfo == null || !registered(nodeInfo.nodeIdentifier())) {
+           throw new IllegalArgumentException("NodeInfo cannot be null and must be already registered.");
+       }
+       
+       Set<NodeInfoI> neighbours_possible = findNeighboursInAllDirections((NodeInfo) nodeInfo);
+       Set<NodeInfoI> neighbours = new HashSet<>();
+       
+       //check range
+       for (NodeInfoI possibleNeighbour : neighbours_possible) {
+           if (isConnectable(nodeInfo, possibleNeighbour)) {
+               neighbours.add((NodeInfo) possibleNeighbour);
+           }
+       }
+      
+       
+       assert neighbours.stream().allMatch(n -> n != null) : "All returned nodes must be non-null.";
+       assert neighbours.stream().noneMatch(n -> n.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) : "The new node must not be included in the returned set.";
+       assert neighbours.stream().allMatch(n -> 
+           nodeInfo.nodePosition().distance(n.nodePosition()) <= nodeInfo.nodeRange() ||
+           nodeInfo.nodePosition().distance(n.nodePosition()) <= n.nodeRange())
+           : "All returned nodes must be within the communication range of the new node or vice versa.";
+       
+       return neighbours;
+   }
     
     private Set<NodeInfoI> findNeighboursInAllDirections(NodeInfoI nodeInfo) throws Exception {
         Set<NodeInfoI> neighbours = new HashSet<>();
@@ -129,7 +153,7 @@ public class RegistreComponent extends AbstractComponent {
                 neighbours.add(neighbour);
             }
         }
-        this.logMessage("RegistreComponent : register() Succes!");
+  
         return neighbours;
     }
     
@@ -171,10 +195,13 @@ public class RegistreComponent extends AbstractComponent {
         return true;
         //这个节点移除后 它的邻居的行为逻辑需要添加
     }
+    
+    
 //service offered : LookupCI
     
     public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
-    	this.logMessage("RegistreComponent receive request: findByIdentifer() avec NodeID :"+ sensorNodeId);
+    	this.logMessage("------------Receive Client Request---------------");
+    	this.logMessage("RegistreComponent receive request de Client : findByIdentifer() avec NodeID :"+ sensorNodeId);
     	NodeInfo nodeInfo = registeredNodes.get(sensorNodeId);
         if (nodeInfo != null) {
         	this.logMessage("RegistreComponent : findByIdentifer() NodeID :"+ sensorNodeId + "NodeInfo : " + nodeInfo);
