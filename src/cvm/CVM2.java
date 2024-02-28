@@ -19,7 +19,7 @@ import java.util.HashMap;
 import client.ClientComponent;
 import client.connectors.ClientRegistreConnector;
 
-public class CVM extends AbstractCVM {
+public class CVM2 extends AbstractCVM {
 	//component uri
 	protected static final String Registre_COMPONENT_URI = "my-registre-uri";
     protected static final String CLIENT_COMPONENT_URI = "my-client-uri";
@@ -27,8 +27,6 @@ public class CVM extends AbstractCVM {
     //port
     protected static final String SENSORNODE_INBOUND_PORT_URI = "sensornode-inbound-uri";
     protected static final String SENSORNODE_INBOUND_PORT_URI2 = "sensornode-inbound-uri2";
-    protected static final String NODE2_INBOUND_PORT_URI = "node2-inbound-uri";
-    protected static final String NODE2_INBOUND_PORT_URI2 = "node2-inbound-uri2";
     protected static final String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri";
     //Registre
     protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
@@ -44,11 +42,7 @@ public class CVM extends AbstractCVM {
     protected static final String SensorNode_Registre_OUTBOUND_PORT_URI = "node-registre-outbound-uri";
     protected static final String SensorNode_Registre_OUTBOUND_PORT_URI2 = "node-registre-outbound-uri2";
     
-  //SensorNode node
-    protected static final String SensorNode_Node_OUTBOUND_PORT_URI = "node-node-outbound-uri";
-    protected static final String SensorNode_Node_OUTBOUND_PORT_URI2 = "node-node-outbound-uri2";
-    
-    public CVM() throws Exception {
+    public CVM2() throws Exception {
         super();
     }
     
@@ -100,22 +94,13 @@ public class CVM extends AbstractCVM {
             sensorsData.put("fumée",SensorData_fumée);
      		
         // creer sensorNode Component
-		
-//		  this.uriSensorNodeURI = AbstractComponent.createComponent(
-//		  SensorNodeComponent.class.getCanonicalName(), new
-//		  Object[]{nodeinfo,SENSORNODE_COMPONENT_URI,
-//		  SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,sensorsData
-//		  }); assert this.isDeployedComponent(this.uriSensorNodeURI);
-//		  this.toggleTracing(this.uriSensorNodeURI);
-//		  this.toggleLogging(this.uriSensorNodeURI);
-		 
-        this.uriSensorNodeURI =
-                AbstractComponent.createComponent(
-                    SensorNodeComponent.class.getCanonicalName(),
-                    new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,SensorNode_Node_OUTBOUND_PORT_URI,NODE2_INBOUND_PORT_URI,sensorsData});
-            assert this.isDeployedComponent(this.uriSensorNodeURI);
-            this.toggleTracing(this.uriSensorNodeURI);
-            this.toggleLogging(this.uriSensorNodeURI);
+     		this.uriSensorNodeURI =
+            AbstractComponent.createComponent(
+                SensorNodeComponent.class.getCanonicalName(),
+                new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,sensorsData});
+        assert this.isDeployedComponent(this.uriSensorNodeURI);
+        this.toggleTracing(this.uriSensorNodeURI);
+        this.toggleLogging(this.uriSensorNodeURI);
         
         //init donnees for 2ieme node
     	Position position2 = new Position(5,5);
@@ -133,21 +118,14 @@ public class CVM extends AbstractCVM {
         sensorsData2.put("fumée",SensorData_fumée2);
         
         // creer 2 ieme sensorNode Component
-// 		this.uriSensorNodeURI2 =
-//        AbstractComponent.createComponent(
-//            SensorNodeComponent.class.getCanonicalName(),
-//            new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,sensorsData2});
-//    assert this.isDeployedComponent(this.uriSensorNodeURI2);
-//    this.toggleTracing(this.uriSensorNodeURI2);
-//    this.toggleLogging(this.uriSensorNodeURI2);
-        
-    this.uriSensorNodeURI2 =
-            AbstractComponent.createComponent(
-                SensorNodeComponent.class.getCanonicalName(),
-                new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,SensorNode_Node_OUTBOUND_PORT_URI2,NODE2_INBOUND_PORT_URI2,sensorsData2});
-        assert this.isDeployedComponent(this.uriSensorNodeURI2);
-        this.toggleTracing(this.uriSensorNodeURI2);
-        this.toggleLogging(this.uriSensorNodeURI2);
+ 		this.uriSensorNodeURI2 =
+        AbstractComponent.createComponent(
+            SensorNodeComponent.class.getCanonicalName(),
+            new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,sensorsData2});
+    assert this.isDeployedComponent(this.uriSensorNodeURI2);
+    this.toggleTracing(this.uriSensorNodeURI2);
+    this.toggleLogging(this.uriSensorNodeURI2);
+
         // creer client Component
         this.uriClientURI =
             AbstractComponent.createComponent(
@@ -194,14 +172,6 @@ public class CVM extends AbstractCVM {
             	SensorNode_Registre_OUTBOUND_PORT_URI2,
             	Registre_RegistrationCI_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
-        
-        this.doPortConnection(
-            	this.uriSensorNodeURI2,
-            	SensorNode_Node_OUTBOUND_PORT_URI2,
-            	NODE2_INBOUND_PORT_URI2,
-                NodeRegistreConnector.class.getCanonicalName());
-        
-    
 
         
 
@@ -234,7 +204,7 @@ public class CVM extends AbstractCVM {
     public static void main(String[] args) {
         try {
         	// Create an instance of the defined component virtual machine.
-            CVM cvm = new CVM();
+            CVM2 cvm = new CVM2();
             //execute
             cvm.startStandardLifeCycle(200000L);
             Thread.sleep(100000L); // 等待一段时间以观察输出

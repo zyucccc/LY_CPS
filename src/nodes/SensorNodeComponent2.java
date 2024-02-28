@@ -17,15 +17,12 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import registre.interfaces.RegistrationCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
-import nodes.ports.NodeNodeInboundPort;
-import nodes.ports.NodeNodeOutboundPort;
 import nodes.ports.SensorNodeInboundPort;
 import nodes.ports.SensorNodeRegistreOutboundPort;
 import nodes.sensor.Sensor;
@@ -40,20 +37,18 @@ import request.ast.interpreter.Interpreter;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
-@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class})
-@OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
-public class SensorNodeComponent extends AbstractComponent {
+@RequiredInterfaces(required = {RegistrationCI.class})
+@OfferedInterfaces(offered = {RequestingCI.class})
+public class SensorNodeComponent2 extends AbstractComponent {
 	protected NodeInfo nodeinfo;
 	protected String uriPrefix;
 //	protected ArrayList<Sensor> sensorlist;
 	protected ProcessingNode processingNode;
 	protected SensorNodeRegistreOutboundPort node_registre_port;
-	//new1
-	protected NodeNodeOutboundPort node2_out_port;
 	
 //	protected IASTvisitor<Object, ExecutionStateI, Exception> interpreter;
 	
-	protected static void	checkInvariant(SensorNodeComponent c)
+	protected static void	checkInvariant(SensorNodeComponent2 c)
 	{
 		assert	c.uriPrefix != null :
 					new InvariantException("The URI prefix is null!");
@@ -66,21 +61,17 @@ public class SensorNodeComponent extends AbstractComponent {
 //        super(1, 0); // 1 schedule thread,0 task
 //        this.nodeinfo = new NodeInfo(nodeId, position, range, p2pEndPoint, clientEndPoint);
 //    }
-	protected SensorNodeComponent(
+	protected SensorNodeComponent2(
             NodeInfoI nodeInfo,
 //            ArrayList<Sensor> sensorlist,
             String uriPrefix,
             String sensorNodeInboundPortURI,
-            String Node_Registre_outboundPortURI,//Node_node_outboundPortURI
-            String Node2_OutboundPortURI,//new
-            String Node2_InboundPortURI,//new
+            String Node_Registre_outboundPortURI,
             HashMap<String, Sensor> sensorsData
             ) throws Exception {
 		super(uriPrefix, 1, 0) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
-	    //new
-	    assert Node2_InboundPortURI != null && !Node2_InboundPortURI.isEmpty() : "InboundPortN2 URI cannot be null or empty!";
 	    this.nodeinfo = (NodeInfo) nodeInfo;
 //	    this.sensorlist = sensorlist;
 	    this.uriPrefix = uriPrefix;
@@ -100,14 +91,10 @@ public class SensorNodeComponent extends AbstractComponent {
 		//node - registre - RegistrationCI
         this.node_registre_port = new SensorNodeRegistreOutboundPort(Node_Registre_outboundPortURI,this);
         this.node_registre_port.localPublishPort();
-        
-      //node - node - SensorNodeP2PCI
-        PortI p2p=new NodeNodeInboundPort(Node2_InboundPortURI,this);
-        p2p.publishPort();
-        this.node2_out_port = new NodeNodeOutboundPort(Node2_OutboundPortURI,this);
-        this.node2_out_port.localPublishPort();
 		
-        if (AbstractCVM.isDistributed) {
+		
+		
+		if (AbstractCVM.isDistributed) {
 			this.getLogger().setDirectory(System.getProperty("user.dir"));
 		} else {
 			this.getLogger().setDirectory(System.getProperty("user.home"));
@@ -116,7 +103,7 @@ public class SensorNodeComponent extends AbstractComponent {
 		this.getTracer().setRelativePosition(0, 2);
 		
 		//le methode de class courant
-		SensorNodeComponent.checkInvariant(this);
+		SensorNodeComponent2.checkInvariant(this);
 		AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
 	
@@ -152,7 +139,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         	     @Override
         	     public void run() {
         	      try {    
-        	       ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(nodeinfo) ;
+        	       ((SensorNodeComponent2)this.getTaskOwner()).sendNodeInfoToRegistre(nodeinfo) ;
         	      } catch (Exception e) {
         	       e.printStackTrace();
         	      }
@@ -223,7 +210,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //		     this.logMessage("neighbours: " + neighbours);
 		     this.logMessage("neighbours:");
 		     for (NodeInfoI neighbour : neighbours) {
-		         this.logMessage("nei!:"+((NodeInfo)neighbour).toString());
+		         this.logMessage(((NodeInfo)neighbour).toString());
 		     }
 	}
 
