@@ -3,9 +3,9 @@ package request;
 import java.util.ArrayList;
 import java.util.Set;
 
-import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import nodes.sensor.Sensor;
+import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import request.ast.Direction;
 import request.ast.Query;
 import request.ast.astBase.ABase;

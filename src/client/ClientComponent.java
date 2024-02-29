@@ -6,12 +6,11 @@ import client.ports.ClientOutboundPort;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
-import fr.sorbonne_u.components.examples.basic_cs.components.URIConsumer;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
+
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import request.Request;
 import request.ast.Query;
@@ -66,9 +65,9 @@ public class ClientComponent extends AbstractComponent {
 		ConnectionInfo connectionInfo = (ConnectionInfo) this.client_registre_port.findByIdentifier(NodeID);
 		if (connectionInfo != null) {
 		String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getURI();
-		this.logMessage("ClientComponent start connect : Uri obtenue to connect :" + InboundPortURI);
+//		this.logMessage("ClientComponent start connect : Uri obtenue to connect :" + InboundPortURI);
 //		try {
-		this.logMessage("Test name class: "+NodeClientConnector.class.getCanonicalName());
+//		this.logMessage("Test name class: "+NodeClientConnector.class.getCanonicalName());
 		this.client_node_port.doConnection(InboundPortURI, NodeClientConnector.class.getCanonicalName());
 //		}catch(Exception e) {
 //			 this.logMessage("Exception occurred during connection: " + e.toString());

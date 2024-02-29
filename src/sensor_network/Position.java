@@ -1,5 +1,7 @@
 package sensor_network;
 
+
+
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import request.ast.Direction;
 
@@ -25,16 +27,12 @@ public class Position implements PositionI {
         throw new IllegalArgumentException("Unsupported PositionI implementation.");
     }
     
-    @Override
-    public fr.sorbonne_u.cps.sensor_network.interfaces.Direction directionFrom(PositionI p) {     
-    	 return null;
-    }
-
     // 根据相对位置返回方向
     //正西属于西北
     //正南属于西南
     //正东属于东南
     //正北属于东北
+    
     public Direction directionFrom_ast(PositionI p) {     
     	  Position other = (Position) p;
           // 判断两点在x轴和y轴的相对位置，并考虑正方向归属的改变
@@ -63,6 +61,36 @@ public class Position implements PositionI {
           }
         throw new IllegalArgumentException("Unsupported PositionI implementation.");
     }
+    
+    //inverse du directionfrom
+    public Direction directionTo_ast(PositionI p) {
+        Position other = (Position) p;
+        // inverse logique du comparaison
+        boolean north = this.y < other.y; 
+        boolean south = this.y > other.y;
+        boolean east = this.x < other.x;
+        boolean west = this.x > other.x; 
+
+        if (north && !east && !west) {
+            return Direction.NE; 
+        } else if (south && !east && !west) {
+            return Direction.SW; 
+        } else if (west && !north && !south) {
+            return Direction.NW; 
+        } else if (east && !north && !south) {
+            return Direction.SE; 
+        } else if (north && east) {
+            return Direction.NE; 
+        } else if (north && west) {
+            return Direction.NW; 
+        } else if (south && east) {
+            return Direction.SE; 
+        } else if (south && west) {
+            return Direction.SW;
+        }
+        throw new IllegalArgumentException("Unsupported PositionI implementation.");
+    }
+
 
     // 判断相对位置
     @Override
@@ -89,7 +117,7 @@ public class Position implements PositionI {
         return this.x < other.x;
     }
 
-    // Getter方法，如果需要
+    // Getter
     public double getX() {
         return x;
     }
@@ -105,4 +133,10 @@ public class Position implements PositionI {
                 ", y=" + y +
                 '}';
     }
+
+	@Override
+	public fr.sorbonne_u.cps.sensor_network.interfaces.Direction directionFrom(PositionI p) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

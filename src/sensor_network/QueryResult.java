@@ -58,6 +58,38 @@ public class QueryResult implements QueryResultI,Serializable{
         return gatheredSensorsValues;
     }
     
+//    @Override
+//    public String toString() {
+//        StringBuilder sb = new StringBuilder();
+//        if (isBooleanRequest) {
+//            sb.append("Boolean Query Result: \n");
+//            if (positiveSensorNodes.isEmpty()) {
+//                sb.append("No positive sensor nodes.");
+//            } else {
+//                sb.append("Positive Sensor Nodes: ");
+//                sb.append(String.join(", ", positiveSensorNodes));
+//            }
+//        }
+//        if (isGatherRequest) {
+//            if (sb.length() > 0) {
+//                sb.append("\n"); // 如果已经有内容，添加换行符
+//            }
+//            sb.append("Gather Query Result: \n");
+//            if (gatheredSensorsValues.isEmpty()) {
+//                sb.append("No sensor data gathered.");
+//            } else {
+//                sb.append("Gathered Sensors Values: [");
+//                ArrayList<String> sensorValues = new ArrayList<>();
+//                for (SensorDataI sensorData : gatheredSensorsValues) {
+//                    sensorValues.add(sensorData.toString()); // 假设SensorDataI也重写了toString方法
+//                }
+//                sb.append(String.join(", ", sensorValues));
+//                sb.append("]");
+//            }
+//        }
+//        return sb.toString();
+//    }
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -78,16 +110,22 @@ public class QueryResult implements QueryResultI,Serializable{
             if (gatheredSensorsValues.isEmpty()) {
                 sb.append("No sensor data gathered.");
             } else {
-                sb.append("Gathered Sensors Values: [");
+                sb.append("Gathered Sensors Values: ");
                 ArrayList<String> sensorValues = new ArrayList<>();
                 for (SensorDataI sensorData : gatheredSensorsValues) {
-                    sensorValues.add(sensorData.toString()); // 假设SensorDataI也重写了toString方法
+                    // 修改此处以满足新的格式要求
+                    String sensorValueString = String.format("[Node ID: %s, Sensor ID: %s, Value: %s]", 
+                        sensorData.getNodeIdentifier(), 
+                        sensorData.getSensorIdentifier(), 
+                        sensorData.getValue().toString());
+                    sensorValues.add(sensorValueString);
                 }
-                sb.append(String.join(", ", sensorValues));
-                sb.append("]");
+                // 使用";"作为分隔符
+                sb.append("[" + String.join(";", sensorValues) + "]");
             }
         }
         return sb.toString();
     }
+
 
 }

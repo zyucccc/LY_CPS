@@ -13,6 +13,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
+
 import nodes.NodeInfo;
 import registre.ports.LookupInboundPort;
 import registre.interfaces.RegistrationCI;
@@ -166,7 +167,7 @@ public class RegistreComponent extends AbstractComponent {
           for (NodeInfoI potentialNeighbour : registeredNodes.values()) {
               // assurer que on compare pas le node it-self
               if (!potentialNeighbour.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
-                  Direction potentialDirection = ((Position)nodeInfo.nodePosition()).directionFrom_ast(potentialNeighbour.nodePosition());
+                  Direction potentialDirection = ((Position)nodeInfo.nodePosition()).directionTo_ast(potentialNeighbour.nodePosition());
                  //on trouve un noeud dans la direction indique
                   if (potentialDirection == d) {
                       double distance = nodeInfo.nodePosition().distance(potentialNeighbour.nodePosition());

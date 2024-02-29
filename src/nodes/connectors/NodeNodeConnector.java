@@ -8,7 +8,9 @@ import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
 
 
+
 public class NodeNodeConnector extends AbstractConnector implements SensorNodeP2PCI{
+	
 
 	@Override
 	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {

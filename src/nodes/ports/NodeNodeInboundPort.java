@@ -23,11 +23,11 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 	}
 
 	@Override
-	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-		/*
-		 * this.getOwner().handleRequest(owner -> { return ((SensorNodeComponent)
-		 * owner).ask4Disconnection(neighbours); });
-		 */
+	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {	
+		  this.getOwner().handleRequest(owner -> { 
+			  ((SensorNodeComponent)owner).ask4Disconnection(neighbour);
+			  return null;
+		  }); 
 	}
 
 	
@@ -44,10 +44,8 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 	public QueryResultI execute(RequestContinuationI request) throws Exception {
 //		return this.getOwner().handleRequest(owner -> {
 //	        ((SensorNodeComponent) owner).execute(request);
-//	        return null; // Since the method is void, we return null.
+//	        return null; 
 //	    });
-		
-
 		return null;
 	}
 

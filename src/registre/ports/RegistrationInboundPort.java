@@ -2,9 +2,7 @@ package registre.ports;
 
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
-
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
-
 import registre.RegistreComponent;
 import registre.interfaces.RegistrationCI;
 import request.ast.Direction;

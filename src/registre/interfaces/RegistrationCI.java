@@ -34,7 +34,6 @@ package registre.interfaces;
 
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
-
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import registre.RegistreComponent;
 import request.ast.Direction;

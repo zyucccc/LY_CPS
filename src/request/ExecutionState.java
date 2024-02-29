@@ -5,11 +5,10 @@ import java.util.Set;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
-//import fr.sorbonne_u.cps.sensor_network.interfaces.*;
-
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import request.ast.Direction;
-import request.interfaces.ExecutionStateI;
+//import request.interfaces.ExecutionStateI;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
@@ -91,8 +90,8 @@ public class ExecutionState implements ExecutionStateI {
     }
     
 
-    @Override
-    public Set<Direction> getDirections() {
+   
+    public Set<Direction> getDirections_ast() {
         return this.directions;
     }
 
@@ -129,22 +128,26 @@ public class ExecutionState implements ExecutionStateI {
     }
 
     // set direction//flooding //
-    public void setDirectional(boolean isDirectional, Set<Direction> directions,int saut) {
+    public void setDirectional( Set<Direction> directions,int saut) {
     	this.isContinuationSet = true;
-        this.isDirectional = isDirectional;
+        this.isDirectional = true;
+        this.isFlooding = false;
         this.directions = directions;
         this.hops = saut;
     }
 
-    public void setFlooding(boolean isFlooding, double maximalDistance, PositionI basePosition) {
+    public void setFlooding(double maximalDistance, PositionI basePosition) {
     	this.isContinuationSet = true;
-    	this.isFlooding = isFlooding;
+    	this.isFlooding = true;
+    	this.isDirectional = false;
         this.maximalDistance = maximalDistance;
         this.floodingBasePosition = (Position) basePosition;
     }
     
     public void setIsContinuationSet() {
     	this.isContinuationSet = true;
+    	this.isDirectional = false;
+    	this.isFlooding = false;
     }
     
     public String toStringContinuation() {
@@ -168,6 +171,12 @@ public class ExecutionState implements ExecutionStateI {
         }
         return sb.toString();
     }
+
+	@Override
+	public Set<fr.sorbonne_u.cps.sensor_network.interfaces.Direction> getDirections() {
+		// TODO Auto-generated method stub
+		return null;
+	}
     
     
 }

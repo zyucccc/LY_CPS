@@ -3,7 +3,7 @@ package cvm;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.helpers.CVMDebugModes;
-import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
+
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
 import nodes.connectors.NodeClientConnector;
@@ -45,10 +45,18 @@ public class CVM extends AbstractCVM {
     protected static final String SensorNode_Registre_OUTBOUND_PORT_URI2 = "node-registre-outbound-uri2";
     
     //SensorNode node
-    protected static final String NODE_P2P_INBOUND_PORT_URI1  = "node2-inbound-uri";
+    protected static final String NODE_P2P_INBOUND_PORT_URI1  = "node1-inbound-uri1";
     protected static final String NODE_P2P_INBOUND_PORT_URI2  = "node2-inbound-uri2";
-    protected static final String SensorNode_Node_OUTBOUND_PORT_URI = "node-node-outbound-uri";
-    protected static final String SensorNode_Node_OUTBOUND_PORT_URI2 = "node-node-outbound-uri2";
+    
+    protected static final String SensorNode_Node_NE_OUTBOUND_PORT_URI1 = "node-node-NE-outbound-uri1";
+    protected static final String SensorNode_Node_NW_OUTBOUND_PORT_URI1 = "node-node-NW-outbound-uri1";
+    protected static final String SensorNode_Node_SE_OUTBOUND_PORT_URI1 = "node-node-SE-outbound-uri1";
+    protected static final String SensorNode_Node_SW_OUTBOUND_PORT_URI1 = "node-node-SW-outbound-uri1";
+    
+    protected static final String SensorNode_Node_NE_OUTBOUND_PORT_URI2 = "node-node-NE-outbound-uri2";
+    protected static final String SensorNode_Node_NW_OUTBOUND_PORT_URI2 = "node-node-NW-outbound-uri2";
+    protected static final String SensorNode_Node_SE_OUTBOUND_PORT_URI2 = "node-node-SE-outbound-uri2";
+    protected static final String SensorNode_Node_SW_OUTBOUND_PORT_URI2 = "node-node-SW-outbound-uri2";
     
     public CVM() throws Exception {
         super();
@@ -115,7 +123,14 @@ public class CVM extends AbstractCVM {
         this.uriSensorNodeURI =
                 AbstractComponent.createComponent(
                     SensorNodeComponent.class.getCanonicalName(),
-                    new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, SENSORNODE_INBOUND_PORT_URI,SensorNode_Registre_OUTBOUND_PORT_URI,SensorNode_Node_OUTBOUND_PORT_URI,NODE_P2P_INBOUND_PORT_URI1 ,sensorsData});
+                    new Object[]{nodeinfo,SENSORNODE_COMPONENT_URI, 
+                    		SENSORNODE_INBOUND_PORT_URI,
+                    		SensorNode_Registre_OUTBOUND_PORT_URI,
+                    		SensorNode_Node_NE_OUTBOUND_PORT_URI1,
+                    		SensorNode_Node_NW_OUTBOUND_PORT_URI1,
+                    		SensorNode_Node_SE_OUTBOUND_PORT_URI1,
+                    		SensorNode_Node_SW_OUTBOUND_PORT_URI1,
+                    		NODE_P2P_INBOUND_PORT_URI1 ,sensorsData});
             assert this.isDeployedComponent(this.uriSensorNodeURI);
             this.toggleTracing(this.uriSensorNodeURI);
             this.toggleLogging(this.uriSensorNodeURI);
@@ -149,7 +164,15 @@ public class CVM extends AbstractCVM {
     this.uriSensorNodeURI2 =
             AbstractComponent.createComponent(
                 SensorNodeComponent.class.getCanonicalName(),
-                new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, SENSORNODE_INBOUND_PORT_URI2,SensorNode_Registre_OUTBOUND_PORT_URI2,SensorNode_Node_OUTBOUND_PORT_URI2,NODE_P2P_INBOUND_PORT_URI2 ,sensorsData2});
+                new Object[]{nodeinfo2,SENSORNODE_COMPONENT_URI2, 
+                		SENSORNODE_INBOUND_PORT_URI2,
+                		SensorNode_Registre_OUTBOUND_PORT_URI2,
+                		SensorNode_Node_NE_OUTBOUND_PORT_URI2,
+                		SensorNode_Node_NW_OUTBOUND_PORT_URI2,
+                		SensorNode_Node_SE_OUTBOUND_PORT_URI2,
+                		SensorNode_Node_SW_OUTBOUND_PORT_URI2,
+                		NODE_P2P_INBOUND_PORT_URI2 
+                		,sensorsData2});
         assert this.isDeployedComponent(this.uriSensorNodeURI2);
         this.toggleTracing(this.uriSensorNodeURI2);
         this.toggleLogging(this.uriSensorNodeURI2);

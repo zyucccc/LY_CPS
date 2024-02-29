@@ -353,7 +353,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 				int nbSauts = ast.getNbSauts();
 				Set<Direction> directions = (Set<Direction>) ast.getDirs().eval(this, data);
 //				Set<Direction> directions = (Set<Direction>) visit(ast.getDirs(),data);			
-				data.setDirectional(true, directions,nbSauts);
+				data.setDirectional(directions,nbSauts);
 			}
 			return null;
 		}
@@ -373,7 +373,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 				PositionI base = (PositionI) ast.getBase().eval(this, data);
 //				PositionI base = (PositionI) visit(ast.getBase(),data);
 	            double distanceMax = ast.getDistanceMax();					
-				data.setFlooding(true, distanceMax,base);
+				data.setFlooding(distanceMax,base);
 			}
 			return null;
 		}
