@@ -13,9 +13,12 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import request.Request;
+import request.ast.Direction;
 import request.ast.Query;
 import request.ast.astCont.DCont;
 import request.ast.astCont.ECont;
+import request.ast.astDirs.FDirs;
+import request.ast.astDirs.RDirs;
 import request.ast.astGather.FGather;
 import request.ast.astQuery.GQuery;
 import sensor_network.ConnectionInfo;
@@ -50,7 +53,7 @@ public class ClientComponent extends AbstractComponent {
 	public void sendRequest() throws Exception{
 		this.logMessage("----------------- Query Resultat ------------------");
 		 this.logMessage("ClientComponent Sending request....");
-		GQuery test = new GQuery(new FGather("temperature"),new ECont());
+		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),1));
         String requestURI = "gather-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
@@ -89,7 +92,7 @@ public class ClientComponent extends AbstractComponent {
             public void run() {
                 try {
                     // essayer de connecter de node indiquee
-                    String NodeID = "node2";
+                    String NodeID = "node1";
                     ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
                     ((ClientComponent)this.getTaskOwner()).sendRequest() ;
                 } catch (Exception e) {

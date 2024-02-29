@@ -42,11 +42,9 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 
 	@Override
 	public QueryResultI execute(RequestContinuationI request) throws Exception {
-//		return this.getOwner().handleRequest(owner -> {
-//	        ((SensorNodeComponent) owner).execute(request);
-//	        return null; 
-//	    });
-		return null;
+		return this.getOwner().handleRequest(owner -> {
+	       return ((SensorNodeComponent) owner).processRequestContinuation(request);
+	    });
 	}
 
 	@Override

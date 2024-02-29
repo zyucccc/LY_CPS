@@ -242,23 +242,51 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		return result;
 	 }
 	
-	public QueryResultI processRequestContinuation(RequestI request) throws Exception{
-		this.logMessage("----------------Receive Query------------------");
+	public void propagerQuery(RequestContinuationI request) throws Exception {
+		this.logMessage("-----------------Propager Query------------------");
+		ExecutionState data = (ExecutionState) request.getExecutionState();
+		if(data.isDirectional()) {
+		Set<Direction> dirs = data.getDirections_ast();
+		  if(!data.noMoreHops()) {
+			  for (Direction dir : dirs) {
+				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
+				  if(selectedOutboundPort.connected()) {
+					  selectedOutboundPort.execute(request);
+				  }
+				}
+		  }
+		}else if(data.isFlooding()){
+	      for(Direction dir : Direction.values()) {
+	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
+	    	  if(selectedOutboundPort.connected()) {
+				  selectedOutboundPort.execute(request);
+			  }
+	      }
+		} else {
+			System.err.println("Erreur type de Cont");
+		}
+//		this.node_node_port.execute(request);
+	}
+	
+	public QueryResultI processRequestContinuation(RequestContinuationI request) throws Exception{
+		this.logMessage("---------------Receive Query Continuation---------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		Interpreter interpreter = new Interpreter();
 		Query<?> query = (Query<?>) request.getQueryCode();
-		ExecutionState data = new ExecutionState(); 
-        data.updateProcessingNode(this.processingNode);
-        
+		ExecutionState data = (ExecutionState) request.getExecutionState();
+        data.updateProcessingNode(this.processingNode);  
         QueryResultI result = (QueryResult) query.eval(interpreter, data);	
+        QueryResultI result_All = data.getCurrentResult();
 		
-		this.logMessage("Calcul Fini: ");
+		this.logMessage("Calcul Fini Cont: ");
 		
-		this.logMessage("Res: " + result);
-		this.logMessage("----------------------------------");
+		this.logMessage("Res Cont de node actuel: " + result);
+		this.logMessage("Res All: " + result_All);
+		this.logMessage("------------------------------------");
 
 		return result;
 	 }
+	
 	
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
 		     this.logMessage("----------------Register------------------");
@@ -377,16 +405,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	     }
 	     this.logMessage("----------------------------------------------");
 	}
-	
-	public void propagerQuery(RequestContinuationI request) throws Exception {
-		this.logMessage("-----------------Propager Query------------------");
-		
-//		this.node_node_port.execute(request);
-	}
-
-//	public QueryResultI execute(RequestContinuationI request) {
-//		this.node_node_port.execute(request)
-//	}
 
 	
 }
