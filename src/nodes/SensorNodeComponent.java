@@ -245,6 +245,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void propagerQuery(RequestContinuationI request) throws Exception {
 		this.logMessage("-----------------Propager Query------------------");
 		ExecutionState data = (ExecutionState) request.getExecutionState();
+		//deal with direction
 		if(data.isDirectional()) {
 		Set<Direction> dirs = data.getDirections_ast();
 		  if(!data.noMoreHops()) {
@@ -255,10 +256,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 				  }
 				}
 		  }
-		}else if(data.isFlooding()){
+		}else 
+			//deal with fooding
+			if(data.isFlooding()){
+				//parpager query a tous les directions
 	      for(Direction dir : Direction.values()) {
 	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
-	    	  if(selectedOutboundPort.connected()) {
+	    	  if(selectedOutboundPort.connected()) {		  
 				  selectedOutboundPort.execute(request);
 			  }
 	      }
@@ -268,15 +272,31 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //		this.node_node_port.execute(request);
 	}
 	
-	public QueryResultI processRequestContinuation(RequestContinuationI request) throws Exception{
+	public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
+		Interpreter interpreter = new Interpreter();
+		ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+		//chaque fois on recevoit un request de flooding
+		//on check si ce node est dans max_distance de propager ce request
+		//si oui ,on continue a collecter les infos de node actuel
+		//si non,on return le res precedent
+		if(data.isFlooding()) {
+			Position actuel_position = (Position) this.nodeinfo.nodePosition();
+			if(!data.withinMaximalDistance(actuel_position)) {
+				return data.getCurrentResult();
+			}
+		}
 		this.logMessage("---------------Receive Query Continuation---------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
-		Interpreter interpreter = new Interpreter();
-		Query<?> query = (Query<?>) request.getQueryCode();
-		ExecutionState data = (ExecutionState) request.getExecutionState();
+		if(data.isDirectional()){
+			data.incrementHops();
+		}	
+		Query<?> query = (Query<?>) requestCont.getQueryCode();
         data.updateProcessingNode(this.processingNode);  
         QueryResultI result = (QueryResult) query.eval(interpreter, data);	
         QueryResultI result_All = data.getCurrentResult();
+        
+        
+        this.propagerQuery(requestCont);
 		
 		this.logMessage("Calcul Fini Cont: ");
 		

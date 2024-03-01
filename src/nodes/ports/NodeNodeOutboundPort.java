@@ -47,6 +47,8 @@ public class NodeNodeOutboundPort extends AbstractOutboundPort implements Sensor
 		
 	}
 	
+	
+	
 	 // 调用连接时，保存节点标识符
     @Override
     public void doConnection(String otherPortURI, ConnectorI connector) throws Exception {
