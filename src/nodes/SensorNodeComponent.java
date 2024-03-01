@@ -210,25 +210,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		ExecutionState data = new ExecutionState(); 
         data.updateProcessingNode(this.processingNode);
         
-//        this.logMessage("Actuel position: " + this.processingNode.getPosition());
-//        this.logMessage("Actuel ProcessingNode" + this.processingNode);
-        
-//        ProcessingNode processingnode2 = (ProcessingNode) data.getProcessingNode();
-        
-//        this.logMessage("Test ProcessingNode" + this.processingNode);
-        
-//        this.logMessage("Test1");
-
-//        if(((GQuery) query).getGather() != null) {
-//        	 this.logMessage("Test_Gather");
-//        }
-//        Gather test_RGather = ((GQuery) query).getGather();
-//        ArrayList<String> result_test_RGather = (ArrayList<String>)interpreter.visit(test_RGather, data);
-//        this.logMessage("Res Gather: " + result_test_RGather);
-        
         QueryResult result = (QueryResult) query.eval(interpreter, data);
-//        this.logMessage("Test query: " + result);
-//        data.addToCurrentResult(result);
+
         //si cest un requestContinuation,propager le request
         if(data.isDirectional() || data.isFlooding()) {
         	RequestContinuation requestCont = new RequestContinuation(request,data);
@@ -289,9 +272,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//si non,on return le res precedent
 		if(data.isFlooding()) {
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
-//			this.logMessage("Test Position:"+actuel_position);
 			if(!data.withinMaximalDistance(actuel_position)) {
-				this.logMessage("Hors distance");
+//				this.logMessage("Hors distance");
 				return data.getCurrentResult();
 			}
 		}
@@ -322,7 +304,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
 		     this.logMessage("----------------Register------------------");
 		     this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
-		     // 调用注册表组件的注册方法
+
 		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
 		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
@@ -332,11 +314,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     }
 		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
-		     this.logMessage("----------------------------------");
-//		     this.logMessage("neighbours:");
-//		     for (NodeInfoI neighbour : neighbours) {
-//		         this.logMessage("neighbour :"+((NodeInfo)neighbour).toString());
-//		     }
+		     this.logMessage("----------------------------------------");
+
 	}
 	
 	public void refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
@@ -352,23 +331,30 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 	         this.logMessage("neighbour de driection "+neighbour.getKey()+" :"+((NodeInfo)neighbour.getValue()).toString());
 	     }
-	     this.logMessage("----------------------------------");
+	     this.logMessage("------------------------------------");
 	}
 	
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
+		this.logMessage(this.nodeinfo.nodeIdentifier()+" receive ask4Connection from "+newNeighbour.nodeIdentifier());
 	    // check direction de newNeighbour
+		System.out.println("TestPosition actuel: "+this.nodeinfo.nodePosition() );
+		System.out.println("TestPosition neighbours: "+newNeighbour.nodePosition() );
 	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
-	    // 检查当前方向的出站端口是否已经连接
+
+	    // check if deja connected
+	    System.out.println("Test1 ");
 	    if (selectedOutboundPort.connected()) {
+	    	System.out.println("Test2 ");
 	        // si on trouve que cet node est deja connecte au newNeighbour,on fait rien et sort fonction
-	        if (!selectedOutboundPort.getConnectedNodePortURI().equals( ((EndPointDescriptor)((NodeInfo)newNeighbour).p2pEndPointInfo()).getURI()  )) {
+//	        if (!selectedOutboundPort.getConnectedNodePortURI().equals( ((EndPointDescriptor)((NodeInfo)newNeighbour).p2pEndPointInfo()).getURI()  )) {
 	            //disconnter d'abord
-	        	selectedOutboundPort.ask4Disconnection(newNeighbour);
-//	            ask4Disconnection();
+//	        	selectedOutboundPort.ask4Disconnection(newNeighbour);
+	    	    selectedOutboundPort.doDisconnection();
 	            // connecter
-	            connecter(direction, selectedOutboundPort, newNeighbour);
-	        }
+	        	System.out.println("Test3 ");
+	            this.connecter(direction, selectedOutboundPort, newNeighbour);
+//	        }
 	    } else {
 	        // si pas de connection pour le outport,on fait connecter
 	        connecter(direction, selectedOutboundPort, newNeighbour);
@@ -381,7 +367,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 
 	    if (selectedOutboundPort.connected()) {
-	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de deconnect:"+neighbour.nodeIdentifier());
+	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de disconnect:"+neighbour.nodeIdentifier());
 	        selectedOutboundPort.doDisconnection();
 	    }
 	}
@@ -402,14 +388,15 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    }
 	}
 	
+	//deleguer les operation de connecter un outport choisi a un neighbour
 	public void connecter(Direction direction,NodeNodeOutboundPort selectedOutboundPort,NodeInfoI newNeighbour) throws Exception {
 	    EndPointDescriptor endpointDescriptor = (EndPointDescriptor) newNeighbour.p2pEndPointInfo();
 	    if (endpointDescriptor != null) {
 	        String neighbourInboundPortURI = endpointDescriptor.getURI();
 	        this.logMessage("SensorNodeComponent :"+ this.nodeinfo.nodeIdentifier() +" start connect : Uri obtenue to connect :" + neighbourInboundPortURI);
-//	        this.logMessage("Test name class: "+NodeNodeConnector.class.getCanonicalName());
+
 	        selectedOutboundPort.doConnection(neighbourInboundPortURI,NodeNodeConnector.class.getCanonicalName());  
-//	        selectedOutboundPort.ask4Connection(this.nodeinfo);
+
 	       this.logMessage("SensorNodeComponent : "+ this.nodeinfo.nodeIdentifier() + ": Connection established with Node :" + newNeighbour.nodeIdentifier());
 	    } else {
 	        throw new Exception("p2pEndPointInfo() did not return an instance of EndPointDescriptor");
@@ -420,15 +407,17 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("----------------Connecter Neighbours-----------------");
 		this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] start connecter ses neighbours");
 	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
-//	    	 this.ask4Connection(neighbour.getKey(),neighbour.getValue());
-	    	 Direction direction = neighbour.getKey();
+
+	    	    Direction direction = neighbour.getKey();
 	    	    NodeInfoI neighbourInfo = neighbour.getValue();
 	    	    NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(direction);
 	    	    if (selectedOutboundPort != null) {
 	    	        try {
-                     this.connecter(direction,selectedOutboundPort, neighbourInfo);
+	    	        	nodeinfo = this.nodeinfo;
+                       this.connecter(direction,selectedOutboundPort, neighbourInfo);
+	    	           selectedOutboundPort.ask4Connection(nodeinfo);
 	    	        } catch (Exception e) {
-	    	            System.err.println(this.nodeinfo.nodeIdentifier() + "Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
+	    	            System.err.println("connecterNeighbours: "+this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
 	    	        }
 	    	    } else {
 	    	        System.err.println("No outbound port selected for direction " + direction);

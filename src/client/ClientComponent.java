@@ -54,7 +54,7 @@ public class ClientComponent extends AbstractComponent {
         AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
     }
-	public void sendRequest() throws Exception{
+	public void sendRequest_direction() throws Exception{
 		this.logMessage("----------------- Query Resultat (Direction) ------------------");
 		 this.logMessage("ClientComponent Sending request Direction....");
 		 int nb_saut = 1;
@@ -112,7 +112,7 @@ public class ClientComponent extends AbstractComponent {
                     // essayer de connecter de node indiquee
                     String NodeID = "node1";
                     ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
-                    ((ClientComponent)this.getTaskOwner()).sendRequest() ;
+                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
                     ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
                
                 } catch (Exception e) {

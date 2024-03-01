@@ -60,14 +60,9 @@ public class ClientOutboundPort extends	AbstractOutboundPort implements Requesti
 		assert	otherPortURI != null && ccname != null :
 					new PreconditionException("otherPortURI != null && "
 													+ "ccname != null");
-//		assert	this.isPublished()  :
-//			new PreconditionException("isPublished() && "
-//											+ "!connected()");
-////		assert	 !this.connected() :
-//			new PreconditionException("isPublished() && "
-//											+ "!connected()");
-		System.out.println("Test connected: " + this.connected());
-		System.out.println("Test1 ");
+
+//		System.out.println("Test connected: " + this.connected());
+//		System.out.println("Test1 ");
 
 		// FIXME: should use a proper state machine model to implement the
 		// connection and disconnection protocol
@@ -75,7 +70,7 @@ public class ClientOutboundPort extends	AbstractOutboundPort implements Requesti
 		Class<?> cc = Class.forName(ccname);
 		Constructor<?> c = cc.getConstructor(new Class<?>[]{});
 		ConnectorI connector = (ConnectorI) c.newInstance();
-		System.out.println("Test2 ");
+//		System.out.println("Test2 ");
 		this.doConnection(otherPortURI, connector);
 	}
 	
@@ -101,16 +96,16 @@ public class ClientOutboundPort extends	AbstractOutboundPort implements Requesti
 		// connected to a plain inbound port, be it remote or local, the
 		// connection is done one way on the client (outbound port) side,
 		// so we need only to connect this side.
-		System.out.println("Test3 ");
+//		System.out.println("Test3 ");
 		this.doMyConnection(otherPortURI, connector);
-		System.out.println("Test4 ");
+//		System.out.println("Test4 ");
 		AbstractOutboundPort.checkImplementationInvariant(this);
 		AbstractOutboundPort.checkInvariant(this);
 		AbstractPort.checkImplementationInvariant(this);
 		AbstractPort.checkInvariant(this);
 		assert	this.connected() :
 					new PostconditionException("connected()");
-		System.out.println("Test5 ");
+//		System.out.println("Test5 ");
 	}
 
 	/**

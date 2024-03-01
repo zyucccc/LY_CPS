@@ -219,37 +219,37 @@ public class CVM extends AbstractCVM {
         this.toggleTracing(this.uriSensorNodeURI3);
         this.toggleLogging(this.uriSensorNodeURI3);
         
-//      //init donnees for 4ieme node
-//    	Position position4 = new Position(1,-1);
-//    	EndPointDescriptor uriinfo4 = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI4);
-//    	EndPointDescriptor p2pEndPoint4 = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI4);
-//
-// 		NodeInfo nodeinfo4 = new NodeInfo("node4",position4,50.0,p2pEndPoint4,uriinfo4);
-//        Sensor SensorData_temperature4 = new Sensor("node4","temperature",double.class,90.0);
-//        Sensor SensorData_fumée4 = new Sensor("node4","fumée",Boolean.class,true);
-// 		
-//        HashMap<String, Sensor> sensorsData4 = new HashMap<String, Sensor>();
-//        
-//        sensorsData4.put("temperature",SensorData_temperature4);
-//        sensorsData4.put("fumée",SensorData_fumée4);
-//        
-//        // creer 4 ieme sensorNode Component
-//        
-//    this.uriSensorNodeURI4 =
-//            AbstractComponent.createComponent(
-//                SensorNodeComponent.class.getCanonicalName(),
-//                new Object[]{nodeinfo4,SENSORNODE_COMPONENT_URI4, 
-//                		SENSORNODE_INBOUND_PORT_URI4,
-//                		SensorNode_Registre_OUTBOUND_PORT_URI4,
-//                		SensorNode_Node_NE_OUTBOUND_PORT_URI4,
-//                		SensorNode_Node_NW_OUTBOUND_PORT_URI4,
-//                		SensorNode_Node_SE_OUTBOUND_PORT_URI4,
-//                		SensorNode_Node_SW_OUTBOUND_PORT_URI4,
-//                		NODE_P2P_INBOUND_PORT_URI4 
-//                		,sensorsData4});
-//        assert this.isDeployedComponent(this.uriSensorNodeURI4);
-//        this.toggleTracing(this.uriSensorNodeURI4);
-//        this.toggleLogging(this.uriSensorNodeURI4);
+      //init donnees for 4ieme node
+    	Position position4 = new Position(1,-1);
+    	EndPointDescriptor uriinfo4 = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI4);
+    	EndPointDescriptor p2pEndPoint4 = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI4);
+
+ 		NodeInfo nodeinfo4 = new NodeInfo("node4",position4,3.0,p2pEndPoint4,uriinfo4);
+        Sensor SensorData_temperature4 = new Sensor("node4","temperature",double.class,90.0);
+        Sensor SensorData_fumée4 = new Sensor("node4","fumée",Boolean.class,true);
+ 		
+        HashMap<String, Sensor> sensorsData4 = new HashMap<String, Sensor>();
+        
+        sensorsData4.put("temperature",SensorData_temperature4);
+        sensorsData4.put("fumée",SensorData_fumée4);
+        
+        // creer 4 ieme sensorNode Component
+        
+    this.uriSensorNodeURI4 =
+            AbstractComponent.createComponent(
+                SensorNodeComponent.class.getCanonicalName(),
+                new Object[]{nodeinfo4,SENSORNODE_COMPONENT_URI4, 
+                		SENSORNODE_INBOUND_PORT_URI4,
+                		SensorNode_Registre_OUTBOUND_PORT_URI4,
+                		SensorNode_Node_NE_OUTBOUND_PORT_URI4,
+                		SensorNode_Node_NW_OUTBOUND_PORT_URI4,
+                		SensorNode_Node_SE_OUTBOUND_PORT_URI4,
+                		SensorNode_Node_SW_OUTBOUND_PORT_URI4,
+                		NODE_P2P_INBOUND_PORT_URI4 
+                		,sensorsData4});
+        assert this.isDeployedComponent(this.uriSensorNodeURI4);
+        this.toggleTracing(this.uriSensorNodeURI4);
+        this.toggleLogging(this.uriSensorNodeURI4);
         
         
         // creer client Component
@@ -305,11 +305,11 @@ public class CVM extends AbstractCVM {
             	Registre_RegistrationCI_INBOUND_PORT_URI,
                 NodeRegistreConnector.class.getCanonicalName());
         //conection node4 to registre
-//        this.doPortConnection(
-//            	this.uriSensorNodeURI4,
-//            	SensorNode_Registre_OUTBOUND_PORT_URI4,
-//            	Registre_RegistrationCI_INBOUND_PORT_URI,
-//                NodeRegistreConnector.class.getCanonicalName());
+        this.doPortConnection(
+            	this.uriSensorNodeURI4,
+            	SensorNode_Registre_OUTBOUND_PORT_URI4,
+            	Registre_RegistrationCI_INBOUND_PORT_URI,
+                NodeRegistreConnector.class.getCanonicalName());
         //conection node2 to node1
 //        this.doPortConnection(
 //            	this.uriSensorNodeURI2,

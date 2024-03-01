@@ -227,22 +227,25 @@
 ////        this.logMessage("Res Gather: " + result_test_RGather);
 //        
 //        QueryResult result = (QueryResult) query.eval(interpreter, data);
+////        this.logMessage("Test query: " + result);
 ////        data.addToCurrentResult(result);
 //        //si cest un requestContinuation,propager le request
 //        if(data.isDirectional() || data.isFlooding()) {
 //        	RequestContinuation requestCont = new RequestContinuation(request,data);
-//        	this.propagerQuery(requestCont);
+//        	result =  (QueryResult) this.propagerQuery(requestCont);
 //        }
+//        
+//        QueryResult result_all = (QueryResult) data.getCurrentResult();
 //        
 //		this.logMessage("Calcul Fini: ");
 //		
-//		this.logMessage("Resultat du query: " + result);
+//		this.logMessage("Resultat du query: " + result_all);
 //		this.logMessage("--------------------------------------");
 //
-//		return result;
+//		return result_all;
 //	 }
 //	
-//	public void propagerQuery(RequestContinuationI request) throws Exception {
+//	public QueryResultI propagerQuery(RequestContinuationI request) throws Exception {
 //		this.logMessage("-----------------Propager Query------------------");
 //		ExecutionState data = (ExecutionState) request.getExecutionState();
 //		//deal with direction
@@ -252,7 +255,8 @@
 //			  for (Direction dir : dirs) {
 //				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 //				  if(selectedOutboundPort.connected()) {
-//					  selectedOutboundPort.execute(request);
+//					 QueryResultI res = selectedOutboundPort.execute(request);
+//					 return res;
 //				  }
 //				}
 //		  }
@@ -262,13 +266,17 @@
 //				//parpager query a tous les directions
 //	      for(Direction dir : Direction.values()) {
 //	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
+//	    	  
 //	    	  if(selectedOutboundPort.connected()) {		  
-//				  selectedOutboundPort.execute(request);
+//	    		  QueryResultI res = selectedOutboundPort.execute(request);
+//				  return res;
 //			  }
 //	      }
 //		} else {
 //			System.err.println("Erreur type de Cont");
+//			return null;
 //		}
+//		return null;
 ////		this.node_node_port.execute(request);
 //	}
 //	
@@ -281,10 +289,13 @@
 //		//si non,on return le res precedent
 //		if(data.isFlooding()) {
 //			Position actuel_position = (Position) this.nodeinfo.nodePosition();
+////			this.logMessage("Test Position:"+actuel_position);
 //			if(!data.withinMaximalDistance(actuel_position)) {
+//				this.logMessage("Hors distance");
 //				return data.getCurrentResult();
 //			}
 //		}
+//		
 //		this.logMessage("---------------Receive Query Continuation---------------");
 //		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 //		if(data.isDirectional()){
