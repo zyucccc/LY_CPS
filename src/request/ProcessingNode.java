@@ -50,6 +50,17 @@ public class ProcessingNode implements ProcessingNodeI {
     public SensorDataI getSensorData(String sensorIdentifier) {
         return this.sensorsData.get(sensorIdentifier);
     }
+    
+    public void updateSensorData_int(String sensorIdentifier, int newValue) {
+        Sensor oldSensor = this.sensorsData.get(sensorIdentifier);
+        if (oldSensor != null) {
+            Sensor newSensor = new Sensor(oldSensor.getNodeIdentifier(), 
+                                          oldSensor.getSensorIdentifier(), 
+                                          oldSensor.getType(), 
+                                          newValue);
+            this.sensorsData.put(sensorIdentifier, newSensor);
+        } 
+    }
 
     
     public void addNeighbour(NodeInfoI neighbour) {

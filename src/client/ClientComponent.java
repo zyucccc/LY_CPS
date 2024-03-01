@@ -147,7 +147,15 @@ public class ClientComponent extends AbstractComponent {
 	    public void finalise() throws Exception {
 		 this.logMessage("stopping Client component.") ;
 		 this.printExecutionLogOnFile("Client");
+		 
+		 if (this.client_node_port.connected()) {
+	            this.client_node_port.doDisconnection();
+	        }
 	     this.client_node_port.unpublishPort();
+	     if (this.client_registre_port.connected()) {
+	            this.client_registre_port.doDisconnection();
+	        }
+	     this.client_registre_port.unpublishPort();
 	     super.finalise();
 	    }
 	
