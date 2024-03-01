@@ -15,12 +15,16 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import request.Request;
 import request.ast.Direction;
 import request.ast.Query;
+import request.ast.astBase.RBase;
+import request.ast.astBexp.SBExp;
 import request.ast.astCont.DCont;
 import request.ast.astCont.ECont;
+import request.ast.astCont.FCont;
 import request.ast.astDirs.FDirs;
 import request.ast.astDirs.RDirs;
 import request.ast.astGather.FGather;
 import request.ast.astQuery.GQuery;
+import request.ast.astQuery.BQuery;
 import sensor_network.ConnectionInfo;
 import sensor_network.EndPointDescriptor;
 import sensor_network.QueryResult;
@@ -51,11 +55,24 @@ public class ClientComponent extends AbstractComponent {
 		AbstractComponent.checkInvariant(this);
     }
 	public void sendRequest() throws Exception{
-		this.logMessage("----------------- Query Resultat ------------------");
-		 this.logMessage("ClientComponent Sending request....");
+		this.logMessage("----------------- Query Resultat (Direction) ------------------");
+		 this.logMessage("ClientComponent Sending request Direction....");
 		 int nb_saut = 1;
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
         String requestURI = "gather-uri";	      
+        RequestI request = new Request(requestURI,test,false,null);
+        QueryResult result = (QueryResult) this.client_node_port.execute(request);
+        this.logMessage("ClientComponentr Receive resultat de request:");
+        this.logMessage("" + result);
+        this.logMessage("----------------------------------");
+	}
+	
+	public void sendRequest_flooding() throws Exception{
+		this.logMessage("----------------- Query Resultat (Flooding)------------------");
+		 this.logMessage("ClientComponent Sending request Flooding....");
+		double max_distance =8.0;
+		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
+        String requestURI = "gather-uri2";	      
         RequestI request = new Request(requestURI,test,false,null);
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
         this.logMessage("ClientComponentr Receive resultat de request:");
@@ -96,6 +113,8 @@ public class ClientComponent extends AbstractComponent {
                     String NodeID = "node1";
                     ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
                     ((ClientComponent)this.getTaskOwner()).sendRequest() ;
+                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
+               
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

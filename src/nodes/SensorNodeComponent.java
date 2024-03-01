@@ -227,11 +227,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //        this.logMessage("Res Gather: " + result_test_RGather);
         
         QueryResult result = (QueryResult) query.eval(interpreter, data);
+//        this.logMessage("Test query: " + result);
 //        data.addToCurrentResult(result);
         //si cest un requestContinuation,propager le request
         if(data.isDirectional() || data.isFlooding()) {
         	RequestContinuation requestCont = new RequestContinuation(request,data);
-        	this.propagerQuery(requestCont);
+        	result =  (QueryResult) this.propagerQuery(requestCont);
         }
         
 		this.logMessage("Calcul Fini: ");
@@ -242,7 +243,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		return result;
 	 }
 	
-	public void propagerQuery(RequestContinuationI request) throws Exception {
+	public QueryResultI propagerQuery(RequestContinuationI request) throws Exception {
 		this.logMessage("-----------------Propager Query------------------");
 		ExecutionState data = (ExecutionState) request.getExecutionState();
 		//deal with direction
@@ -252,7 +253,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			  for (Direction dir : dirs) {
 				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 				  if(selectedOutboundPort.connected()) {
-					  selectedOutboundPort.execute(request);
+					 QueryResultI res = selectedOutboundPort.execute(request);
+					 return res;
 				  }
 				}
 		  }
@@ -263,12 +265,15 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	      for(Direction dir : Direction.values()) {
 	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 	    	  if(selectedOutboundPort.connected()) {		  
-				  selectedOutboundPort.execute(request);
+	    		  QueryResultI res = selectedOutboundPort.execute(request);
+				  return res;
 			  }
 	      }
 		} else {
 			System.err.println("Erreur type de Cont");
+			return null;
 		}
+		return null;
 //		this.node_node_port.execute(request);
 	}
 	
@@ -281,10 +286,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//si non,on return le res precedent
 		if(data.isFlooding()) {
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
+//			this.logMessage("Test Position:"+actuel_position);
 			if(!data.withinMaximalDistance(actuel_position)) {
+				this.logMessage("Hors distance");
 				return data.getCurrentResult();
 			}
 		}
+		
 		this.logMessage("---------------Receive Query Continuation---------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		if(data.isDirectional()){
