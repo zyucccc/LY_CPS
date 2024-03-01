@@ -235,12 +235,14 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         	result =  (QueryResult) this.propagerQuery(requestCont);
         }
         
+        QueryResult result_all = (QueryResult) data.getCurrentResult();
+        
 		this.logMessage("Calcul Fini: ");
 		
-		this.logMessage("Resultat du query: " + result);
+		this.logMessage("Resultat du query: " + result_all);
 		this.logMessage("--------------------------------------");
 
-		return result;
+		return result_all;
 	 }
 	
 	public QueryResultI propagerQuery(RequestContinuationI request) throws Exception {
@@ -264,6 +266,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 				//parpager query a tous les directions
 	      for(Direction dir : Direction.values()) {
 	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
+	    	  
 	    	  if(selectedOutboundPort.connected()) {		  
 	    		  QueryResultI res = selectedOutboundPort.execute(request);
 				  return res;

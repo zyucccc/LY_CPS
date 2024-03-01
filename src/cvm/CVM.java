@@ -220,7 +220,7 @@ public class CVM extends AbstractCVM {
         this.toggleLogging(this.uriSensorNodeURI3);
         
 //      //init donnees for 4ieme node
-//    	Position position4 = new Position(10,10);
+//    	Position position4 = new Position(1,-1);
 //    	EndPointDescriptor uriinfo4 = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI4);
 //    	EndPointDescriptor p2pEndPoint4 = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI4);
 //
