@@ -13,6 +13,7 @@ public class Request implements RequestI {
     private final Query<?> query;
     private final boolean isAsynchronous;
     private final ConnectionInfoI clientConnectionInfo;
+    
 
     public Request(String requestURI, Query<?> query, boolean isAsynchronous, ConnectionInfoI clientConnectionInfo) {
         this.requestURI = requestURI;
@@ -40,4 +41,7 @@ public class Request implements RequestI {
     public ConnectionInfoI clientConnectionInfo() {
         return this.clientConnectionInfo;
     }
+    
+    
+    
 }

@@ -1,6 +1,10 @@
 package request;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
@@ -10,10 +14,12 @@ import request.ast.Query;
 public class RequestContinuation  extends Request implements RequestContinuationI {
     private static final long serialVersionUID = 1L;
 	private ExecutionState executionState; // 执行状态
+	private Set<NodeInfoI> visitedNodes = new HashSet<>();
 
     public RequestContinuation(String requestURI, Query<?> query, boolean isAsynchronous, ConnectionInfoI clientConnectionInfo, ExecutionState executionState) {
         super(requestURI, query, isAsynchronous, clientConnectionInfo);
         this.executionState = executionState;
+//         this.visitedNodes = new HashSet<>();
     }
     
     public RequestContinuation(RequestI request,ExecutionState data) {
@@ -31,5 +37,13 @@ public class RequestContinuation  extends Request implements RequestContinuation
     
     public void setExecutionState(ExecutionState executionState) {
         this.executionState = executionState;
+    }
+ 
+    public Set<NodeInfoI> getVisitedNodes() {
+        return visitedNodes;
+    }
+
+    public void addVisitedNode(NodeInfoI nodeInfo) {
+        visitedNodes.add(nodeInfo);
     }
 }

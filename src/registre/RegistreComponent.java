@@ -185,7 +185,7 @@ public class RegistreComponent extends AbstractComponent {
 
     private boolean isConnectable(NodeInfoI newNode, NodeInfoI existingNode) {
         double distance = newNode.nodePosition().distance(existingNode.nodePosition());
-        return distance <= newNode.nodeRange() || distance <= existingNode.nodeRange();
+        return distance <= newNode.nodeRange() && distance <= existingNode.nodeRange();
     }
     
     public boolean unregister(String nodeIdentifier) throws Exception {
@@ -201,7 +201,7 @@ public class RegistreComponent extends AbstractComponent {
 //service offered : LookupCI
     
     public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
-    	this.logMessage("------------Receive Client Request---------------");
+    	this.logMessage("------------Receive Client Request (By Id)---------------");
     	this.logMessage("RegistreComponent receive request de Client : findByIdentifer() avec NodeID :"+ sensorNodeId);
     	NodeInfo nodeInfo = registeredNodes.get(sensorNodeId);
         if (nodeInfo != null) {

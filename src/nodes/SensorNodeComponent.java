@@ -88,7 +88,7 @@ public class SensorNodeComponent extends AbstractComponent {
             HashMap<String, Sensor> sensorsData
             ) throws Exception {
 		
-		super(uriPrefix, 1, 1) ;
+		super(uriPrefix, 2, 1) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
@@ -210,13 +210,14 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		ExecutionState data = new ExecutionState(); 
         data.updateProcessingNode(this.processingNode);
         
-        QueryResult result = (QueryResult) query.eval(interpreter, data);
-
-        //si cest un requestContinuation,propager le request
-        if(data.isDirectional() || data.isFlooding()) {
-        	RequestContinuation requestCont = new RequestContinuation(request,data);
-        	result =  (QueryResult) this.propagerQuery(requestCont);
-        }
+         query.eval(interpreter, data);
+         
+         if(data.isDirectional()||data.isFlooding()) {
+        	 RequestContinuation requestCont = new RequestContinuation(request,data);
+        	 //pour enregister les nodes deja traite pour ce request
+        	 requestCont.addVisitedNode(this.nodeinfo);
+        	 this.propagerQuery(requestCont);
+         }
         
         QueryResult result_all = (QueryResult) data.getCurrentResult();
         
@@ -228,7 +229,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		return result_all;
 	 }
 	
-	public QueryResultI propagerQuery(RequestContinuationI request) throws Exception {
+	public void propagerQuery(RequestContinuationI request) throws Exception {
 		this.logMessage("-----------------Propager Query------------------");
 		ExecutionState data = (ExecutionState) request.getExecutionState();
 		//deal with direction
@@ -238,8 +239,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			  for (Direction dir : dirs) {
 				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 				  if(selectedOutboundPort.connected()) {
-					 QueryResultI res = selectedOutboundPort.execute(request);
-					 return res;
+					   selectedOutboundPort.execute(request);
 				  }
 				}
 		  }
@@ -248,22 +248,27 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			if(data.isFlooding()){
 				//parpager query a tous les directions
 	      for(Direction dir : Direction.values()) {
-	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
-	    	  
-	    	  if(selectedOutboundPort.connected()) {		  
-	    		  QueryResultI res = selectedOutboundPort.execute(request);
-				  return res;
+//	    	  this.logMessage("Sending request floding dir :"+dir);
+	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir); 
+	    	  if(selectedOutboundPort.connected()) {	
+	    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request flooding dir :"+dir);
+	    		   selectedOutboundPort.execute(request);
 			  }
 	      }
 		} else {
 			System.err.println("Erreur type de Cont");
-			return null;
 		}
-		return null;
-//		this.node_node_port.execute(request);
 	}
 	
+	
 	public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
+		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
+		//pour eviter le Probleme: deadlock caused by Call_back
+		//ex: node 1 send request flooding to node2,node2 send encore request to node1
+		if (((RequestContinuation)requestCont).getVisitedNodes().contains(this.nodeinfo)) {
+            return null;
+        }
+		((RequestContinuation) requestCont).addVisitedNode(this.nodeinfo);
 		Interpreter interpreter = new Interpreter();
 		ExecutionState data = (ExecutionState) requestCont.getExecutionState();
 		//chaque fois on recevoit un request de flooding
@@ -271,25 +276,33 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//si oui ,on continue a collecter les infos de node actuel
 		//si non,on return le res precedent
 		if(data.isFlooding()) {
+			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request");
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
 			if(!data.withinMaximalDistance(actuel_position)) {
-//				this.logMessage("Hors distance");
+				this.logMessage("Hors distance");
 				return data.getCurrentResult();
 			}
+//			this.logMessage(this.nodeinfo.nodeIdentifier()+"passe test 2");
 		}
-		
+		 if(data.isDirectional()){
+				data.incrementHops();
+			}
 		this.logMessage("---------------Receive Query Continuation---------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
-		if(data.isDirectional()){
-			data.incrementHops();
-		}	
 		Query<?> query = (Query<?>) requestCont.getQueryCode();
         data.updateProcessingNode(this.processingNode);  
         QueryResultI result = (QueryResult) query.eval(interpreter, data);	
         QueryResultI result_All = data.getCurrentResult();
+       
         
+		this.propagerQuery(requestCont);
+//    	if(data.isDirectional()){
+//			data.incrementHops();
+//			this.propagerQuery_Direction(requestCont);
+//		}else if(data.isFlooding()) {
+//			
+//		}
         
-        this.propagerQuery(requestCont);
 		
 		this.logMessage("Calcul Fini Cont: ");
 		
@@ -415,7 +428,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	        try {
 	    	        	nodeinfo = this.nodeinfo;
                        this.connecter(direction,selectedOutboundPort, neighbourInfo);
-	    	           selectedOutboundPort.ask4Connection(nodeinfo);
+//	    	           selectedOutboundPort.ask4Connection(nodeinfo);
 	    	        } catch (Exception e) {
 	    	            System.err.println("connecterNeighbours: "+this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
 	    	        }
