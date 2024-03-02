@@ -54,7 +54,7 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public void addToCurrentResult(QueryResultI result) {
-    	// 如果当前没有结果，则直接将新结果设置为当前结果
+    	// si res actuel null,set result new current 
         if (this.currentResult == null) {
             this.currentResult = (QueryResult) result;
         } else {
@@ -103,7 +103,11 @@ public class ExecutionState implements ExecutionStateI {
     public int Hops_Left() {
     	return this.hops-this.current_hops;
     }
-
+    
+    public int getHops()
+    {
+    	return this.hops;
+    }
     @Override
     public void incrementHops() {
         this.current_hops++;
@@ -121,6 +125,11 @@ public class ExecutionState implements ExecutionStateI {
         }
         return false;
     }
+    
+    public double getMaximalDistance() {
+    	return this.maximalDistance;
+    }
+   
     
     // check continuation Vide
     public boolean isVide() {
