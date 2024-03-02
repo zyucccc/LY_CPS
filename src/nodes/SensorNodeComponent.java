@@ -275,7 +275,9 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		ExecutionState data = new ExecutionState(); 
         data.updateProcessingNode(this.processingNode);
         
-         query.eval(interpreter, data);
+        QueryResult result = (QueryResult) query.eval(interpreter, data);
+		this.logMessage("----------------Res Actuel----------------------");
+		this.logMessage("Resultat du query: " + result);
          
          if(data.isDirectional()||data.isFlooding()) {
         	 RequestContinuation requestCont = new RequestContinuation(request,data);
@@ -286,8 +288,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         
         QueryResult result_all = (QueryResult) data.getCurrentResult();
         
-		this.logMessage("Calcul Fini: ");
-		
+//		this.logMessage("Calcul Fini: ");
+		this.logMessage("------------------Res ALL----------------------");
 		this.logMessage("Resultat du query: " + result_all);
 		this.logMessage("--------------------------------------");
 
@@ -358,15 +360,16 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		Query<?> query = (Query<?>) requestCont.getQueryCode();
         data.updateProcessingNode(this.processingNode);  
         QueryResultI result = (QueryResult) query.eval(interpreter, data);	
-        QueryResultI result_All = data.getCurrentResult();
+		this.logMessage("----------------Res Actuel----------------------");
+		this.logMessage("Res Cont de node actuel: " + result);
+//        QueryResultI result_All = data.getCurrentResult();
        
         
 		this.propagerQuery(requestCont);     
 		
-		this.logMessage("Calcul Fini Cont: ");
-		
-		this.logMessage("Res Cont de node actuel: " + result);
-		this.logMessage("Res All: " + result_All);
+//		this.logMessage("Calcul Fini Cont: ");
+//		this.logMessage("------------------Res ALL----------------------");
+//		this.logMessage("Res All: " + result_All);
 		this.logMessage("------------------------------------");
 
 		return result;
