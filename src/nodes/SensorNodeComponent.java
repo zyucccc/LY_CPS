@@ -1,5 +1,7 @@
 package nodes;
 
+//neighbours:把check range放进find neighbour中
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;

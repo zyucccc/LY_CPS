@@ -1,4 +1,6 @@
 package cvm;
+//uri 会自动生成
+// plus automatique
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
