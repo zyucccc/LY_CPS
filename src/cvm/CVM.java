@@ -28,7 +28,8 @@ public class CVM extends AbstractCVM {
     protected static final String CLIENT_COMPONENT_URI = "my-client-uri";
     
    
-    
+    //Client asyn Request InboundPort
+    String Client_AsynReqest_Inbound_PORT_URI="client-asynRequest-inbound-uri";
 
     protected static final String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri";
     //Registre inbound port
@@ -54,6 +55,7 @@ public class CVM extends AbstractCVM {
         String SensorNode_Node_NW_OUTBOUND_PORT_URI = "node-node-NW-outbound-uri" +baseId;
         String SensorNode_Node_SE_OUTBOUND_PORT_URI = "node-node-SE-outbound-uri1"+baseId;
         String SensorNode_Node_SW_OUTBOUND_PORT_URI = "node-node-SW-outbound-uri1"+baseId;
+       
         return new String[] {SENSORNODE_COMPONENT_URI
         		, NODE_P2P_INBOUND_PORT_URI
         		, SENSORNODE_INBOUND_PORT_URI
@@ -110,7 +112,7 @@ public class CVM extends AbstractCVM {
             this.uriClientURI =
                 AbstractComponent.createComponent(
                     ClientComponent.class.getCanonicalName(),
-                    new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI});
+                    new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI});
             assert this.isDeployedComponent(this.uriClientURI);
             this.toggleTracing(this.uriClientURI);
             this.toggleLogging(this.uriClientURI);

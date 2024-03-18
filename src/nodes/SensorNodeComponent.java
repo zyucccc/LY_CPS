@@ -359,6 +359,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		 if(data.isDirectional()){
 				data.incrementHops();
 			}
+		 
 		this.logMessage("---------------Receive Query Continuation---------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		Query<?> query = (Query<?>) requestCont.getQueryCode();

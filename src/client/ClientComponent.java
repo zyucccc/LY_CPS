@@ -2,15 +2,18 @@ package client;
 
 import java.util.concurrent.TimeUnit;
 
+import client.ports.ClientAsynRequestInboundPort;
 import client.ports.ClientOutboundPort;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.components.ports.PortI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-
+import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import request.Request;
 import request.ast.Direction;
@@ -26,19 +29,27 @@ import request.ast.astGather.FGather;
 import request.ast.astQuery.GQuery;
 import request.ast.astQuery.BQuery;
 import sensor_network.ConnectionInfo;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import sensor_network.EndPointDescriptor;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.connectors.NodeClientConnector;
+import nodes.ports.SensorNodeInboundPort;
 
 @RequiredInterfaces(required = {RequestingCI.class,LookupCI.class})
+@OfferedInterfaces(offered = {RequestResultCI.class})
 public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_node_port;
 	protected ClientRegistreOutboundPort client_registre_port;
 	
-	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI) throws Exception {
+	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI) throws Exception {
 //        super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
 		super(uri, 0, 1);
+		
+		//publish InboundPort
+		 PortI InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
+		 InboundPort_AsynRequest.publishPort();
+		
         // init port (required interface)
         this.client_node_port = new ClientOutboundPort(Client_Node_outboundPortURI, this);
         //publish port(an outbound port is always local)
