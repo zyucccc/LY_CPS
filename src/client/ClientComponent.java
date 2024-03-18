@@ -119,7 +119,7 @@ public class ClientComponent extends AbstractComponent {
                     e.printStackTrace();
                 }
             }
-        }, 3000, TimeUnit.MILLISECONDS); 
+        }, 5000, TimeUnit.MILLISECONDS); 
     }
 	
 	 @Override

@@ -97,15 +97,15 @@ public class RegistreComponent extends AbstractComponent {
         // ajoute new nodeid - nodeinfo dans hashmao
         this.registeredNodes.put(nodeInfo.nodeIdentifier(), (NodeInfo) nodeInfo);
         
-        Set<NodeInfoI> neighbours = findNeighboursInAllDirections((NodeInfo) nodeInfo);
+        Set<NodeInfoI> neighbours_possible = findNeighboursInAllDirections((NodeInfo) nodeInfo);
        
         //check range
-//        Set<NodeInfoI> neighbours = new HashSet<>();
-//        for (NodeInfoI possibleNeighbour : neighbours_possible) {
-//            if (isConnectable(nodeInfo, possibleNeighbour)) {
-//                neighbours.add((NodeInfo) possibleNeighbour);
-//            }
-//        }
+        Set<NodeInfoI> neighbours = new HashSet<>();
+        for (NodeInfoI possibleNeighbour : neighbours_possible) {
+            if (isConnectable(nodeInfo, possibleNeighbour)) {
+                neighbours.add((NodeInfo) possibleNeighbour);
+            }
+        }
        
         
         assert neighbours.stream().allMatch(n -> n != null) : "All returned nodes must be non-null.";
