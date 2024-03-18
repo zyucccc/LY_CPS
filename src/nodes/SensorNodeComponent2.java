@@ -1,5 +1,7 @@
 //package nodes;
 //
+////neighbours:把check range放进find neighbour中
+//
 //import java.util.ArrayList;
 //import java.util.HashMap;
 //import java.util.HashSet;
@@ -63,7 +65,6 @@
 //	protected NodeNodeOutboundPort node_node_NW_Outport;
 //	protected NodeNodeOutboundPort node_node_SE_Outport;
 //	protected NodeNodeOutboundPort node_node_SW_Outport;
-////	protected Set<NodeInfoI> neighbours;
 //	protected Map<Direction,NodeInfoI> neighbours;
 //	
 //	protected static void	checkInvariant(SensorNodeComponent c)
@@ -88,7 +89,7 @@
 //            HashMap<String, Sensor> sensorsData
 //            ) throws Exception {
 //		
-//		super(uriPrefix, 1, 1) ;
+//		super(uriPrefix, 4, 2) ;
 //		assert nodeInfo != null : "NodeInfo cannot be null!";
 //		//inboudporturi for client
 //	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
@@ -153,24 +154,64 @@
 //			new PostconditionException("The component must have a "
 //					+ "port published with URI " + sensorNodeInboundPortURI);
 //	}
+//	//mise a jour les donnees de sensors
+//	protected void startSensorDataUpdateTask() {
+//	    // mise a jour par 8 secs
+//	    long delay = 8_000; // milliseconde
+//
+//	    this.scheduleTaskWithFixedDelay(
+//	        new AbstractComponent.AbstractTask() {
+//	            @Override
+//	            public void run() {
+//	                // mise a jour temperature
+//	                String sensorIdentifier = "temperature";
+//	                // generer new val temperature
+//	                int newTemperature = generateNewTemperatureValue();
+//	                ((SensorNodeComponent)this.getTaskOwner()).processingNode.updateSensorData_int(sensorIdentifier, (int) newTemperature);
+//	                logMessage("Temperature sensor updated with new value: " + newTemperature);
+//	            }
+//	        },
+//	        delay, // init
+//	        delay, // 
+//	        TimeUnit.MILLISECONDS);
+//	}
+//
+//	protected int generateNewTemperatureValue() {
+//	    // rand val entre -2 et 2
+//	    int change = (int) ((Math.random() * 4) - 2);
+//	    // init val 35
+//	    return 35 + change;
+//	}
 //	
-//	
-//	//life
+//	/////////////////////////////////////////////////////////////////////////////////////////////
+//	//Cycle life
 //	@Override
 //    public void start() throws ComponentStartException {
 //		this.logMessage("SensorNodeComponent "+ this.nodeinfo.nodeIdentifier() +" started.");
 //        super.start();
-//        this.runTask(
-//        	    new AbstractComponent.AbstractTask() {
-//        	     @Override
-//        	     public void run() {
-//        	      try {    
-//        	       ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo) ;
-//        	      } catch (Exception e) {
-//        	       e.printStackTrace();
-//        	      }
-//        	     }
-//        	    }) ;  
+//        //exectuer parallels
+//        //2 threads
+//        this.runTask(new AbstractComponent.AbstractTask() {
+//            @Override
+//            public void run() {
+//                try {    
+//                    ((SensorNodeComponent)this.getTaskOwner()).startSensorDataUpdateTask();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
+//
+//        this.runTask(new AbstractComponent.AbstractTask() {
+//            @Override
+//            public void run() {
+//                try {    
+//                    ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
 //    }
 //	
 //	@Override
@@ -194,6 +235,30 @@
 //	 @Override
 //	    public void finalise() throws Exception {
 //	        this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] stopping...");
+//	        if (this.node_node_NE_Outport.connected()) {
+//	            this.node_node_NE_Outport.doDisconnection();
+//	        }
+//	        this.node_node_NE_Outport.unpublishPort();
+//
+//	        if (this.node_node_NW_Outport.connected()) {
+//	            this.node_node_NW_Outport.doDisconnection();
+//	        }
+//	        this.node_node_NW_Outport.unpublishPort();
+//
+//	        if (this.node_node_SE_Outport.connected()) {
+//	            this.node_node_SE_Outport.doDisconnection();
+//	        }
+//	        this.node_node_SE_Outport.unpublishPort();
+//
+//	        if (this.node_node_SW_Outport.connected()) {
+//	            this.node_node_SW_Outport.doDisconnection();
+//	        }
+//	        this.node_node_SW_Outport.unpublishPort();
+//
+//	        if (this.node_registre_port.connected()) {
+//	            this.node_registre_port.doDisconnection();
+//	        }
+//	        this.node_registre_port.unpublishPort();
 //	        super.finalise();
 //	    }
 //	 
@@ -202,6 +267,8 @@
 //	        super.shutdown();
 //	    }
 //	 
+//	 //////////////////////////////////////////////////////////////////////////////////////
+//	 //deal with les request recu par le client
 //	public QueryResultI processRequest(RequestI request) throws Exception{
 //		this.logMessage("----------------Receive Query------------------");
 //		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
@@ -210,42 +277,29 @@
 //		ExecutionState data = new ExecutionState(); 
 //        data.updateProcessingNode(this.processingNode);
 //        
-////        this.logMessage("Actuel position: " + this.processingNode.getPosition());
-////        this.logMessage("Actuel ProcessingNode" + this.processingNode);
-//        
-////        ProcessingNode processingnode2 = (ProcessingNode) data.getProcessingNode();
-//        
-////        this.logMessage("Test ProcessingNode" + this.processingNode);
-//        
-////        this.logMessage("Test1");
-//
-////        if(((GQuery) query).getGather() != null) {
-////        	 this.logMessage("Test_Gather");
-////        }
-////        Gather test_RGather = ((GQuery) query).getGather();
-////        ArrayList<String> result_test_RGather = (ArrayList<String>)interpreter.visit(test_RGather, data);
-////        this.logMessage("Res Gather: " + result_test_RGather);
-//        
 //        QueryResult result = (QueryResult) query.eval(interpreter, data);
-////        this.logMessage("Test query: " + result);
-////        data.addToCurrentResult(result);
-//        //si cest un requestContinuation,propager le request
-//        if(data.isDirectional() || data.isFlooding()) {
-//        	RequestContinuation requestCont = new RequestContinuation(request,data);
-//        	result =  (QueryResult) this.propagerQuery(requestCont);
-//        }
+//		this.logMessage("----------------Res Actuel----------------------");
+//		this.logMessage("Resultat du query: " + result);
+//         
+//         if(data.isDirectional()||data.isFlooding()) {
+//        	 RequestContinuation requestCont = new RequestContinuation(request,data);
+//        	 //pour enregister les nodes deja traite pour ce request
+//        	 requestCont.addVisitedNode(this.nodeinfo);
+//        	 this.propagerQuery(requestCont);
+//         }
 //        
 //        QueryResult result_all = (QueryResult) data.getCurrentResult();
 //        
-//		this.logMessage("Calcul Fini: ");
-//		
+////		this.logMessage("Calcul Fini: ");
+//		this.logMessage("------------------Res ALL----------------------");
 //		this.logMessage("Resultat du query: " + result_all);
 //		this.logMessage("--------------------------------------");
 //
 //		return result_all;
 //	 }
 //	
-//	public QueryResultI propagerQuery(RequestContinuationI request) throws Exception {
+//	//continuer a propager les request continuation
+//	public void propagerQuery(RequestContinuationI request) throws Exception {
 //		this.logMessage("-----------------Propager Query------------------");
 //		ExecutionState data = (ExecutionState) request.getExecutionState();
 //		//deal with direction
@@ -255,8 +309,7 @@
 //			  for (Direction dir : dirs) {
 //				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 //				  if(selectedOutboundPort.connected()) {
-//					 QueryResultI res = selectedOutboundPort.execute(request);
-//					 return res;
+//					   selectedOutboundPort.execute(request);
 //				  }
 //				}
 //		  }
@@ -265,22 +318,27 @@
 //			if(data.isFlooding()){
 //				//parpager query a tous les directions
 //	      for(Direction dir : Direction.values()) {
-//	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
-//	    	  
-//	    	  if(selectedOutboundPort.connected()) {		  
-//	    		  QueryResultI res = selectedOutboundPort.execute(request);
-//				  return res;
+////	    	  this.logMessage("Sending request floding dir :"+dir);
+//	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir); 
+//	    	  if(selectedOutboundPort.connected()) {	
+//	    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request flooding dir :"+dir);
+//	    		   selectedOutboundPort.execute(request);
 //			  }
 //	      }
 //		} else {
 //			System.err.println("Erreur type de Cont");
-//			return null;
 //		}
-//		return null;
-////		this.node_node_port.execute(request);
 //	}
 //	
+//	//deal with les request continuation recu par les nodes
 //	public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
+//		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
+//		//pour eviter le Probleme: deadlock caused by Call_back
+//		//ex: node 1 send request flooding to node2,node2 send encore request to node1
+//		if (((RequestContinuation)requestCont).getVisitedNodes().contains(this.nodeinfo)) {
+//            return null;
+//        }
+//		((RequestContinuation) requestCont).addVisitedNode(this.nodeinfo);
 //		Interpreter interpreter = new Interpreter();
 //		ExecutionState data = (ExecutionState) requestCont.getExecutionState();
 //		//chaque fois on recevoit un request de flooding
@@ -288,31 +346,32 @@
 //		//si oui ,on continue a collecter les infos de node actuel
 //		//si non,on return le res precedent
 //		if(data.isFlooding()) {
+//			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request");
 //			Position actuel_position = (Position) this.nodeinfo.nodePosition();
-////			this.logMessage("Test Position:"+actuel_position);
 //			if(!data.withinMaximalDistance(actuel_position)) {
 //				this.logMessage("Hors distance");
 //				return data.getCurrentResult();
 //			}
+////			this.logMessage(this.nodeinfo.nodeIdentifier()+"passe test 2");
 //		}
-//		
+//		 if(data.isDirectional()){
+//				data.incrementHops();
+//			}
 //		this.logMessage("---------------Receive Query Continuation---------------");
 //		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
-//		if(data.isDirectional()){
-//			data.incrementHops();
-//		}	
 //		Query<?> query = (Query<?>) requestCont.getQueryCode();
 //        data.updateProcessingNode(this.processingNode);  
 //        QueryResultI result = (QueryResult) query.eval(interpreter, data);	
-//        QueryResultI result_All = data.getCurrentResult();
-//        
-//        
-//        this.propagerQuery(requestCont);
-//		
-//		this.logMessage("Calcul Fini Cont: ");
-//		
+//		this.logMessage("----------------Res Actuel----------------------");
 //		this.logMessage("Res Cont de node actuel: " + result);
-//		this.logMessage("Res All: " + result_All);
+////        QueryResultI result_All = data.getCurrentResult();
+//       
+//        
+//		this.propagerQuery(requestCont);     
+//		
+////		this.logMessage("Calcul Fini Cont: ");
+////		this.logMessage("------------------Res ALL----------------------");
+////		this.logMessage("Res All: " + result_All);
 //		this.logMessage("------------------------------------");
 //
 //		return result;
@@ -322,7 +381,7 @@
 //	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
 //		     this.logMessage("----------------Register------------------");
 //		     this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
-//		     // 调用注册表组件的注册方法
+//
 //		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 //		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
 //		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
@@ -332,13 +391,13 @@
 //		     }
 //		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 //		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
-//		     this.logMessage("----------------------------------");
-////		     this.logMessage("neighbours:");
-////		     for (NodeInfoI neighbour : neighbours) {
-////		         this.logMessage("neighbour :"+((NodeInfo)neighbour).toString());
-////		     }
+//		     this.logMessage("----------------------------------------");
+//
 //	}
 //	
+//	//apres que tous les nodes se register dans Registre
+//	//on regraichir pour obetnir les infos de neighbours
+//	//car au debut,les infos de neighbours retourne par register() sont incomplete
 //	public void refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
 //		this.logMessage("--------------Actuel neighbours:--------------");
 //		this.logMessage("SensorNodeComponent"+ nodeInfo.nodeIdentifier() +" : actuel neighbours: " );
@@ -352,23 +411,29 @@
 //	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 //	         this.logMessage("neighbour de driection "+neighbour.getKey()+" :"+((NodeInfo)neighbour.getValue()).toString());
 //	     }
-//	     this.logMessage("----------------------------------");
+//	     this.logMessage("------------------------------------");
 //	}
 //	
+//	/////////////////////////////////////////////////////////////////////////////////////////////////
+//	// fonctions Pour connection entre Nodes
 //	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
+//		this.logMessage(this.nodeinfo.nodeIdentifier()+" receive ask4Connection from "+newNeighbour.nodeIdentifier());
 //	    // check direction de newNeighbour
+//		System.out.println("TestPosition actuel: "+this.nodeinfo.nodePosition() );
+//		System.out.println("TestPosition neighbours: "+newNeighbour.nodePosition() );
 //	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
 //	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
-//	    // 检查当前方向的出站端口是否已经连接
+//
+//	    // check if deja connected
+//	    System.out.println("Test1 ");
 //	    if (selectedOutboundPort.connected()) {
+//	    	System.out.println("Test2 ");
 //	        // si on trouve que cet node est deja connecte au newNeighbour,on fait rien et sort fonction
-//	        if (!selectedOutboundPort.getConnectedNodePortURI().equals( ((EndPointDescriptor)((NodeInfo)newNeighbour).p2pEndPointInfo()).getURI()  )) {
 //	            //disconnter d'abord
-//	        	selectedOutboundPort.ask4Disconnection(newNeighbour);
-////	            ask4Disconnection();
+//	    	    selectedOutboundPort.doDisconnection();
 //	            // connecter
-//	            connecter(direction, selectedOutboundPort, newNeighbour);
-//	        }
+//	        	System.out.println("Test3 ");
+//	            this.connecter(direction, selectedOutboundPort, newNeighbour);
 //	    } else {
 //	        // si pas de connection pour le outport,on fait connecter
 //	        connecter(direction, selectedOutboundPort, newNeighbour);
@@ -381,11 +446,12 @@
 //	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 //
 //	    if (selectedOutboundPort.connected()) {
-//	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de deconnect:"+neighbour.nodeIdentifier());
+//	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de disconnect:"+neighbour.nodeIdentifier());
 //	        selectedOutboundPort.doDisconnection();
 //	    }
 //	}
 //
+//	//retourne les outport correspondant selon le direction donnee
 //	private NodeNodeOutboundPort getOutboundPortByDirection(Direction direction) {
 //	    // choose  correct outport by direction
 //	    switch (direction) {
@@ -402,14 +468,15 @@
 //	    }
 //	}
 //	
+//	//deleguer les operation de connecter un outport choisi a un neighbour
 //	public void connecter(Direction direction,NodeNodeOutboundPort selectedOutboundPort,NodeInfoI newNeighbour) throws Exception {
 //	    EndPointDescriptor endpointDescriptor = (EndPointDescriptor) newNeighbour.p2pEndPointInfo();
 //	    if (endpointDescriptor != null) {
 //	        String neighbourInboundPortURI = endpointDescriptor.getURI();
 //	        this.logMessage("SensorNodeComponent :"+ this.nodeinfo.nodeIdentifier() +" start connect : Uri obtenue to connect :" + neighbourInboundPortURI);
-////	        this.logMessage("Test name class: "+NodeNodeConnector.class.getCanonicalName());
+//
 //	        selectedOutboundPort.doConnection(neighbourInboundPortURI,NodeNodeConnector.class.getCanonicalName());  
-////	        selectedOutboundPort.ask4Connection(this.nodeinfo);
+//
 //	       this.logMessage("SensorNodeComponent : "+ this.nodeinfo.nodeIdentifier() + ": Connection established with Node :" + newNeighbour.nodeIdentifier());
 //	    } else {
 //	        throw new Exception("p2pEndPointInfo() did not return an instance of EndPointDescriptor");
@@ -420,15 +487,20 @@
 //		this.logMessage("----------------Connecter Neighbours-----------------");
 //		this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] start connecter ses neighbours");
 //	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
-////	    	 this.ask4Connection(neighbour.getKey(),neighbour.getValue());
-//	    	 Direction direction = neighbour.getKey();
+//
+//	    	    Direction direction = neighbour.getKey();
 //	    	    NodeInfoI neighbourInfo = neighbour.getValue();
 //	    	    NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(direction);
 //	    	    if (selectedOutboundPort != null) {
 //	    	        try {
-//                     this.connecter(direction,selectedOutboundPort, neighbourInfo);
+//	    	        	nodeinfo = this.nodeinfo;
+//	    	           if(selectedOutboundPort.connected()) {
+//	    	        	   selectedOutboundPort.doDisconnection();
+//	    	           }
+//                       this.connecter(direction,selectedOutboundPort, neighbourInfo);
+////	    	           selectedOutboundPort.ask4Connection(nodeinfo);
 //	    	        } catch (Exception e) {
-//	    	            System.err.println(this.nodeinfo.nodeIdentifier() + "Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
+//	    	            System.err.println("connecterNeighbours: "+this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
 //	    	        }
 //	    	    } else {
 //	    	        System.err.println("No outbound port selected for direction " + direction);

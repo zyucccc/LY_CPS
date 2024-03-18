@@ -97,15 +97,15 @@ public class RegistreComponent extends AbstractComponent {
         // ajoute new nodeid - nodeinfo dans hashmao
         this.registeredNodes.put(nodeInfo.nodeIdentifier(), (NodeInfo) nodeInfo);
         
-        Set<NodeInfoI> neighbours_possible = findNeighboursInAllDirections((NodeInfo) nodeInfo);
-        Set<NodeInfoI> neighbours = new HashSet<>();
-        
+        Set<NodeInfoI> neighbours = findNeighboursInAllDirections((NodeInfo) nodeInfo);
+       
         //check range
-        for (NodeInfoI possibleNeighbour : neighbours_possible) {
-            if (isConnectable(nodeInfo, possibleNeighbour)) {
-                neighbours.add((NodeInfo) possibleNeighbour);
-            }
-        }
+//        Set<NodeInfoI> neighbours = new HashSet<>();
+//        for (NodeInfoI possibleNeighbour : neighbours_possible) {
+//            if (isConnectable(nodeInfo, possibleNeighbour)) {
+//                neighbours.add((NodeInfo) possibleNeighbour);
+//            }
+//        }
        
         
         assert neighbours.stream().allMatch(n -> n != null) : "All returned nodes must be non-null.";
@@ -119,6 +119,8 @@ public class RegistreComponent extends AbstractComponent {
         return neighbours;
     }
     
+    
+    //inutile
     public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
 //   	 this.logMessage("RegistreComponent receive request: refraichir_register()by: "+ nodeInfo.nodeIdentifier());
        if (nodeInfo == null || !registered(nodeInfo.nodeIdentifier())) {
@@ -172,7 +174,8 @@ public class RegistreComponent extends AbstractComponent {
                   if (potentialDirection == d) {
                       double distance = nodeInfo.nodePosition().distance(potentialNeighbour.nodePosition());
                       //&& distance <= nodeInfo.nodeRange() Ici on check pas le contraint de range,on le fait dans register boucle
-                      if (distance < closestDistance ) {
+                      //on check si la distance est dans le portee des 2 ranges
+                      if (distance < closestDistance && isConnectable(nodeInfo,potentialNeighbour)) {
                           closestNeighbour = (NodeInfo) potentialNeighbour;
                           closestDistance = distance;
                       }

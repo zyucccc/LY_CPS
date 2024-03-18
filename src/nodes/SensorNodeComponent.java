@@ -167,8 +167,9 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	                String sensorIdentifier = "temperature";
 	                // generer new val temperature
 	                int newTemperature = generateNewTemperatureValue();
+	                //Mettre en commentaire pour tester
 	                ((SensorNodeComponent)this.getTaskOwner()).processingNode.updateSensorData_int(sensorIdentifier, (int) newTemperature);
-	                logMessage("Temperature sensor updated with new value: " + newTemperature);
+//	                logMessage("Temperature sensor updated with new value: " + newTemperature);
 	            }
 	        },
 	        delay, // init
@@ -222,7 +223,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
             @Override
             public void run() {
                 try {
-                ((SensorNodeComponent)this.getTaskOwner()).refraichir_neighbours(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
+                	
+//                ((SensorNodeComponent)this.getTaskOwner()).refraichir_neighbours(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
                 ((SensorNodeComponent)this.getTaskOwner()).connecterNeighbours();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -385,10 +387,17 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
 		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
+		     
 		     for (NodeInfoI neighbour : neighbours) {
 		    	 Direction dir = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
 		    	 this.neighbours.put(dir, neighbour);
 		     }
+		     this.logMessage("--------------Register() neighbours:--------------");
+		     this.logMessage("neighbours:");
+		     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
+		         this.logMessage("neighbour de driection "+neighbour.getKey()+" :"+((NodeInfo)neighbour.getValue()).toString());
+		     }
+		     
 		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
 		     this.logMessage("----------------------------------------");
@@ -498,7 +507,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	        	   selectedOutboundPort.doDisconnection();
 	    	           }
                        this.connecter(direction,selectedOutboundPort, neighbourInfo);
-//	    	           selectedOutboundPort.ask4Connection(nodeinfo);
+	    	           selectedOutboundPort.ask4Connection(nodeinfo);
 	    	        } catch (Exception e) {
 	    	            System.err.println("connecterNeighbours: "+this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
 	    	        }
