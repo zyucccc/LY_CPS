@@ -1,6 +1,5 @@
 package nodes;
 
-//neighbours:把check range放进find neighbour中
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import client.ClientComponent;
+import client.connectors.ClientAsynRequestConnector;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
@@ -23,7 +23,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import registre.interfaces.RegistrationCI;
@@ -33,6 +33,7 @@ import nodes.connectors.NodeClientConnector;
 import nodes.connectors.NodeNodeConnector;
 import nodes.ports.NodeNodeInboundPort;
 import nodes.ports.NodeNodeOutboundPort;
+import nodes.ports.SensorNodeAsynRequestOutboundPort;
 import nodes.ports.SensorNodeInboundPort;
 import nodes.ports.SensorNodeRegistreOutboundPort;
 import nodes.sensor.Sensor;
@@ -47,12 +48,13 @@ import request.ast.astQuery.BQuery;
 import request.ast.astQuery.GQuery;
 import request.ast.interfaces.IASTvisitor;
 import request.ast.interpreter.Interpreter;
+import sensor_network.ConnectionInfo;
 import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
-@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class})
+@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class})
 @OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
 public class SensorNodeComponent extends AbstractComponent {
 	protected NodeInfo nodeinfo;
@@ -65,6 +67,10 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected NodeNodeOutboundPort node_node_NW_Outport;
 	protected NodeNodeOutboundPort node_node_SE_Outport;
 	protected NodeNodeOutboundPort node_node_SW_Outport;
+	//outbound port for AsynRequest
+	protected SensorNodeAsynRequestOutboundPort node_asynRequest_Outport;
+	
+	
 	protected Map<Direction,NodeInfoI> neighbours;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
@@ -86,7 +92,8 @@ public class SensorNodeComponent extends AbstractComponent {
             String node_node_SE_OutboundPortURI,
             String node_node_SW_OutboundPortURI,
             String node_node_InboundPortURI,//P2P node to node Inbound Port
-            HashMap<String, Sensor> sensorsData
+            HashMap<String, Sensor> sensorsData,
+            String sensorNodeAsyn_OutboundPortURI
             ) throws Exception {
 		
 		super(uriPrefix, 4, 2) ;
@@ -126,6 +133,10 @@ public class SensorNodeComponent extends AbstractComponent {
         this.node_node_SE_Outport.localPublishPort();
         this.node_node_SW_Outport = new NodeNodeOutboundPort(node_node_SW_OutboundPortURI,this);
         this.node_node_SW_Outport.localPublishPort();
+        
+        //node async request outbound port
+        this.node_asynRequest_Outport = new SensorNodeAsynRequestOutboundPort(sensorNodeAsyn_OutboundPortURI,this);
+        this.node_asynRequest_Outport.localPublishPort();
 		
         if (AbstractCVM.isDistributed) {
 			this.getLogger().setDirectory(System.getProperty("user.dir"));
@@ -172,8 +183,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //	                logMessage("Temperature sensor updated with new value: " + newTemperature);
 	            }
 	        },
-	        delay, // init
-	        delay, // 
+	        delay, // init delay
+	        delay, // delay entre 2 task
 	        TimeUnit.MILLISECONDS);
 	}
 
@@ -299,6 +310,36 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 
 		return result_all;
 	 }
+	 //////////////////////////////////////////////////////////////////////////////////////
+	 //deal with les request Async recu par le client
+	public void processRequest_Async(RequestI request) throws Exception{
+		this.logMessage("----------------Receive Query Async------------------");
+		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request Async");	
+		Interpreter interpreter = new Interpreter();
+		Query<?> query = (Query<?>) request.getQueryCode();
+		ExecutionState data = new ExecutionState(); 
+        data.updateProcessingNode(this.processingNode);
+        
+        QueryResult result = (QueryResult) query.eval(interpreter, data);
+		this.logMessage("----------------Res Actuel----------------------");
+		this.logMessage("Resultat du query: " + result);
+         
+         if(data.isDirectional()||data.isFlooding()) {
+        	 RequestContinuation requestCont = new RequestContinuation(request,data);
+        	 //pour enregister les nodes deja traite pour ce request
+        	 requestCont.addVisitedNode(this.nodeinfo);
+        	 this.propagerQuery(requestCont);
+         }else{
+        	 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
+        	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getURI();
+        	 if(this.node_asynRequest_Outport.connected()) {
+        		 this.node_asynRequest_Outport.doDisconnection();
+        	 }
+        	 this.node_asynRequest_Outport.doConnection(InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
+        	 QueryResult result_all = (QueryResult) data.getCurrentResult();
+        	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
+         }    
+	}
 	
 	//continuer a propager les request continuation
 	public void propagerQuery(RequestContinuationI request) throws Exception {

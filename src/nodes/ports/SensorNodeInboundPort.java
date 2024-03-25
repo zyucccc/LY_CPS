@@ -1,5 +1,6 @@
 package nodes.ports;
 
+import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
@@ -28,9 +29,18 @@ public class SensorNodeInboundPort extends	AbstractInboundPort implements Reques
 
 	@Override
 	public void executeAsync(RequestI request) throws Exception {
-		// TODO Auto-generated method stub
-		
+	    this.getOwner().runTask(new AbstractComponent.AbstractTask() {
+	        @Override
+	        public void run() {
+	            try {
+	                ((SensorNodeComponent)getOwner()).processRequest_Async(request);
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    });
 	}
+
 	
 
 }

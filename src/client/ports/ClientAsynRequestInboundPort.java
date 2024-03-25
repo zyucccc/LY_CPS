@@ -21,9 +21,16 @@ public class ClientAsynRequestInboundPort extends AbstractInboundPort implements
 
     @Override
     public void acceptRequestResult(String requestURI, QueryResultI result) throws Exception {
-//        this.getOwner().handleRequest(owner -> {
-//            ((ClientComponent)owner).handleReceivedRequestResult(requestURI, result);
-//            return null; // Since the method does not return anything.
-//        });
+        this.getOwner().runTask(new AbstractComponent.AbstractTask() {
+            @Override
+            public void run() {
+                try {
+                    ((ClientComponent)getOwner()).acceptRequestResult(requestURI, result);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
+
 }

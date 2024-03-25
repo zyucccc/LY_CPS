@@ -55,7 +55,9 @@ public class CVM extends AbstractCVM {
         String SensorNode_Node_NW_OUTBOUND_PORT_URI = "node-node-NW-outbound-uri" +baseId;
         String SensorNode_Node_SE_OUTBOUND_PORT_URI = "node-node-SE-outbound-uri1"+baseId;
         String SensorNode_Node_SW_OUTBOUND_PORT_URI = "node-node-SW-outbound-uri1"+baseId;
-       
+       //asyn outbound port uri for Sensor node
+        String sensorNodeAsyn_OutboundPortURI = "sensornode-async-outbound-uri" + baseId;
+        
         return new String[] {SENSORNODE_COMPONENT_URI
         		, NODE_P2P_INBOUND_PORT_URI
         		, SENSORNODE_INBOUND_PORT_URI
@@ -63,7 +65,8 @@ public class CVM extends AbstractCVM {
         		,SensorNode_Node_NE_OUTBOUND_PORT_URI
         		,SensorNode_Node_NW_OUTBOUND_PORT_URI
         		,SensorNode_Node_SE_OUTBOUND_PORT_URI
-        		,SensorNode_Node_SW_OUTBOUND_PORT_URI};
+        		,SensorNode_Node_SW_OUTBOUND_PORT_URI
+        		,sensorNodeAsyn_OutboundPortURI};
     }
 
     public CVM() throws Exception {
@@ -143,17 +146,20 @@ public class CVM extends AbstractCVM {
      		        new Position(1.0, -1.0)
      		    };
      		double[] temperatures = {35.0, 40.0, 10.0, 90.0};
+     		double[] ranges = {50.0, 50.0, 50.0, 3.0};
      	    boolean[] smokes = {false, true, true, true};
+     	    // creer des composants
      		 for(int i = 0; i < 4; i++) {
      			 //les uris de noeud
      			 String[] uris = generateNodeAndPortsURIs();
      			Position position = positions[i];
      			double tempera = temperatures[i];
      			boolean smoke = smokes[i];
+     			double range = ranges[i];
      			 //Position position = new Position(Math.random() * 100, Math.random() * 100); // 示例：随机生成位置
      			EndPointDescriptor uriinfo = new EndPointDescriptor(uris[2]);
          		EndPointDescriptor p2pEndPoint = new EndPointDescriptor(uris[1]);
-         		NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,50.0,p2pEndPoint,uriinfo);
+         		NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,uriinfo);
          		Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,tempera);
                 Sensor SensorData_fumée = new Sensor("node"+(i+1),"fumée",Boolean.class,smoke);
                 HashMap<String, Sensor> sensorsData = new HashMap<String, Sensor>();
@@ -186,7 +192,9 @@ public class CVM extends AbstractCVM {
                             		uris[5],
                             		uris[6],
                             		uris[7],
-                            		uris[1] ,sensorsData});
+                            		uris[1] ,
+                            		sensorsData,
+                            		uris[8]});
                     assert this.isDeployedComponent(this.uriSensorNodeURI);
                     this.toggleTracing(this.uriSensorNodeURI);
                     this.toggleLogging(this.uriSensorNodeURI);

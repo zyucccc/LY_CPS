@@ -10,14 +10,12 @@ public class NodeClientConnector extends AbstractConnector implements Requesting
 	@Override
     public QueryResultI execute(RequestI request) throws Exception {
 		//deleguer a sensor node
-        // 将调用转发给服务端实现
         return ((RequestingCI)this.offering).execute(request);
     }
 
     @Override
     public void executeAsync(RequestI request) throws Exception {
     	//deleguer a sensor node
-        // 将异步调用转发给服务端实现
         ((RequestingCI)this.offering).executeAsync(request);
     }
     

@@ -41,6 +41,7 @@ import nodes.ports.SensorNodeInboundPort;
 public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_node_port;
 	protected ClientRegistreOutboundPort client_registre_port;
+	protected String ClientAsyncInboundPortURI = null;
 	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI) throws Exception {
 //        super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
@@ -59,31 +60,37 @@ public class ClientComponent extends AbstractComponent {
         this.client_registre_port = new ClientRegistreOutboundPort(Client_Registre_outboundPortURI,this);
         this.client_registre_port.localPublishPort();
         
+        //Async port URI
+        this.ClientAsyncInboundPortURI = Client_AsynRequest_inboundPortURI;
+        
         this.getTracer().setTitle("client") ;
 		this.getTracer().setRelativePosition(0, 0) ;
         
         AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
     }
+	
+	//Parti Sync Send request:
 	public void sendRequest_direction() throws Exception{
 		this.logMessage("----------------- Query Resultat (Direction) ------------------");
 		 this.logMessage("ClientComponent Sending request Direction....");
 		 int nb_saut = 1;
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
-        String requestURI = "gather-uri";	      
+        String requestURI = "gather-request-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
         this.logMessage("ClientComponentr Receive resultat de request:");
         this.logMessage("" + result);
         this.logMessage("----------------------------------");
 	}
+        
 	
 	public void sendRequest_flooding() throws Exception{
 		this.logMessage("----------------- Query Resultat (Flooding)------------------");
 		 this.logMessage("ClientComponent Sending request Flooding....");
 		double max_distance =8.0;
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
-        String requestURI = "gather-uri2";	      
+        String requestURI = "flood-request-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
         this.logMessage("ClientComponentr Receive resultat de request:");
@@ -112,6 +119,31 @@ public class ClientComponent extends AbstractComponent {
 		this.logMessage("----------------------------------");
 	}
 	
+	//////////////////////////////////////////////////////////////////////////////
+	// Partie Async
+	public void sendRequest_direction_Asyn()throws Exception{
+        if(this.ClientAsyncInboundPortURI!=null) {
+    	this.logMessage("----------------- Query Request Async (Direction) ------------------");
+   		this.logMessage("ClientComponent Sending Request Async Direction....");
+		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
+        ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
+        int nb_saut = 1;
+//		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
+        GQuery test = new GQuery(new FGather("temperature"),new ECont());
+        String requestURI = "gather-request-uri";	      
+        RequestI request = new Request(requestURI,test,true,connection_info);
+        this.client_node_port.executeAsync(request);
+        
+        }else {
+        	System.err.println("ClientAsyncInboundPortURI NULL");
+        }	
+	}
+	
+	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
+		this.logMessage("-----------------Receive Request Async Resultat ------------------");
+		this.logMessage("Receive resultat du request: "+requestURI + "\n Query Result: " + result );
+	}
+	
 	@Override
     public void start() throws ComponentStartException {
 		this.logMessage("ClientComponent started.");
@@ -123,8 +155,13 @@ public class ClientComponent extends AbstractComponent {
                     // essayer de connecter de node indiquee
                     String NodeID = "node1";
                     ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
-                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
-                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
+                    
+                    //request Sync
+//                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
+//                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
+                    
+                    //request Async        
+                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn() ;
                
                 } catch (Exception e) {
                     e.printStackTrace();

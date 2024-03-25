@@ -34,7 +34,7 @@ public class RegistreComponent extends AbstractComponent {
     private HashMap<String, NodeInfo> registeredNodes;
 
     protected RegistreComponent(String uriPrefix,String registrationInboundPortURI, String lookupInboundPortURI) throws Exception {
-        super(uriPrefix , 1, 0); // 假设有一个调度线程池，没有普通线程池
+        super(uriPrefix , 1, 0); // 1 schedule thread
         this.registrationInboundPortURI = registrationInboundPortURI;
         this.lookupInboundPortURI = lookupInboundPortURI;
         
@@ -44,11 +44,9 @@ public class RegistreComponent extends AbstractComponent {
         //init hashmap
         this.registeredNodes = new HashMap<>();
         
-        // 创建并发布Registration服务的入站端口
         RegistrationInboundPort registrationPort = new RegistrationInboundPort(registrationInboundPortURI, this);
         registrationPort.publishPort();
 
-        // 创建并发布Lookup服务的入站端口
         LookupInboundPort lookupPort = new LookupInboundPort(lookupInboundPortURI, this);
         lookupPort.publishPort();
         
