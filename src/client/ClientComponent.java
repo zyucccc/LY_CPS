@@ -121,16 +121,16 @@ public class ClientComponent extends AbstractComponent {
 	
 	//////////////////////////////////////////////////////////////////////////////
 	// Partie Async
+	//Request Direction Async
 	public void sendRequest_direction_Asyn()throws Exception{
         if(this.ClientAsyncInboundPortURI!=null) {
     	this.logMessage("----------------- Query Request Async (Direction) ------------------");
    		this.logMessage("ClientComponent Sending Request Async Direction....");
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
         ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
-        int nb_saut = 1;
-//		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
-        GQuery test = new GQuery(new FGather("temperature"),new ECont());
-        String requestURI = "gather-request-uri";	      
+        int nb_saut = 2;
+		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
+        String requestURI = "gather-request-Async-uri";	      
         RequestI request = new Request(requestURI,test,true,connection_info);
         this.client_node_port.executeAsync(request);
         
@@ -138,6 +138,24 @@ public class ClientComponent extends AbstractComponent {
         	System.err.println("ClientAsyncInboundPortURI NULL");
         }	
 	}
+	
+	public void sendRequest_flooding_Asyn() throws Exception{
+		this.logMessage("----------------- Query Resultat Async (Flooding)------------------");
+		this.logMessage("ClientComponent Sending request Async Flooding....");
+		
+		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
+	    ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
+		 
+		double max_distance =8.0;
+		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
+        String requestURI = "flood-request-Async-uri";	      
+        RequestI request = new Request(requestURI,test,true,connection_info);
+       
+        this.client_node_port.executeAsync(request);
+	}
+	
+	
+	
 	
 	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
 		this.logMessage("-----------------Receive Request Async Resultat ------------------");
@@ -157,11 +175,12 @@ public class ClientComponent extends AbstractComponent {
                     ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
                     
                     //request Sync
-//                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
-//                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
+                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
+                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
                     
                     //request Async        
                     ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn() ;
+                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn() ;
                
                 } catch (Exception e) {
                     e.printStackTrace();

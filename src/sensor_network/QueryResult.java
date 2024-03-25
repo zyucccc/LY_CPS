@@ -29,6 +29,14 @@ public class QueryResult implements QueryResultI,Serializable{
         this.isGatherRequest = isGatherRequest;
         this.gatheredSensorsValues = gatheredSensorsValues;
     }
+    
+    //copie constructeur
+    public QueryResult(QueryResult other) {
+        this.isBooleanRequest = other.isBooleanRequest;
+        this.positiveSensorNodes = new ArrayList<>(other.positiveSensorNodes);
+        this.isGatherRequest = other.isGatherRequest;
+        this.gatheredSensorsValues = new ArrayList<>(other.gatheredSensorsValues);
+    }
 
     @Override
     public boolean isBooleanRequest() {

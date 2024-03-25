@@ -325,11 +325,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("Resultat du query: " + result);
          
          if(data.isDirectional()||data.isFlooding()) {
+        	 //if cest un request continuation
         	 RequestContinuation requestCont = new RequestContinuation(request,data);
         	 //pour enregister les nodes deja traite pour ce request
         	 requestCont.addVisitedNode(this.nodeinfo);
         	 this.propagerQuery(requestCont);
          }else{
+        	 //if cest un request ECont,renvoyer directement le res a Client
         	 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
         	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getURI();
         	 if(this.node_asynRequest_Outport.connected()) {
@@ -348,24 +350,38 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//deal with direction
 		if(data.isDirectional()) {
 		Set<Direction> dirs = data.getDirections_ast();
+		//if noMoreHops , on stop propage Request Direction
 		  if(!data.noMoreHops()) {
 			  for (Direction dir : dirs) {
 				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 				  if(selectedOutboundPort.connected()) {
-					   selectedOutboundPort.execute(request);
+					  if(!request.isAsynchronous()) {
+					   selectedOutboundPort.execute(request);}
+					  else {
+						  //if async,on fait un copie du request
+						  RequestContinuation copie_request = (RequestContinuation) request;
+						  selectedOutboundPort.executeAsync(copie_request);
+					  }
 				  }
 				}
 		  }
 		}else 
 			//deal with fooding
 			if(data.isFlooding()){
-				//parpager query a tous les directions
+				//propager flooding query a tous les directions
 	      for(Direction dir : Direction.values()) {
-//	    	  this.logMessage("Sending request floding dir :"+dir);
+	    	  
 	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir); 
 	    	  if(selectedOutboundPort.connected()) {	
+	    		  if(!request.isAsynchronous()) {
 	    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request flooding dir :"+dir);
 	    		   selectedOutboundPort.execute(request);
+	    		  }else {
+		    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request Async flooding dir :"+dir);
+		    		  //if async,on fait un copie du request
+					  RequestContinuation copie_request = (RequestContinuation) request;
+		    		   selectedOutboundPort.executeAsync(copie_request);
+	    		  }
 			  }
 	      }
 		} else {
@@ -421,6 +437,95 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		return result;
 	 }
 	
+	//process Request Continuation Async 
+	public void processRequestContinuation_Asyn(RequestContinuationI requestCont) throws Exception{
+		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
+		//pour eviter le Probleme: deadlock caused by Call_back
+		//ex: node 1 send request flooding to node2,node2 send encore request to node1
+		if (!((RequestContinuation)requestCont).getVisitedNodes().contains(this.nodeinfo)) {
+			
+      
+		((RequestContinuation) requestCont).addVisitedNode(this.nodeinfo);
+		Interpreter interpreter = new Interpreter();
+		ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+		//chaque fois on recevoit un request de flooding
+		//on check si ce node est dans max_distance de propager ce request
+		//si oui ,on continue a collecter les infos de node actuel
+		//si non,on return le res precedent
+		if(data.isFlooding()) {
+			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request asyn");
+			Position actuel_position = (Position) this.nodeinfo.nodePosition();
+			if(!data.withinMaximalDistance(actuel_position)) {
+				this.logMessage("Hors distance");
+				//connecter Client et renvoyer les res async
+ 				//renvoyerAsyncRes(requestCont);
+				return;
+			}
+		}
+		 if(data.isDirectional()){
+				data.incrementHops();
+			}
+		 
+		this.logMessage("---------------Receive Query Continuation Async---------------");
+		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request async");	
+		Query<?> query = (Query<?>) requestCont.getQueryCode();
+        data.updateProcessingNode(this.processingNode);  
+        
+     
+		this.logMessage("----------------Res Actuel----------------------");
+		QueryResultI result = (QueryResult) query.eval(interpreter, data);	
+		this.logMessage("Res Cont de node actuel: " + result);
+        
+		//traiter la fin du request:
+		if(data.isDirectional()){
+			if(data.noMoreHops()) {
+				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+				renvoyerAsyncRes(requestCont);
+			}
+		}else if(data.isFlooding()) {
+			if(checkNeighboursDansPortee(requestCont)) {
+				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
+				renvoyerAsyncRes(requestCont);
+			}
+		}
+		
+		this.propagerQuery(requestCont);     
+		this.logMessage("------------------------------------");
+		
+		
+		}
+	 }
+	public Boolean checkNeighboursDansPortee (RequestContinuationI requestCont) {
+		// verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
+	    for (Map.Entry<Direction, NodeInfoI> entry : neighbours.entrySet()) {
+	        NodeInfoI neighbour = entry.getValue();
+	        //si ce neighbours est deja visite
+	        if (((RequestContinuation) requestCont).getVisitedNodes().contains(neighbour)) {
+	            continue;
+	        }
+	        // check les autres neighbours
+	        ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+	        if (data.withinMaximalDistance(neighbour.nodePosition())) {
+	            // si au moins 1 neighbours non visite est dans portee,return false
+	            return false;
+	        }
+	    }
+	    //tous les neighbours non visitees est dehors le portee:
+	    return true;
+	}
+	
+	//deleguer les operations de connecter Client via Port Async et appeler acceptRequest pour renvoyer res
+	public void renvoyerAsyncRes (RequestContinuationI request) throws Exception {
+		 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
+    	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getURI();
+    	 if(this.node_asynRequest_Outport.connected()) {
+    		 this.node_asynRequest_Outport.doDisconnection();
+    	 }
+    	 this.node_asynRequest_Outport.doConnection(InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
+    	 ExecutionState data = (ExecutionState) request.getExecutionState();
+    	 QueryResult result_all = (QueryResult) data.getCurrentResult();
+    	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
+	}
 	
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
 		     this.logMessage("----------------Register------------------");

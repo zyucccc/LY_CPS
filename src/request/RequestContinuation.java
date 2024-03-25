@@ -27,6 +27,17 @@ public class RequestContinuation  extends Request implements RequestContinuation
     	this.executionState = data;
     }
     
+    //copie constructeur
+    public RequestContinuation(RequestContinuation other) {
+        super(other.requestURI(), other.getQueryCode(), other.isAsynchronous(), other.clientConnectionInfo());
+        this.executionState = new ExecutionState(other.executionState);
+        
+        this.visitedNodes = new HashSet<>();
+        for (NodeInfoI node : other.visitedNodes) {
+            this.visitedNodes.add(node);
+        }
+    }
+    
     @Override
     public ExecutionStateI getExecutionState() {
 //        if (!this.isAsynchronous()) {

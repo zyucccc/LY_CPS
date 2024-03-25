@@ -36,6 +36,26 @@ public class ExecutionState implements ExecutionStateI {
         this.maximalDistance = 0.0;
         this.floodingBasePosition = null;
     }
+    
+    //copie constructeur
+    public ExecutionState(ExecutionState other) {
+
+        this.processingNode = other.processingNode;
+
+        this.currentResult = new QueryResult(other.currentResult);     
+
+        this.isContinuationSet = other.isContinuationSet;
+        this.isDirectional = other.isDirectional;
+        
+        this.directions = new HashSet<>(other.directions);
+        
+        this.hops = other.hops;
+        this.current_hops = other.current_hops;
+        this.isFlooding = other.isFlooding;
+        this.maximalDistance = other.maximalDistance;
+
+        this.floodingBasePosition = other.floodingBasePosition;      
+    }
 
     @Override
     public ProcessingNodeI getProcessingNode() {

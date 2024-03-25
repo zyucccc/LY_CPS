@@ -21,6 +21,13 @@ public class Request implements RequestI {
         this.isAsynchronous = isAsynchronous;
         this.clientConnectionInfo = clientConnectionInfo;
     }
+    //copie constructeur
+    public Request(Request other) {
+        this.requestURI = other.requestURI;
+        this.query = other.query; 
+        this.isAsynchronous = other.isAsynchronous;
+        this.clientConnectionInfo = other.clientConnectionInfo; 
+    }
 
     @Override
     public String requestURI() {
