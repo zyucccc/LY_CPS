@@ -38,6 +38,15 @@ public class QueryResult implements QueryResultI,Serializable{
         this.gatheredSensorsValues = new ArrayList<>(other.gatheredSensorsValues);
     }
 
+    public void mergeRes(QueryResultI otherResult) {
+        if (otherResult.isBooleanRequest()) {
+            this.positiveSensorNodes.addAll(otherResult.positiveSensorNodes());
+        }
+        if (otherResult.isGatherRequest()) {
+            this.gatheredSensorsValues.addAll(otherResult.gatheredSensorsValues());
+        }
+    }
+    
     @Override
     public boolean isBooleanRequest() {
         return isBooleanRequest;

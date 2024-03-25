@@ -1,5 +1,7 @@
 package client;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import client.ports.ClientAsynRequestInboundPort;
@@ -43,6 +45,8 @@ public class ClientComponent extends AbstractComponent {
 	protected ClientRegistreOutboundPort client_registre_port;
 	protected String ClientAsyncInboundPortURI = null;
 	
+	protected Map<String, QueryResult> requestResults;
+	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI) throws Exception {
 //        super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
 		super(uri, 0, 1);
@@ -65,7 +69,10 @@ public class ClientComponent extends AbstractComponent {
         
         this.getTracer().setTitle("client") ;
 		this.getTracer().setRelativePosition(0, 0) ;
+		
+		this.requestResults = new HashMap<>();
         
+		
         AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
     }
@@ -160,6 +167,20 @@ public class ClientComponent extends AbstractComponent {
 	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
 		this.logMessage("-----------------Receive Request Async Resultat ------------------");
 		this.logMessage("Receive resultat du request: "+requestURI + "\n Query Result: " + result );
+		
+		//fusionner les res,stocker dans hashmap
+		//si deja exist,merge res . Sinon inserer le res dans hashmap
+        if (this.requestResults.containsKey(requestURI)) {
+            // merge res
+            QueryResult existingResult = this.requestResults.get(requestURI);
+            existingResult.mergeRes(result);
+            this.requestResults.put(requestURI, existingResult);
+        } else {
+            // insert
+            this.requestResults.put(requestURI, (QueryResult)result);
+        }
+
+        this.logMessage("Apres de fusionner,total Resultat du request: " + requestURI + "est : " + this.requestResults.get(requestURI));
 	}
 	
 	@Override

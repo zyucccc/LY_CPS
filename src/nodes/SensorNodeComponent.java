@@ -359,7 +359,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 					   selectedOutboundPort.execute(request);}
 					  else {
 						  //if async,on fait un copie du request
-						  RequestContinuation copie_request = (RequestContinuation) request;
+						  RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
 						  selectedOutboundPort.executeAsync(copie_request);
 					  }
 				  }
@@ -379,7 +379,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    		  }else {
 		    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request Async flooding dir :"+dir);
 		    		  //if async,on fait un copie du request
-					  RequestContinuation copie_request = (RequestContinuation) request;
+					  RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
 		    		   selectedOutboundPort.executeAsync(copie_request);
 	    		  }
 			  }
@@ -457,8 +457,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
 			if(!data.withinMaximalDistance(actuel_position)) {
 				this.logMessage("Hors distance");
-				//connecter Client et renvoyer les res async
- 				//renvoyerAsyncRes(requestCont);
 				return;
 			}
 		}
@@ -481,11 +479,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			if(data.noMoreHops()) {
 				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
 				renvoyerAsyncRes(requestCont);
+				return;
 			}
 		}else if(data.isFlooding()) {
 			if(checkNeighboursDansPortee(requestCont)) {
 				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
 				renvoyerAsyncRes(requestCont);
+				return;
 			}
 		}
 		
