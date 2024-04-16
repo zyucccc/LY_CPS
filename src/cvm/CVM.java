@@ -1,11 +1,11 @@
 package cvm;
-//uri 会自动生成
-// plus automatique
+//uri plus automatique
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.helpers.CVMDebugModes;
 
+import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
 import nodes.connectors.NodeClientConnector;
@@ -15,19 +15,28 @@ import registre.RegistreComponent;
 import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import client.ClientComponent;
 import client.connectors.ClientRegistreConnector;
 
 public class CVM extends AbstractCVM {
+	// ---------------------------------------------------------------------
+	// URIs statiques
+	// ---------------------------------------------------------------------
+    //Clock
+	protected static final String CLOCK_URI = "global-clock";
+	public static final Instant START_INSTANT = Instant.now().plusSeconds(1);
+	protected static final long START_DELAY = 3000L;
+	public static final double ACCELERATION_FACTOR = 1.0;
+
 	//component uri
 	protected static final String Registre_COMPONENT_URI = "my-registre-uri";
     protected static final String CLIENT_COMPONENT_URI = "my-client-uri";
-    
-   
     //Client asyn Request InboundPort
     String Client_AsynReqest_Inbound_PORT_URI="client-asynRequest-inbound-uri";
 
@@ -42,20 +51,20 @@ public class CVM extends AbstractCVM {
     private static final AtomicInteger idCounter = new AtomicInteger(0);
     protected String[] generateNodeAndPortsURIs() {
         int baseId = idCounter.incrementAndGet(); 
-      //SensorNode component URI
+        //SensorNode component URI
         String SENSORNODE_COMPONENT_URI = "my-sensornode-uri" + baseId;
-      //SensorNode node P2P
+        //SensorNode node P2P
         String NODE_P2P_INBOUND_PORT_URI = "node"+ baseId +"-inbound-uri" + baseId;
         //sensor inbound port pour Client
         String SENSORNODE_INBOUND_PORT_URI="sensornode-inbound-uri" + baseId;
-      //SensorNode outbound port pour Registre
+        //SensorNode outbound port pour Registre
         String SensorNode_Registre_OUTBOUND_PORT_URI = "node-registre-outbound-uri" + baseId;
         //NWES
         String SensorNode_Node_NE_OUTBOUND_PORT_URI="node-node-NE-outbound-uri" + baseId;
         String SensorNode_Node_NW_OUTBOUND_PORT_URI = "node-node-NW-outbound-uri" +baseId;
         String SensorNode_Node_SE_OUTBOUND_PORT_URI = "node-node-SE-outbound-uri1"+baseId;
         String SensorNode_Node_SW_OUTBOUND_PORT_URI = "node-node-SW-outbound-uri1"+baseId;
-       //asyn outbound port uri for Sensor node
+        //asyn outbound port uri for Sensor node
         String sensorNodeAsyn_OutboundPortURI = "sensornode-async-outbound-uri" + baseId;
         
         return new String[] {SENSORNODE_COMPONENT_URI
@@ -76,9 +85,6 @@ public class CVM extends AbstractCVM {
     /** Reference to the sensor component to share between deploy
 	 *  and shutdown.														*/
 	protected String	uriSensorNodeURI;
-	protected String	uriSensorNodeURI2;
-	protected String	uriSensorNodeURI3;
-	protected String	uriSensorNodeURI4;
 	/** Reference to the client component to share between deploy
 	 *  and shutdown.														*/
 	protected String	uriClientURI;
@@ -107,15 +113,22 @@ public class CVM extends AbstractCVM {
      	    // ---------------------------------------------------------------------
     		// Creation phase
     		// ---------------------------------------------------------------------
-     		
-     		
+     		//clock
+		long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
+		AbstractComponent.createComponent(
+				ClocksServer.class.getCanonicalName(),
+				new Object[]{
+						CLOCK_URI, // URI attribuée à l’horloge
+						unixEpochStartTimeInNanos, // moment du démarrage en temps réel Unix
+						START_INSTANT, // instant de démarrage du scénario
+						ACCELERATION_FACTOR}); // facteur d’acccélération
      		
             
             // creer client Component
             this.uriClientURI =
                 AbstractComponent.createComponent(
                     ClientComponent.class.getCanonicalName(),
-                    new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI});
+                    new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI,CLOCK_URI});
             assert this.isDeployedComponent(this.uriClientURI);
             this.toggleTracing(this.uriClientURI);
             this.toggleLogging(this.uriClientURI);
@@ -156,7 +169,7 @@ public class CVM extends AbstractCVM {
      			double tempera = temperatures[i];
      			boolean smoke = smokes[i];
      			double range = ranges[i];
-     			 //Position position = new Position(Math.random() * 100, Math.random() * 100); // 示例：随机生成位置
+				 //Position position = new Position(Math.random() * 100, Math.random() * 100); // 示例：随机生成位置
      			EndPointDescriptor uriinfo = new EndPointDescriptor(uris[2]);
          		EndPointDescriptor p2pEndPoint = new EndPointDescriptor(uris[1]);
          		NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,uriinfo);
@@ -194,7 +207,8 @@ public class CVM extends AbstractCVM {
                             		uris[7],
                             		uris[1] ,
                             		sensorsData,
-                            		uris[8]});
+                            		uris[8],
+									CLOCK_URI});
                     assert this.isDeployedComponent(this.uriSensorNodeURI);
                     this.toggleTracing(this.uriSensorNodeURI);
                     this.toggleLogging(this.uriSensorNodeURI);
@@ -219,29 +233,7 @@ public class CVM extends AbstractCVM {
 //		  }); assert this.isDeployedComponent(this.uriSensorNodeURI);
 //		  this.toggleTracing(this.uriSensorNodeURI);
 //		  this.toggleLogging(this.uriSensorNodeURI);
-		 
 
-
-        
-
-
-
-
-		// ---------------------------------------------------------------------
-		// Connection phase
-		// ---------------------------------------------------------------------
-        
-     		 
-        //conection node2 to node1
-//        this.doPortConnection(
-//            	this.uriSensorNodeURI2,
-//            	SensorNode_Node_OUTBOUND_PORT_URI2,
-//            	NODE_P2P_INBOUND_PORT_URI ,
-//                NodeRegistreConnector.class.getCanonicalName());
-        
-    
-
-       
 
         super.deploy();
         assert this.deploymentDone();

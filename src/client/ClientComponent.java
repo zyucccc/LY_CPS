@@ -1,5 +1,7 @@
 package client;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +19,11 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
+import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
+import fr.sorbonne_u.utils.aclocks.ClocksServer;
+import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
+import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
+import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import request.Request;
 import request.ast.Direction;
 import request.ast.Query;
@@ -38,18 +45,33 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.connectors.NodeClientConnector;
 import nodes.ports.SensorNodeInboundPort;
 
-@RequiredInterfaces(required = {RequestingCI.class,LookupCI.class})
+@RequiredInterfaces(required = {RequestingCI.class,LookupCI.class,ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestResultCI.class})
 public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_node_port;
 	protected ClientRegistreOutboundPort client_registre_port;
 	protected String ClientAsyncInboundPortURI = null;
+	protected AcceleratedClock ac;
 	
 	protected Map<String, QueryResult> requestResults;
 	
-	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI) throws Exception {
-//        super(uri, 1, 0); // 1 scheduled thread pool, 0 simple thread pool
+	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI) throws Exception {
 		super(uri, 0, 1);
+
+		//clock
+		ClocksServerOutboundPort p_clock = new ClocksServerOutboundPort(this);
+		p_clock.publishPort();
+		this.doPortConnection(
+				p_clock.getPortURI(),
+				ClocksServer.STANDARD_INBOUNDPORT_URI,
+				ClocksServerConnector.class.getCanonicalName());
+		this.ac = p_clock.getClock(CLOCK_URI);
+		this.doPortDisconnection(p_clock.getPortURI());
+		p_clock.unpublishPort();
+		p_clock.destroyPort();
+		if(this.ac.startTimeNotReached()) {
+			this.ac.waitUntilStart();
+		}
 		
 		//publish InboundPort
 		 PortI InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
@@ -111,14 +133,9 @@ public class ClientComponent extends AbstractComponent {
 		ConnectionInfo connectionInfo = (ConnectionInfo) this.client_registre_port.findByIdentifier(NodeID);
 		if (connectionInfo != null) {
 		String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getURI();
-//		this.logMessage("ClientComponent start connect : Uri obtenue to connect :" + InboundPortURI);
-//		try {
-//		this.logMessage("Test name class: "+NodeClientConnector.class.getCanonicalName());
-		this.client_node_port.doConnection(InboundPortURI, NodeClientConnector.class.getCanonicalName());
-//		}catch(Exception e) {
-//			 this.logMessage("Exception occurred during connection: " + e.toString());
-//		        e.printStackTrace();
-//		}
+//		this.client_node_port.doConnection(InboundPortURI, NodeClientConnector.class.getCanonicalName());
+		this.doPortConnection(this.client_node_port.getPortURI(), InboundPortURI,NodeClientConnector.class.getCanonicalName());
+
 		this.logMessage("ClientComponent : Connection established with Node: " + NodeID);
 		}else {
 			this.logMessage("Node " + NodeID + " not found or cannot connect.");
@@ -189,49 +206,40 @@ public class ClientComponent extends AbstractComponent {
     public void start() throws ComponentStartException {
 		this.logMessage("ClientComponent started.");
         super.start();
-        this.scheduleTask(new AbstractComponent.AbstractTask() {
-            @Override
-            public void run() {
-                try {
-                    // essayer de connecter de node indiquee
-                    String NodeID = "node1";
-                    ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
-                    
-                    //request Sync
-                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
-                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
-                    
-                    //request Async        
-                    ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn() ;
-                    ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn() ;
-               
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 5000, TimeUnit.MILLISECONDS); 
     }
 	
 	 @Override
 	    public void execute() throws Exception {
-		    this.logMessage("ClientComponent executed.");
-		    this.runTask(
-					new AbstractComponent.AbstractTask() {
-						@Override
-						public void run() {
-							try {				
-								//connecter au Node 
-//								String NodeID = "node2";
-//								((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
-								//envoyer query
-//								((ClientComponent)this.getTaskOwner()).sendRequest() ;
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-						}
-					}) ;	    
+		Instant start_instant = this.ac.getStartInstant();
+		Instant instant_findConnecter = start_instant.plusSeconds(5);
+		long delay = 1L;
+		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
+		delay = ac.nanoDelayUntilInstant(instant_findConnecter);
 
-	    }
+		    this.logMessage("ClientComponent executed.");
+		    this.scheduleTask(new AbstractComponent.AbstractTask() {
+			 @Override
+			 public void run() {
+				 try {
+					 // essayer de connecter de node indiquee
+					 String NodeID = "node1";
+					 ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
+
+					 //request Sync
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
+
+					 //request Async
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn() ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn() ;
+
+				 } catch (Exception e) {
+					 e.printStackTrace();
+				 }
+			 }
+		 }, delay, TimeUnit.NANOSECONDS);
+
+	 }
 	 
 	 @Override
 	    public void finalise() throws Exception {

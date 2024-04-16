@@ -1,6 +1,8 @@
 package nodes;
 
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +28,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
+import fr.sorbonne_u.utils.aclocks.*;
 import registre.interfaces.RegistrationCI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
@@ -54,9 +57,10 @@ import sensor_network.Position;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
-@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class})
+@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
 public class SensorNodeComponent extends AbstractComponent {
+	protected AcceleratedClock ac;
 	protected NodeInfo nodeinfo;
 	protected String uriPrefix;
 	protected ProcessingNode processingNode;
@@ -93,16 +97,33 @@ public class SensorNodeComponent extends AbstractComponent {
             String node_node_SW_OutboundPortURI,
             String node_node_InboundPortURI,//P2P node to node Inbound Port
             HashMap<String, Sensor> sensorsData,
-            String sensorNodeAsyn_OutboundPortURI
+            String sensorNodeAsyn_OutboundPortURI,
+			String CLOCK_URI
             ) throws Exception {
 		
-		super(uriPrefix, 4, 2) ;
+		super(uriPrefix, 4, 3) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
 	    //inboudporturi for node2node
 	    assert node_node_InboundPortURI != null && !node_node_InboundPortURI.isEmpty() : "InboundPortN2 URI cannot be null or empty!";
-	    this.nodeinfo = (NodeInfo) nodeInfo;
+
+        //clock
+		ClocksServerOutboundPort p_clock = new ClocksServerOutboundPort(this);
+		p_clock.publishPort();
+		this.doPortConnection(
+				p_clock.getPortURI(),
+				ClocksServer.STANDARD_INBOUNDPORT_URI,
+				ClocksServerConnector.class.getCanonicalName());
+		this.ac = p_clock.getClock(CLOCK_URI);
+		this.doPortDisconnection(p_clock.getPortURI());
+		p_clock.unpublishPort();
+		p_clock.destroyPort();
+		if(this.ac.startTimeNotReached()) {
+			this.ac.waitUntilStart();
+		}
+
+		this.nodeinfo = (NodeInfo) nodeInfo;
 	    this.uriPrefix = uriPrefix;
 	    
 	    String NodeID = this.nodeinfo.nodeIdentifier();
@@ -201,48 +222,42 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
     public void start() throws ComponentStartException {
 		this.logMessage("SensorNodeComponent "+ this.nodeinfo.nodeIdentifier() +" started.");
         super.start();
-        //exectuer parallels
-        //2 threads
-        this.runTask(new AbstractComponent.AbstractTask() {
-            @Override
-            public void run() {
-                try {    
-                    ((SensorNodeComponent)this.getTaskOwner()).startSensorDataUpdateTask();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        this.runTask(new AbstractComponent.AbstractTask() {
-            @Override
-            public void run() {
-                try {    
-                    ((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 	
 	@Override
     public void execute() throws Exception {
 		this.logMessage("SensorNodeComponent executed.");
-        super.execute();
+		super.execute();
+		Instant start_instant = this.ac.getStartInstant();
+		Instant instant_register = start_instant.plusSeconds(1);
+		long delay_register = 1L;
+		if(instant_register.isAfter(this.ac.currentInstant())) {
+			delay_register = this.ac.nanoDelayUntilInstant(instant_register);
+		}
+
+		//exectuer parallels
+		this.runTask(new AbstractComponent.AbstractTask() {
+			@Override
+			public void run() {
+				try {
+					((SensorNodeComponent)this.getTaskOwner()).startSensorDataUpdateTask();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		//instant1:register+connecter
 		this.scheduleTask(new AbstractComponent.AbstractTask() {
-            @Override
-            public void run() {
-                try {
-                	
-//                ((SensorNodeComponent)this.getTaskOwner()).refraichir_neighbours(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
-                ((SensorNodeComponent)this.getTaskOwner()).connecterNeighbours();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 2000, TimeUnit.MILLISECONDS);
-        
+			@Override
+			public void run() {
+				try {
+					((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
+					((SensorNodeComponent)this.getTaskOwner()).connecterNeighbours();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}, delay_register, TimeUnit.NANOSECONDS);
     }
 	
 	 @Override
@@ -549,25 +564,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
 		     this.logMessage("----------------------------------------");
 
-	}
-	
-	//apres que tous les nodes se register dans Registre
-	//on regraichir pour obetnir les infos de neighbours
-	//car au debut,les infos de neighbours retourne par register() sont incomplete
-	public void refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
-		this.logMessage("--------------Actuel neighbours:--------------");
-		this.logMessage("SensorNodeComponent"+ nodeInfo.nodeIdentifier() +" : actuel neighbours: " );
-		Set<NodeInfoI> actuel_neighbours = this.node_registre_port.refraichir_neighbours(nodeInfo);
-	    //mettre neighbours dans this.neighbours (HashMap) 
-		for (NodeInfoI neighbour : actuel_neighbours) {
-	    	 Direction dir = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
-	    	 this.neighbours.put(dir, neighbour);
-	     }
-	    this.logMessage("neighbours:");
-	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
-	         this.logMessage("neighbour de driection "+neighbour.getKey()+" :"+((NodeInfo)neighbour.getValue()).toString());
-	     }
-	     this.logMessage("------------------------------------");
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
