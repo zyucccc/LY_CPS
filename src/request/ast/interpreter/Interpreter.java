@@ -226,7 +226,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		}
 		
 		@Override
-		public Object visit(AndBExp ast, ExecutionState data) throws Exception {
+		public Boolean visit(AndBExp ast, ExecutionState data) throws Exception {
 			
 			Boolean left = (Boolean) ast.getBexp1().eval(this, data);
 		    Boolean right = (Boolean) ast.getBexp2().eval(this, data);
@@ -235,7 +235,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		}
 
 		 @Override
-		  public Object visit(CExpBExp ast, ExecutionState data) throws Exception {
+		  public Boolean visit(CExpBExp ast, ExecutionState data) throws Exception {
 		     Boolean cexp = (Boolean) ast.getCexp().eval(this, data);
 //			 Object cexp = visit( ast.getCexp(), data);
 		    
@@ -243,14 +243,14 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		  }
 
 		@Override
-		public Object visit(NotBExp ast, ExecutionState data) throws Exception {
+		public Boolean visit(NotBExp ast, ExecutionState data) throws Exception {
 			Boolean bo = (Boolean) ast.getBexp().eval(this, data);
 			
 			return bo;
 		}
 
 		@Override
-		public Object visit(OrBExp ast, ExecutionState data) throws Exception {
+		public Boolean visit(OrBExp ast, ExecutionState data) throws Exception {
 			Boolean left = (Boolean) ast.getBexp1().eval(this, data);
 		    Boolean right = (Boolean) ast.getBexp2().eval(this, data);
 		   
@@ -285,7 +285,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		}
 		
 		 @Override
-		  public Object visit(EQCExp ast, ExecutionState data) throws Exception {
+		  public Boolean visit(EQCExp ast, ExecutionState data) throws Exception {
 		   
 		   double r1=(double) ast.getRand1().eval(this, data);
 		   double r2=(double) ast.getRand2().eval(this, data);
@@ -296,7 +296,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		  }
 
 		  @Override
-		  public Object visit(GCExp ast, ExecutionState data) throws Exception {
+		  public Boolean visit(GCExp ast, ExecutionState data) throws Exception {
 			  double r1=(double) ast.getRand1().eval(this, data);
 			   double r2=(double) ast.getRand2().eval(this, data);
 			   
@@ -305,7 +305,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		  }
 
 		  @Override
-		  public Object visit(GEQCExp ast, ExecutionState data) throws Exception {
+		  public Boolean visit(GEQCExp ast, ExecutionState data) throws Exception {
 			  double r1=(double) ast.getRand1().eval(this, data);
 			   double r2=(double) ast.getRand2().eval(this, data);
 			   
@@ -314,7 +314,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		  }
 
 		  @Override
-		  public Object visit(LCExp ast, ExecutionState data) throws Exception {
+		  public Boolean visit(LCExp ast, ExecutionState data) throws Exception {
 			  double r1=(double) ast.getRand1().eval(this, data);
 			   double r2=(double) ast.getRand2().eval(this, data);
 			   
@@ -323,7 +323,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		  }
 
 		  @Override
-		  public Object visit(LEQCExp ast, ExecutionState data) throws Exception {
+		  public Boolean visit(LEQCExp ast, ExecutionState data) throws Exception {
 			  double r1=(double) ast.getRand1().eval(this, data);
 			   double r2=(double) ast.getRand2().eval(this, data);
 			   

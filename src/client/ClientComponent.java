@@ -168,6 +168,8 @@ public class ClientComponent extends AbstractComponent {
 		this.logMessage("-----------------Receive Request Async Resultat ------------------");
 		this.logMessage("Receive resultat du request: "+requestURI + "\n Query Result: " + result );
 		
+		
+		this.logMessage("-----------------Total Async Resultat (Fusionner)------------------");
 		//fusionner les res,stocker dans hashmap
 		//si deja exist,merge res . Sinon inserer le res dans hashmap
         if (this.requestResults.containsKey(requestURI)) {
