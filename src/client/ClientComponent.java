@@ -2,6 +2,7 @@ package client;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -52,11 +53,13 @@ public class ClientComponent extends AbstractComponent {
 	protected ClientRegistreOutboundPort client_registre_port;
 	protected String ClientAsyncInboundPortURI = null;
 	protected AcceleratedClock ac;
-	
+
+	protected long Max_WaitingTime = 6000;
 	protected Map<String, QueryResult> requestResults;
+	protected Map<String,Instant> requestTimes;
 	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI) throws Exception {
-		super(uri, 0, 1);
+		super(uri, 1, 2);
 
 		//clock
 		ClocksServerOutboundPort p_clock = new ClocksServerOutboundPort(this);
@@ -93,15 +96,18 @@ public class ClientComponent extends AbstractComponent {
 		this.getTracer().setRelativePosition(0, 0) ;
 		
 		this.requestResults = new HashMap<>();
+		this.requestTimes = new HashMap<>();
         
 		
         AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
     }
-	
-	//Parti Sync Send request:
+
+	// ---------------------------------------------------------------------
+	// Partie Sync
+	// ---------------------------------------------------------------------
 	public void sendRequest_direction() throws Exception{
-		this.logMessage("----------------- Query Resultat (Direction) ------------------");
+		this.logMessage("----------------- Query Resultat Sync (Direction) ------------------");
 		 this.logMessage("ClientComponent Sending request Direction....");
 		 int nb_saut = 1;
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
@@ -110,12 +116,12 @@ public class ClientComponent extends AbstractComponent {
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
         this.logMessage("ClientComponentr Receive resultat de request:");
         this.logMessage("" + result);
-        this.logMessage("----------------------------------");
+        this.logMessage("--------------------------------------");
 	}
         
 	
 	public void sendRequest_flooding() throws Exception{
-		this.logMessage("----------------- Query Resultat (Flooding)------------------");
+		this.logMessage("----------------- Query Resultat Sync (Flooding)------------------");
 		 this.logMessage("ClientComponent Sending request Flooding....");
 		double max_distance =8.0;
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
@@ -124,8 +130,12 @@ public class ClientComponent extends AbstractComponent {
         QueryResult result = (QueryResult) this.client_node_port.execute(request);
         this.logMessage("ClientComponentr Receive resultat de request:");
         this.logMessage("" + result);
-        this.logMessage("----------------------------------");
+        this.logMessage("-------------------------------------");
 	}
+
+	// ---------------------------------------------------------------------
+	// Obtenir connection info from Registre et connecter
+	// ---------------------------------------------------------------------
 	
 	public void findEtConnecterByIdentifer(String NodeID) throws Exception {
 		this.logMessage("---------------Connect to Node-------------------");
@@ -133,7 +143,6 @@ public class ClientComponent extends AbstractComponent {
 		ConnectionInfo connectionInfo = (ConnectionInfo) this.client_registre_port.findByIdentifier(NodeID);
 		if (connectionInfo != null) {
 		String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getURI();
-//		this.client_node_port.doConnection(InboundPortURI, NodeClientConnector.class.getCanonicalName());
 		this.doPortConnection(this.client_node_port.getPortURI(), InboundPortURI,NodeClientConnector.class.getCanonicalName());
 
 		this.logMessage("ClientComponent : Connection established with Node: " + NodeID);
@@ -142,9 +151,11 @@ public class ClientComponent extends AbstractComponent {
 		}
 		this.logMessage("----------------------------------");
 	}
-	
-	//////////////////////////////////////////////////////////////////////////////
+
+	// ---------------------------------------------------------------------
 	// Partie Async
+	// ---------------------------------------------------------------------
+
 	//Request Direction Async
 	public void sendRequest_direction_Asyn()throws Exception{
         if(this.ClientAsyncInboundPortURI!=null) {
@@ -162,7 +173,8 @@ public class ClientComponent extends AbstractComponent {
         	System.err.println("ClientAsyncInboundPortURI NULL");
         }	
 	}
-	
+
+	//Request Flooding Async
 	public void sendRequest_flooding_Asyn() throws Exception{
 		this.logMessage("----------------- Query Resultat Async (Flooding)------------------");
 		this.logMessage("ClientComponent Sending request Async Flooding....");
@@ -177,19 +189,20 @@ public class ClientComponent extends AbstractComponent {
        
         this.client_node_port.executeAsync(request);
 	}
-	
-	
-	
+
 	
 	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
 		this.logMessage("-----------------Receive Request Async Resultat ------------------");
+
 		this.logMessage("Receive resultat du request: "+requestURI + "\n Query Result: " + result );
-		
-		
-		this.logMessage("-----------------Total Async Resultat (Fusionner)------------------");
 		//fusionner les res,stocker dans hashmap
 		//si deja exist,merge res . Sinon inserer le res dans hashmap
         if (this.requestResults.containsKey(requestURI)) {
+			//check si cette requete est deja terminee
+			if(!this.requestTimes.containsKey(requestURI)) {
+				this.logMessage("Request " + requestURI + " has already been completed.Resultat rejete.");
+				return;
+			}
             // merge res
             QueryResult existingResult = this.requestResults.get(requestURI);
             existingResult.mergeRes(result);
@@ -197,11 +210,45 @@ public class ClientComponent extends AbstractComponent {
         } else {
             // insert
             this.requestResults.put(requestURI, (QueryResult)result);
+			//nous stockons le start instant pour chaque requete
+			this.requestTimes.put(requestURI, this.ac.currentInstant());
         }
-
-        this.logMessage("Apres de fusionner,total Resultat du request: " + requestURI + "est : " + this.requestResults.get(requestURI));
 	}
-	
+
+	//Vérifier régulièrement si les requetes ont atteint le temps d'attente maximum
+	public void checkRequestResults() {
+		// check every 3 secs
+		long delay = 3_000;
+		this.scheduleTaskWithFixedDelay(
+				new AbstractComponent.AbstractTask() {
+					@Override
+					public void run() {
+						Instant currentInstant = ac.currentInstant();
+						ArrayList<String> toRemove = new ArrayList<>();
+						for (Map.Entry<String, Instant> entry : requestTimes.entrySet()) {
+							String requestURI = entry.getKey();
+							Instant start_instant = entry.getValue();
+							QueryResult result = requestResults.get(requestURI);
+							if (Duration.between(start_instant, currentInstant).toMillis() > Max_WaitingTime) {
+							((ClientComponent)this.getTaskOwner()).logMessage("-----------------Total Async Resultat (Fusionner)------------------");
+			                ((ClientComponent)this.getTaskOwner()).logMessage("Request " + requestURI + " has reached the maximum wait time. Final result fusionné: " + result);
+							toRemove.add(requestURI);
+							}
+						}
+						for (String requestURI : toRemove) {
+							requestTimes.remove(requestURI);
+						}
+					 }
+					},
+					delay,
+					delay,
+					TimeUnit.MILLISECONDS);
+	}
+
+
+	// ---------------------------------------------------------------------
+	// Cycle de Vie
+	// ---------------------------------------------------------------------
 	@Override
     public void start() throws ComponentStartException {
 		this.logMessage("ClientComponent started.");
@@ -211,12 +258,23 @@ public class ClientComponent extends AbstractComponent {
 	 @Override
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
-		Instant instant_findConnecter = start_instant.plusSeconds(5);
+		Instant instant_findConnecter = start_instant.plusSeconds(2);
 		long delay = 1L;
 		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
 		delay = ac.nanoDelayUntilInstant(instant_findConnecter);
-
 		    this.logMessage("ClientComponent executed.");
+
+			this.runTask(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+				 ((ClientComponent)this.getTaskOwner()).checkRequestResults();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+
 		    this.scheduleTask(new AbstractComponent.AbstractTask() {
 			 @Override
 			 public void run() {
