@@ -19,11 +19,7 @@ public class NodeRegistreConnector extends AbstractConnector implements Registra
         
         return ((RegistrationCI)this.offering).register(nodeInfo);
     }
-    
-    public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception{
-    	 return ((RegistrationCI)this.offering).refraichir_neighbours(nodeInfo);
-    }
-    
+
     
 	@Override
     public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {

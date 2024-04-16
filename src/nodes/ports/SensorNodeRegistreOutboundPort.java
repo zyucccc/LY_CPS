@@ -28,12 +28,7 @@ public class SensorNodeRegistreOutboundPort extends AbstractOutboundPort impleme
     public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
         return ((RegistrationCI) this.getConnector()).register(nodeInfo);
     }
-    
-    @Override
-    public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception{
-    	return ((RegistrationCI) this.getConnector()).refraichir_neighbours(nodeInfo);
-    }
-    
+
 
     @Override
     public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {

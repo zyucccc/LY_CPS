@@ -97,9 +97,7 @@ extends		OfferedCI,
 	public Set<NodeInfoI>	register(
 		NodeInfoI nodeInfo
 		) throws Exception;
-	
 
-	   public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception;	 
 	    
 
 	/**
