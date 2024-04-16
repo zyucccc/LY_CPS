@@ -1,8 +1,10 @@
 package sensor_network;
 
+import fr.sorbonne_u.components.interfaces.OfferedCI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.BCM4JavaEndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 
-public class EndPointDescriptor implements EndPointDescriptorI {
+public class EndPointDescriptor implements BCM4JavaEndPointDescriptorI {
     private static final long serialVersionUID = 1L;
 	private String uri;
 
@@ -10,15 +12,20 @@ public class EndPointDescriptor implements EndPointDescriptorI {
         this.uri = uri;
     }
 
-    public String getURI() {
+    @Override
+    public String getInboundPortURI() {
         return uri;
     }
-    
+
+    @Override
+    public boolean isOfferedInterface(Class<? extends OfferedCI> aClass) {
+        return true;
+    }
+
     @Override
     public String toString() {
         return "EndPointDescriptor{" +
                 "uri='" + uri + '\'' +
                 '}';
     }
-    
 }

@@ -108,7 +108,7 @@ public class ClientComponent extends AbstractComponent {
 	// ---------------------------------------------------------------------
 	public void sendRequest_direction() throws Exception{
 		this.logMessage("----------------- Query Resultat Sync (Direction) ------------------");
-		 this.logMessage("ClientComponent Sending request Direction....");
+		 this.logMessage("ClientComponent Sending request Sync Direction....");
 		 int nb_saut = 1;
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
         String requestURI = "gather-request-uri";	      
@@ -122,7 +122,7 @@ public class ClientComponent extends AbstractComponent {
 	
 	public void sendRequest_flooding() throws Exception{
 		this.logMessage("----------------- Query Resultat Sync (Flooding)------------------");
-		 this.logMessage("ClientComponent Sending request Flooding....");
+		 this.logMessage("ClientComponent Sending request Sync Flooding....");
 		double max_distance =8.0;
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
         String requestURI = "flood-request-uri";	      
@@ -142,7 +142,7 @@ public class ClientComponent extends AbstractComponent {
 		this.logMessage("ClientComponent search and connect Node :" + NodeID);
 		ConnectionInfo connectionInfo = (ConnectionInfo) this.client_registre_port.findByIdentifier(NodeID);
 		if (connectionInfo != null) {
-		String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getURI();
+		String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getInboundPortURI();
 		this.doPortConnection(this.client_node_port.getPortURI(), InboundPortURI,NodeClientConnector.class.getCanonicalName());
 
 		this.logMessage("ClientComponent : Connection established with Node: " + NodeID);

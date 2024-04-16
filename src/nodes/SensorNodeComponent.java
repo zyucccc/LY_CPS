@@ -348,7 +348,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
          }else{
         	 //if cest un request ECont,renvoyer directement le res a Client
         	 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
-        	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getURI();
+        	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getInboundPortURI();
         	 if(this.node_asynRequest_Outport.connected()) {
         		 this.node_asynRequest_Outport.doDisconnection();
         	 }
@@ -532,7 +532,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	//deleguer les operations de connecter Client via Port Async et appeler acceptRequest pour renvoyer res
 	public void renvoyerAsyncRes (RequestContinuationI request) throws Exception {
 		 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
-    	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getURI();
+    	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getInboundPortURI();
     	 if(this.node_asynRequest_Outport.connected()) {
     		 this.node_asynRequest_Outport.doDisconnection();
     	 }
@@ -624,7 +624,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void connecter(Direction direction,NodeNodeOutboundPort selectedOutboundPort,NodeInfoI newNeighbour) throws Exception {
 	    EndPointDescriptor endpointDescriptor = (EndPointDescriptor) newNeighbour.p2pEndPointInfo();
 	    if (endpointDescriptor != null) {
-	        String neighbourInboundPortURI = endpointDescriptor.getURI();
+	        String neighbourInboundPortURI = endpointDescriptor.getInboundPortURI();
 	        this.logMessage("SensorNodeComponent :"+ this.nodeinfo.nodeIdentifier() +" start connect : Uri obtenue to connect :" + neighbourInboundPortURI);
 
 	        selectedOutboundPort.doConnection(neighbourInboundPortURI,NodeNodeConnector.class.getCanonicalName());  
