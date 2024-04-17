@@ -30,7 +30,9 @@
           <root url="jar://$MODULE_DIR$/BCM4Java-23022024.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/BCM4Java-23022024.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

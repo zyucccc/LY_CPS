@@ -23,9 +23,11 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
         assert owner instanceof RegistreComponent;
     }
 
+    //ici,nous appelons le pool de thread distinct pour les noeuds
+
     @Override
     public boolean registered(String nodeIdentifier) throws Exception {
-        return this.getOwner().handleRequest(owner -> {
+        return this.getOwner().handleRequest(((RegistreComponent)owner).getIndex_poolthread_node(),owner -> {
             return ((RegistreComponent) owner).registered(nodeIdentifier);
             });
         }
@@ -33,15 +35,15 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
 
     @Override
     public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
-        return  this.getOwner().handleRequest(owner -> {
+        return  this.getOwner().handleRequest(((RegistreComponent)owner).getIndex_poolthread_node(),owner -> {
             return ((RegistreComponent) owner).register(nodeInfo);
         });
     }
-    
+
     
     @Override
     public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
-        return this.getOwner().handleRequest(owner -> {
+        return this.getOwner().handleRequest(((RegistreComponent)owner).getIndex_poolthread_node(),owner -> {
       	  return (NodeInfoI)((RegistreComponent)owner).findNewNeighbour(nodeInfo,d);
         }
       		  );
@@ -49,7 +51,7 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
 
     @Override
     public void unregister(String nodeIdentifier) throws Exception {
-    	this.getOwner().handleRequest(owner -> {
+    	this.getOwner().handleRequest(((RegistreComponent)owner).getIndex_poolthread_node(),owner -> {
             return ((RegistreComponent) owner).unregister(nodeIdentifier);
         });
             

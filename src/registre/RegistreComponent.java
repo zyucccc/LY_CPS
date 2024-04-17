@@ -3,6 +3,9 @@ package registre;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
@@ -29,9 +32,18 @@ import sensor_network.ConnectionInfo;
 public class RegistreComponent extends AbstractComponent {
     protected String registrationInboundPortURI;
     protected String lookupInboundPortURI;
-    protected String uriPrefix;
-    
-    private HashMap<String, NodeInfo> registeredNodes;
+    //pool thread client
+    protected int index_poolthread_client;
+    protected String uri_pool_client = "registre-pool-thread-client";
+    protected int nbThreads_poolClient = 5;
+    //pool thread node
+    protected int index_poolthread_node;
+    protected String uri_pool_node = "registre-pool-thread-node";
+    protected int nbThreads_poolNode = 60;
+
+    //Gestion Concurrence : Technique concurrentHashMap
+    //hashmap pour stocker les noeuds deja register
+    private ConcurrentHashMap<String, NodeInfo> registeredNodes;
 
     protected RegistreComponent(String uriPrefix,String registrationInboundPortURI, String lookupInboundPortURI) throws Exception {
         super(uriPrefix , 1, 0); // 1 schedule thread
@@ -42,7 +54,11 @@ public class RegistreComponent extends AbstractComponent {
         assert lookupInboundPortURI != null && !lookupInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
         
         //init hashmap
-        this.registeredNodes = new HashMap<>();
+        this.registeredNodes = new ConcurrentHashMap<>();
+
+        //introduire nouveau pool de thread
+        this.index_poolthread_client = this.createNewExecutorService(uri_pool_client, nbThreads_poolClient, false);
+        this.index_poolthread_node = this.createNewExecutorService(uri_pool_node, nbThreads_poolNode, false);
         
         RegistrationInboundPort registrationPort = new RegistrationInboundPort(registrationInboundPortURI, this);
         registrationPort.publishPort();
@@ -59,34 +75,24 @@ public class RegistreComponent extends AbstractComponent {
 		this.getTracer().setTitle("Registre");
 		this.getTracer().setRelativePosition(2, 0);
     }
-
-    @Override
-    public void start() throws ComponentStartException {
-        super.start();
-        this.logMessage("RegistreComponent started.");
+    // ---------------------------------------------------------------------
+    // Partie getter index pool thread
+    // ---------------------------------------------------------------------
+    public int getIndex_poolthread_client() {
+        return this.index_poolthread_client;
     }
-    
-	 @Override
-	    public void finalise() throws Exception {
-	        super.finalise();
-	        this.logMessage("RegistreComponent finalising...");
-	    }
-
-    @Override
-    public void shutdown() throws ComponentShutdownException {
-        super.shutdown();
-        this.logMessage("RegistreComponent shutting down.");
+    public int getIndex_poolthread_node() {
+        return this.index_poolthread_node;
     }
-    
-    //service offered : Registration
-    //new
+    // ---------------------------------------------------------------------
+    // Partie Registration.CI  for Sensor Node
+    // ---------------------------------------------------------------------
     public boolean registered(String nodeIdentifier) throws Exception {
-//    	  this.logMessage("RegistreComponent receive request: registed()");
            return registeredNodes.containsKey(nodeIdentifier);
        }
     
     public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
-    	 this.logMessage("------------Receive Register Request---------------");
+//    	 this.logMessage("------------Receive Register Request---------------");
     	 this.logMessage("RegistreComponent receive request: register() by: "+ nodeInfo.nodeIdentifier());
         if (nodeInfo == null || registered(nodeInfo.nodeIdentifier())) {
             throw new IllegalArgumentException("NodeInfo cannot be null and must not be already registered.");
@@ -113,38 +119,9 @@ public class RegistreComponent extends AbstractComponent {
             nodeInfo.nodePosition().distance(n.nodePosition()) <= n.nodeRange())
             : "All returned nodes must be within the communication range of the new node or vice versa.";
         
-        this.logMessage("RegistreComponent : register() Succes!");
+        this.logMessage("RegistreComponent :"+nodeInfo.nodeIdentifier()+" register() Succes!");
         return neighbours;
     }
-    
-    
-    //inutile
-    public Set<NodeInfoI> refraichir_neighbours(NodeInfoI nodeInfo) throws Exception {
-//   	 this.logMessage("RegistreComponent receive request: refraichir_register()by: "+ nodeInfo.nodeIdentifier());
-       if (nodeInfo == null || !registered(nodeInfo.nodeIdentifier())) {
-           throw new IllegalArgumentException("NodeInfo cannot be null and must be already registered.");
-       }
-       
-       Set<NodeInfoI> neighbours_possible = findNeighboursInAllDirections((NodeInfo) nodeInfo);
-       Set<NodeInfoI> neighbours = new HashSet<>();
-       
-       //check range
-       for (NodeInfoI possibleNeighbour : neighbours_possible) {
-           if (isConnectable(nodeInfo, possibleNeighbour)) {
-               neighbours.add((NodeInfo) possibleNeighbour);
-           }
-       }
-      
-       
-       assert neighbours.stream().allMatch(n -> n != null) : "All returned nodes must be non-null.";
-       assert neighbours.stream().noneMatch(n -> n.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) : "The new node must not be included in the returned set.";
-       assert neighbours.stream().allMatch(n -> 
-           nodeInfo.nodePosition().distance(n.nodePosition()) <= nodeInfo.nodeRange() ||
-           nodeInfo.nodePosition().distance(n.nodePosition()) <= n.nodeRange())
-           : "All returned nodes must be within the communication range of the new node or vice versa.";
-       
-       return neighbours;
-   }
     
     private Set<NodeInfoI> findNeighboursInAllDirections(NodeInfoI nodeInfo) throws Exception {
         Set<NodeInfoI> neighbours = new HashSet<>();
@@ -195,12 +172,12 @@ public class RegistreComponent extends AbstractComponent {
         }
         registeredNodes.remove(nodeIdentifier);
         return true;
-        //这个节点移除后 它的邻居的行为逻辑需要添加
     }
-    
-    
-//service offered : LookupCI
-    
+
+
+    // ---------------------------------------------------------------------
+    // Partie Lookup.CI   for client
+    // ---------------------------------------------------------------------
     public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
     	this.logMessage("------------Receive Client Request (By Id)---------------");
     	this.logMessage("RegistreComponent receive request de Client : findByIdentifer() avec NodeID :"+ sensorNodeId);
@@ -222,7 +199,27 @@ public class RegistreComponent extends AbstractComponent {
         }
         return result;
     }
-    
-    
+
+    // ---------------------------------------------------------------------
+    // Partie Cycle de vie
+    // ---------------------------------------------------------------------
+
+    @Override
+    public void start() throws ComponentStartException {
+        super.start();
+        this.logMessage("RegistreComponent started.");
+    }
+
+    @Override
+    public void finalise() throws Exception {
+        super.finalise();
+        this.logMessage("RegistreComponent finalising...");
+    }
+
+    @Override
+    public void shutdown() throws ComponentShutdownException {
+        super.shutdown();
+        this.logMessage("RegistreComponent shutting down.");
+    }
 
 }

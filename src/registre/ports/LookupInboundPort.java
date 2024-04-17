@@ -23,9 +23,11 @@ public class LookupInboundPort extends AbstractInboundPort implements LookupCI {
         assert owner instanceof RegistreComponent;
     }
 
+    //ici,nous appelons le pool de thread distinct pour les clients
+
     @Override
     public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
-    	return this.getOwner().handleRequest(owner -> {
+    	return this.getOwner().handleRequest(((RegistreComponent)owner).getIndex_poolthread_client(),owner -> {
             return ((RegistreComponent)owner).findByIdentifier(sensorNodeId);
     	});
         }
@@ -33,7 +35,7 @@ public class LookupInboundPort extends AbstractInboundPort implements LookupCI {
 
     @Override
     public Set<ConnectionInfoI> findByZone(GeographicalZoneI z) throws Exception {
-        return this.getOwner().handleRequest(owner -> {
+        return this.getOwner().handleRequest(((RegistreComponent)owner).getIndex_poolthread_client(),owner -> {
             return ((RegistreComponent)owner).findByZone(z);
         });
         }

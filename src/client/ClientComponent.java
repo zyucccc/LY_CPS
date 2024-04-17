@@ -5,7 +5,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import client.ports.ClientAsynRequestInboundPort;
 import client.ports.ClientOutboundPort;
@@ -52,16 +55,31 @@ public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_node_port;
 	protected ClientRegistreOutboundPort client_registre_port;
 	protected String ClientAsyncInboundPortURI = null;
+	//accelerated clock
 	protected AcceleratedClock ac;
-
+    //Max waiting time for un ASync request
 	protected long Max_WaitingTime = 6000;
+	//map qui stocke ASync requete resultats recu
 	protected Map<String, QueryResult> requestResults;
+	//map qui stocke ASync requete temps de debut
 	protected Map<String,Instant> requestTimes;
+
+	//gestion Concurrence
+	protected final ReentrantReadWriteLock requestResults_lock = new ReentrantReadWriteLock();
+	protected final ReentrantReadWriteLock requestTimes_lock = new ReentrantReadWriteLock();
+
+	//introduire les pools threads
+	//pool thread pour les requete Async from Node
+	protected int index_poolthread_async;
+	protected String uri_pool_sync = "registre-pool-thread-async";
+	protected int nbThreads_poolAsync = 10;
 	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI) throws Exception {
 		super(uri, 1, 2);
 
-		//clock
+		// ---------------------------------------------------------------------
+		// configuration clock
+		// ---------------------------------------------------------------------
 		ClocksServerOutboundPort p_clock = new ClocksServerOutboundPort(this);
 		p_clock.publishPort();
 		this.doPortConnection(
@@ -75,7 +93,15 @@ public class ClientComponent extends AbstractComponent {
 		if(this.ac.startTimeNotReached()) {
 			this.ac.waitUntilStart();
 		}
-		
+		// ---------------------------------------------------------------------
+		// Configuration des pools de threads
+		// ---------------------------------------------------------------------
+        //pool thread pour les requete Async from Node
+		this.index_poolthread_async = this.createNewExecutorService(this.uri_pool_sync, this.nbThreads_poolAsync,false);
+
+		// ---------------------------------------------------------------------
+		// Gestion des Port
+		// ---------------------------------------------------------------------
 		//publish InboundPort
 		 PortI InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
 		 InboundPort_AsynRequest.publishPort();
@@ -102,6 +128,12 @@ public class ClientComponent extends AbstractComponent {
         AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
     }
+	// ---------------------------------------------------------------------
+	// Partie getters pour les pools threads
+	// ---------------------------------------------------------------------
+    public int getIndex_poolthread_async() {
+		return index_poolthread_async;
+	}
 
 	// ---------------------------------------------------------------------
 	// Partie Sync
@@ -159,8 +191,8 @@ public class ClientComponent extends AbstractComponent {
 	//Request Direction Async
 	public void sendRequest_direction_Asyn()throws Exception{
         if(this.ClientAsyncInboundPortURI!=null) {
-    	this.logMessage("----------------- Query Request Async (Direction) ------------------");
-   		this.logMessage("ClientComponent Sending Request Async Direction....");
+    	this.logMessage("-----------------Client Send Requete Async (Direction) ------------------");
+//   		this.logMessage("ClientComponent Sending Request Async Direction....");
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
         ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
         int nb_saut = 2;
@@ -176,8 +208,8 @@ public class ClientComponent extends AbstractComponent {
 
 	//Request Flooding Async
 	public void sendRequest_flooding_Asyn() throws Exception{
-		this.logMessage("----------------- Query Resultat Async (Flooding)------------------");
-		this.logMessage("ClientComponent Sending request Async Flooding....");
+		this.logMessage("-----------------Client Send Requete Async (Flooding)------------------");
+//		this.logMessage("ClientComponent Sending request Async Flooding....");
 		
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
 	    ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
@@ -197,22 +229,39 @@ public class ClientComponent extends AbstractComponent {
 		this.logMessage("Receive resultat du request: "+requestURI + "\n Query Result: " + result );
 		//fusionner les res,stocker dans hashmap
 		//si deja exist,merge res . Sinon inserer le res dans hashmap
-        if (this.requestResults.containsKey(requestURI)) {
-			//check si cette requete est deja terminee
-			if(!this.requestTimes.containsKey(requestURI)) {
-				this.logMessage("Request " + requestURI + " has already been completed.Resultat rejete.");
-				return;
+		requestResults_lock.readLock().lock();
+			if (this.requestResults.containsKey(requestURI)) {
+				requestResults_lock.readLock().unlock();
+				requestResults_lock.writeLock().lock();
+				//check si cette requete est deja terminee
+				requestTimes_lock.readLock().lock();
+				try{
+				if (!this.requestTimes.containsKey(requestURI)) {
+					requestTimes_lock.readLock().unlock();
+					this.logMessage("Request " + requestURI + " has already been completed.Resultat rejete.");
+					return;
+				}
+				}finally {
+					if(requestTimes_lock.getReadHoldCount()>0)
+					 requestTimes_lock.readLock().unlock();
+				}
+				// merge res
+				QueryResult existingResult = this.requestResults.get(requestURI);
+				existingResult.mergeRes(result);
+				this.requestResults.put(requestURI, existingResult);
+				requestResults_lock.writeLock().unlock();
+			} else {
+				requestResults_lock.readLock().unlock();
+				requestResults_lock.writeLock().lock();
+				requestTimes_lock.writeLock().lock();
+				// insert
+				this.requestResults.put(requestURI, (QueryResult) result);
+				//nous stockons le start instant pour chaque requete
+				this.requestTimes.put(requestURI, this.ac.currentInstant());
+
+				requestResults_lock.writeLock().unlock();
+				requestTimes_lock.writeLock().unlock();
 			}
-            // merge res
-            QueryResult existingResult = this.requestResults.get(requestURI);
-            existingResult.mergeRes(result);
-            this.requestResults.put(requestURI, existingResult);
-        } else {
-            // insert
-            this.requestResults.put(requestURI, (QueryResult)result);
-			//nous stockons le start instant pour chaque requete
-			this.requestTimes.put(requestURI, this.ac.currentInstant());
-        }
 	}
 
 	//Vérifier régulièrement si les requetes ont atteint le temps d'attente maximum
@@ -225,6 +274,7 @@ public class ClientComponent extends AbstractComponent {
 					public void run() {
 						Instant currentInstant = ac.currentInstant();
 						ArrayList<String> toRemove = new ArrayList<>();
+						requestTimes_lock.readLock().lock();
 						for (Map.Entry<String, Instant> entry : requestTimes.entrySet()) {
 							String requestURI = entry.getKey();
 							Instant start_instant = entry.getValue();
@@ -235,9 +285,12 @@ public class ClientComponent extends AbstractComponent {
 							toRemove.add(requestURI);
 							}
 						}
+						requestTimes_lock.readLock().unlock();
+						requestTimes_lock.writeLock().lock();
 						for (String requestURI : toRemove) {
 							requestTimes.remove(requestURI);
 						}
+						requestTimes_lock.writeLock().unlock();
 					 }
 					},
 					delay,
