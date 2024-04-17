@@ -62,7 +62,6 @@ import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 public class SensorNodeComponent extends AbstractComponent {
 	protected AcceleratedClock ac;
 	protected NodeInfo nodeinfo;
-	protected String uriPrefix;
 	protected ProcessingNode processingNode;
 	//outbound port for Registre
 	protected SensorNodeRegistreOutboundPort node_registre_port;
@@ -73,14 +72,17 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected NodeNodeOutboundPort node_node_SW_Outport;
 	//outbound port for AsynRequest
 	protected SensorNodeAsynRequestOutboundPort node_asynRequest_Outport;
+
+	//pool thread pour traiter les requetes async recu
+	protected int index_poolthread_receiveAsync;
+	protected String uri_pool_receiveAsync = "-pool-thread-receiveAsync";
+	protected int nbThreads_poolReceiveAsync = 10;
 	
 	
 	protected Map<Direction,NodeInfoI> neighbours;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
 	{
-		assert	c.uriPrefix != null :
-					new InvariantException("The URI prefix is null!");
 		assert	c.isOfferedInterface(RequestingCI.class) :
 					new InvariantException("The URI component should "
 							+ "offer the interface URIProviderI!");
@@ -108,7 +110,9 @@ public class SensorNodeComponent extends AbstractComponent {
 	    //inboudporturi for node2node
 	    assert node_node_InboundPortURI != null && !node_node_InboundPortURI.isEmpty() : "InboundPortN2 URI cannot be null or empty!";
 
-        //clock
+		// ---------------------------------------------------------------------
+		// configuration clock
+		// ---------------------------------------------------------------------
 		ClocksServerOutboundPort p_clock = new ClocksServerOutboundPort(this);
 		p_clock.publishPort();
 		this.doPortConnection(
@@ -123,8 +127,13 @@ public class SensorNodeComponent extends AbstractComponent {
 			this.ac.waitUntilStart();
 		}
 
+		// ---------------------------------------------------------------------
+		// Configuration des pools de threads
+		// ---------------------------------------------------------------------
+		uri_pool_receiveAsync = uriPrefix+uri_pool_receiveAsync;
+		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
+
 		this.nodeinfo = (NodeInfo) nodeInfo;
-	    this.uriPrefix = uriPrefix;
 	    
 	    String NodeID = this.nodeinfo.nodeIdentifier();
 		Position position = (Position) this.nodeinfo.nodePosition();
@@ -171,10 +180,7 @@ public class SensorNodeComponent extends AbstractComponent {
 		SensorNodeComponent.checkInvariant(this);
 		AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
-	
-		assert	this.uriPrefix.equals(uriPrefix) :
-			new PostconditionException("The URI prefix has not "
-										+ "been initialised!");
+
 assert	this.isPortExisting(sensorNodeInboundPortURI) :
 			new PostconditionException("The component must have a "
 					+ "port with URI " + sensorNodeInboundPortURI);
@@ -186,10 +192,11 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			new PostconditionException("The component must have a "
 					+ "port published with URI " + sensorNodeInboundPortURI);
 	}
+
 	//mise a jour les donnees de sensors
 	protected void startSensorDataUpdateTask() {
-	    // mise a jour par 8 secs
-	    long delay = 8_000; // milliseconde
+	    // mise a jour par secs
+	    long delay = 1_000; // milliseconde
 
 	    this.scheduleTaskWithFixedDelay(
 	        new AbstractComponent.AbstractTask() {
@@ -215,9 +222,10 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    // init val 35
 	    return 35 + change;
 	}
-	
-	/////////////////////////////////////////////////////////////////////////////////////////////
-	//Cycle life
+
+	// ---------------------------------------------------------------------
+	// Cycle de Vie
+	// ---------------------------------------------------------------------
 	@Override
     public void start() throws ComponentStartException {
 		this.logMessage("SensorNodeComponent "+ this.nodeinfo.nodeIdentifier() +" started.");
@@ -294,9 +302,10 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    public void shutdown() throws ComponentShutdownException {
 	        super.shutdown();
 	    }
-	 
-	 //////////////////////////////////////////////////////////////////////////////////////
-	 //deal with les request recu par le client
+
+	// ---------------------------------------------------------------------
+	// Traiter les requetes from Client
+	// ---------------------------------------------------------------------
 	public QueryResultI processRequest(RequestI request) throws Exception{
 		this.logMessage("----------------Receive Query------------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
@@ -317,16 +326,16 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
          }
         
         QueryResult result_all = (QueryResult) data.getCurrentResult();
-        
-//		this.logMessage("Calcul Fini: ");
+
 		this.logMessage("------------------Res ALL----------------------");
 		this.logMessage("Resultat du query: " + result_all);
 		this.logMessage("--------------------------------------");
 
 		return result_all;
 	 }
-	 //////////////////////////////////////////////////////////////////////////////////////
-	 //deal with les request Async recu par le client
+	// ---------------------------------------------------------------------
+	// Traiter les requetes Async from Client
+	// ---------------------------------------------------------------------
 	public void processRequest_Async(RequestI request) throws Exception{
 		this.logMessage("----------------Receive Query Async------------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request Async");	
@@ -357,15 +366,17 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
          }    
 	}
-	
-	//continuer a propager les request continuation
+
+	// ---------------------------------------------------------------------
+	// continuer a propager les request continuation
+	// ---------------------------------------------------------------------
 	public void propagerQuery(RequestContinuationI request) throws Exception {
 		this.logMessage("-----------------Propager Query------------------");
 		ExecutionState data = (ExecutionState) request.getExecutionState();
 		//deal with direction
 		if(data.isDirectional()) {
 		Set<Direction> dirs = data.getDirections_ast();
-		//if noMoreHops , on stop propage Request Direction
+		//if noMoreHops , on stop propager Request Direction
 		  if(!data.noMoreHops()) {
 			  for (Direction dir : dirs) {
 				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
@@ -423,7 +434,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request");
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
 			if(!data.withinMaximalDistance(actuel_position)) {
-				this.logMessage("Hors distance");
+//				this.logMessage("Hors distance");
 				return data.getCurrentResult();
 			}
 //			this.logMessage(this.nodeinfo.nodeIdentifier()+"passe test 2");
@@ -439,14 +450,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         QueryResultI result = (QueryResult) query.eval(interpreter, data);	
 		this.logMessage("----------------Res Actuel----------------------");
 		this.logMessage("Res Cont de node actuel: " + result);
-//        QueryResultI result_All = data.getCurrentResult();
-       
         
-		this.propagerQuery(requestCont);     
-		
-//		this.logMessage("Calcul Fini Cont: ");
-//		this.logMessage("------------------Res ALL----------------------");
-//		this.logMessage("Res All: " + result_All);
+		this.propagerQuery(requestCont);
 		this.logMessage("------------------------------------");
 
 		return result;
@@ -471,7 +476,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request asyn");
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
 			if(!data.withinMaximalDistance(actuel_position)) {
-				this.logMessage("Hors distance");
+//				this.logMessage("Hors distance");
 				return;
 			}
 		}
@@ -491,12 +496,15 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         
 		//traiter la fin du request:
 		if(data.isDirectional()){
-			if(data.noMoreHops()) {
+			//si no more hops ou pas de neighbours pour la direction demandé,on renvoie le resultat au client
+			if(data.noMoreHops() || checkNeighboursDansDirection(requestCont)) {
 				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
 				renvoyerAsyncRes(requestCont);
 				return;
 			}
 		}else if(data.isFlooding()) {
+			// verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
+			//si cest le cas,renvoyer le res actuel au client
 			if(checkNeighboursDansPortee(requestCont)) {
 				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
 				renvoyerAsyncRes(requestCont);
@@ -510,8 +518,21 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		
 		}
 	 }
+	 //verifier si il y a pas de neighbours dans la direction de request Directional
+	public Boolean checkNeighboursDansDirection (RequestContinuationI requestCont) {
+	    ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+	    Set<Direction> dirs = data.getDirections_ast();
+	    for (Direction dir : dirs) {
+	        NodeInfoI neighbour = neighbours.get(dir);
+	        if (neighbour != null) {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+
+	 // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
 	public Boolean checkNeighboursDansPortee (RequestContinuationI requestCont) {
-		// verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
 	    for (Map.Entry<Direction, NodeInfoI> entry : neighbours.entrySet()) {
 	        NodeInfoI neighbour = entry.getValue();
 	        //si ce neighbours est deja visite
@@ -571,20 +592,17 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
 		this.logMessage(this.nodeinfo.nodeIdentifier()+" receive ask4Connection from "+newNeighbour.nodeIdentifier());
 	    // check direction de newNeighbour
-		System.out.println("TestPosition actuel: "+this.nodeinfo.nodePosition() );
-		System.out.println("TestPosition neighbours: "+newNeighbour.nodePosition() );
+//		System.out.println("TestPosition actuel: "+this.nodeinfo.nodePosition() );
+//		System.out.println("TestPosition neighbours: "+newNeighbour.nodePosition() );
 	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 
 	    // check if deja connected
-	    System.out.println("Test1 ");
 	    if (selectedOutboundPort.connected()) {
-	    	System.out.println("Test2 ");
 	        // si on trouve que cet node est deja connecte au newNeighbour,on fait rien et sort fonction
 	            //disconnter d'abord
-	    	    selectedOutboundPort.doDisconnection();
+			this.doPortDisconnection(selectedOutboundPort.getPortURI());
 	            // connecter
-	        	System.out.println("Test3 ");
 	            this.connecter(direction, selectedOutboundPort, newNeighbour);
 	    } else {
 	        // si pas de connection pour le outport,on fait connecter
@@ -599,7 +617,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 
 	    if (selectedOutboundPort.connected()) {
 	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de disconnect:"+neighbour.nodeIdentifier());
-	        selectedOutboundPort.doDisconnection();
+	        this.doPortDisconnection(selectedOutboundPort.getPortURI());
 	    }
 	}
 
@@ -627,7 +645,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	        String neighbourInboundPortURI = endpointDescriptor.getInboundPortURI();
 	        this.logMessage("SensorNodeComponent :"+ this.nodeinfo.nodeIdentifier() +" start connect : Uri obtenue to connect :" + neighbourInboundPortURI);
 
-	        selectedOutboundPort.doConnection(neighbourInboundPortURI,NodeNodeConnector.class.getCanonicalName());  
+	        this.doPortConnection(selectedOutboundPort.getPortURI(),neighbourInboundPortURI,NodeNodeConnector.class.getCanonicalName());
 
 	       this.logMessage("SensorNodeComponent : "+ this.nodeinfo.nodeIdentifier() + ": Connection established with Node :" + newNeighbour.nodeIdentifier());
 	    } else {
@@ -645,7 +663,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	    NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(direction);
 	    	    if (selectedOutboundPort != null) {
 	    	        try {
-	    	        	nodeinfo = this.nodeinfo;
 	    	           if(selectedOutboundPort.connected()) {
 	    	        	   selectedOutboundPort.doDisconnection();
 	    	           }

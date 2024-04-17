@@ -5,8 +5,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -18,10 +16,8 @@ import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.ports.PortI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
@@ -30,14 +26,11 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import request.Request;
 import request.ast.Direction;
-import request.ast.Query;
 import request.ast.astBase.RBase;
 import request.ast.astBexp.SBExp;
 import request.ast.astCont.DCont;
-import request.ast.astCont.ECont;
 import request.ast.astCont.FCont;
 import request.ast.astDirs.FDirs;
-import request.ast.astDirs.RDirs;
 import request.ast.astGather.FGather;
 import request.ast.astQuery.GQuery;
 import request.ast.astQuery.BQuery;
@@ -47,7 +40,6 @@ import sensor_network.EndPointDescriptor;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.connectors.NodeClientConnector;
-import nodes.ports.SensorNodeInboundPort;
 
 @RequiredInterfaces(required = {RequestingCI.class,LookupCI.class,ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestResultCI.class})
@@ -69,10 +61,14 @@ public class ClientComponent extends AbstractComponent {
 	protected final ReentrantReadWriteLock requestTimes_lock = new ReentrantReadWriteLock();
 
 	//introduire les pools threads
-	//pool thread pour les requete Async from Node
-	protected int index_poolthread_async;
-	protected String uri_pool_sync = "registre-pool-thread-async";
-	protected int nbThreads_poolAsync = 10;
+	//pool thread pour recevoir les resultats des requete Async from Node
+	protected int index_poolthread_receiveAsync;
+	protected String uri_pool_receiveAsync = "client-pool-thread-receiveAsync";
+	protected int nbThreads_poolReceiveAsync = 10;
+	//pool thread pour envoyer les requetes async aux nodes
+	protected int index_poolthread_sendAsync;
+	protected String uri_pool_sendAsync = "client-pool-thread-sendAsync";
+	protected int nbThreads_poolSendAsync = 10;
 	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI) throws Exception {
 		super(uri, 1, 2);
@@ -97,8 +93,8 @@ public class ClientComponent extends AbstractComponent {
 		// Configuration des pools de threads
 		// ---------------------------------------------------------------------
         //pool thread pour les requete Async from Node
-		this.index_poolthread_async = this.createNewExecutorService(this.uri_pool_sync, this.nbThreads_poolAsync,false);
-
+		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
+		this.index_poolthread_sendAsync = this.createNewExecutorService(this.uri_pool_sendAsync,this.nbThreads_poolSendAsync,true);
 		// ---------------------------------------------------------------------
 		// Gestion des Port
 		// ---------------------------------------------------------------------
@@ -131,8 +127,13 @@ public class ClientComponent extends AbstractComponent {
 	// ---------------------------------------------------------------------
 	// Partie getters pour les pools threads
 	// ---------------------------------------------------------------------
-    public int getIndex_poolthread_async() {
-		return index_poolthread_async;
+	//pool de thread pour les requetes async (renvoyer resultats) from nodes
+    public int getIndex_poolthread_receiveAsync() {
+		return index_poolthread_receiveAsync;
+	}
+	//pool de thread pour les requetes async (envoyer requetes) to nodes
+	public int getIndex_poolthread_sendAsync() {
+		return index_poolthread_sendAsync;
 	}
 
 	// ---------------------------------------------------------------------
@@ -189,15 +190,15 @@ public class ClientComponent extends AbstractComponent {
 	// ---------------------------------------------------------------------
 
 	//Request Direction Async
-	public void sendRequest_direction_Asyn()throws Exception{
+	public void sendRequest_direction_Asyn(String requestURI,Direction dir,int nb_saut)throws Exception{
         if(this.ClientAsyncInboundPortURI!=null) {
     	this.logMessage("-----------------Client Send Requete Async (Direction) ------------------");
-//   		this.logMessage("ClientComponent Sending Request Async Direction....");
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
         ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
-        int nb_saut = 2;
-		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
-        String requestURI = "gather-request-Async-uri";	      
+//        int nb_saut = 2;
+		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(dir),nb_saut));
+//        String requestURI = "gather-request-Async-uri";
+		this.logMessage("ClientComponent Sending Request Async Direction: "+requestURI);
         RequestI request = new Request(requestURI,test,true,connection_info);
         this.client_node_port.executeAsync(request);
         
@@ -207,16 +208,16 @@ public class ClientComponent extends AbstractComponent {
 	}
 
 	//Request Flooding Async
-	public void sendRequest_flooding_Asyn() throws Exception{
+	public void sendRequest_flooding_Asyn(String requestURI) throws Exception{
 		this.logMessage("-----------------Client Send Requete Async (Flooding)------------------");
-//		this.logMessage("ClientComponent Sending request Async Flooding....");
 		
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
 	    ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
 		 
 		double max_distance =8.0;
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
-        String requestURI = "flood-request-Async-uri";	      
+//        String requestURI = "flood-request-Async-uri";
+		this.logMessage("ClientComponent Sending request Async Flooding: "+requestURI);
         RequestI request = new Request(requestURI,test,true,connection_info);
        
         this.client_node_port.executeAsync(request);
@@ -224,9 +225,8 @@ public class ClientComponent extends AbstractComponent {
 
 	
 	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
-		this.logMessage("-----------------Receive Request Async Resultat ------------------");
-
-		this.logMessage("Receive resultat du request: "+requestURI + "\n Query Result: " + result );
+		this.logMessage("-----------------Receive Request Async Resultat ------------------\n"+
+				"Receive resultat du request: "+requestURI + "\n Query Result: " + result );
 		//fusionner les res,stocker dans hashmap
 		//si deja exist,merge res . Sinon inserer le res dans hashmap
 		requestResults_lock.readLock().lock();
@@ -312,9 +312,15 @@ public class ClientComponent extends AbstractComponent {
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
 		Instant instant_findConnecter = start_instant.plusSeconds(2);
+		Instant instant_sendAsync = start_instant.plusSeconds(3);
 		long delay = 1L;
+		long delay_send = 1L;
+
 		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
 		delay = ac.nanoDelayUntilInstant(instant_findConnecter);
+		if(instant_sendAsync.isAfter(this.ac.currentInstant()))
+		delay_send = ac.nanoDelayUntilInstant(instant_sendAsync);
+
 		    this.logMessage("ClientComponent executed.");
 
 			this.runTask(new AbstractComponent.AbstractTask() {
@@ -341,14 +347,39 @@ public class ClientComponent extends AbstractComponent {
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
 
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn() ;
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn() ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri",Direction.NE,5) ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri") ;
 
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }
 			 }
 		 }, delay, TimeUnit.NANOSECONDS);
+
+			//send async requete en utilisant pool thread distinct (pool thread_sendAsync)
+			this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						//request Async
+						((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2",Direction.NE,1) ;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}, delay_send, TimeUnit.NANOSECONDS);
+
+		 this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
+			 @Override
+			 public void run() {
+				 try {
+					 //request Async
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2") ;
+				 } catch (Exception e) {
+					 e.printStackTrace();
+				 }
+			 }
+		 }, delay_send, TimeUnit.NANOSECONDS);
 
 	 }
 	 
