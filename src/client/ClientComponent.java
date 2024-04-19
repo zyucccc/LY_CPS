@@ -24,6 +24,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
+import nodes.SensorNodeComponent;
 import request.Request;
 import request.ast.Direction;
 import request.ast.astBase.RBase;
@@ -272,6 +273,7 @@ public class ClientComponent extends AbstractComponent {
 				new AbstractComponent.AbstractTask() {
 					@Override
 					public void run() {
+//						((ClientComponent)this.getTaskOwner()).logMessage("check start time");
 						Instant currentInstant = ac.currentInstant();
 						ArrayList<String> toRemove = new ArrayList<>();
 						requestTimes_lock.readLock().lock();
@@ -311,8 +313,8 @@ public class ClientComponent extends AbstractComponent {
 	 @Override
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
-		Instant instant_findConnecter = start_instant.plusSeconds(2);
-		Instant instant_sendAsync = start_instant.plusSeconds(3);
+		Instant instant_findConnecter = start_instant.plusSeconds(3);
+		Instant instant_sendAsync = start_instant.plusSeconds(4);
 		long delay = 1L;
 		long delay_send = 1L;
 

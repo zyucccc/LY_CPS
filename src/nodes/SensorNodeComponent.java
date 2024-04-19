@@ -1,14 +1,13 @@
 package nodes;
 
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import client.ClientComponent;
 import client.connectors.ClientAsynRequestConnector;
@@ -77,7 +76,18 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected int index_poolthread_receiveAsync;
 	protected String uri_pool_receiveAsync = "-pool-thread-receiveAsync";
 	protected int nbThreads_poolReceiveAsync = 10;
-	
+
+	//pool thread pour traiter les requetes sync recu
+	protected int index_poolthread_receiveSync;
+	protected String uri_pool_receiveSync = "-pool-thread-receiveSync";
+	protected int nbThreads_poolReceiveSync = 10;
+
+	//gestion Concurrence
+	protected final ReentrantReadWriteLock sensorData_lock = new ReentrantReadWriteLock();
+	protected final ReentrantReadWriteLock neighbours_lock = new ReentrantReadWriteLock();
+
+	//on utilise les pools de threads par defaut pour traiter les fonctions register,connecter
+	//on introduit 2 pools de threads distincts pour traiter les requetes recus
 	
 	protected Map<Direction,NodeInfoI> neighbours;
 	
@@ -103,7 +113,7 @@ public class SensorNodeComponent extends AbstractComponent {
 			String CLOCK_URI
             ) throws Exception {
 		
-		super(uriPrefix, 4, 3) ;
+		super(uriPrefix, 5, 5) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
@@ -131,7 +141,9 @@ public class SensorNodeComponent extends AbstractComponent {
 		// Configuration des pools de threads
 		// ---------------------------------------------------------------------
 		uri_pool_receiveAsync = uriPrefix+uri_pool_receiveAsync;
+		uri_pool_receiveSync = uriPrefix+uri_pool_receiveSync;
 		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
+        this.index_poolthread_receiveSync = this.createNewExecutorService(this.uri_pool_receiveSync, this.nbThreads_poolReceiveSync,false);
 
 		this.nodeinfo = (NodeInfo) nodeInfo;
 	    
@@ -193,34 +205,95 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 					+ "port published with URI " + sensorNodeInboundPortURI);
 	}
 
-	//mise a jour les donnees de sensors
+	// ---------------------------------------------------------------------
+	// Partie getters pour les pools threads
+	// ---------------------------------------------------------------------
+	public int getIndex_poolthread_receiveAsync() {
+		return index_poolthread_receiveAsync;
+	}
+
+	public int getIndex_poolthread_receiveSync() {
+		return index_poolthread_receiveSync;
+	}
+
+	// ---------------------------------------------------------------------
+	// Partie mise a jour les donnees de sensors
+	// ---------------------------------------------------------------------
 	protected void startSensorDataUpdateTask() {
 	    // mise a jour par secs
-	    long delay = 1_000; // milliseconde
+	    long delay = 3_000; // milliseconde
 
 	    this.scheduleTaskWithFixedDelay(
 	        new AbstractComponent.AbstractTask() {
 	            @Override
 	            public void run() {
+//					((SensorNodeComponent)this.getTaskOwner()).logMessage("SensorNodeComponent [" +((SensorNodeComponent)this.getTaskOwner()).nodeinfo.nodeIdentifier() + "] updating sensor data...");
 	                // mise a jour temperature
 	                String sensorIdentifier = "temperature";
 	                // generer new val temperature
-	                int newTemperature = generateNewTemperatureValue();
+	                double newTemperature = ((SensorNodeComponent)this.getTaskOwner()).generateNewTemperatureValue();
+					System.err.println(((SensorNodeComponent)this.getTaskOwner()).nodeinfo.nodeIdentifier()+ " Test generer val: "+newTemperature);
 	                //Mettre en commentaire pour tester
-	                ((SensorNodeComponent)this.getTaskOwner()).processingNode.updateSensorData_int(sensorIdentifier, (int) newTemperature);
-//	                logMessage("Temperature sensor updated with new value: " + newTemperature);
+					try {
+						((SensorNodeComponent) this.getTaskOwner()).updateSensorData(sensorIdentifier, newTemperature);
+					}catch (Exception e){
+						System.err.println("Exception in updateSensorData scheduleTask: " + e.getMessage());
+						e.printStackTrace();
+					}
+					System.out.println("SensorNodeComponent [" +((SensorNodeComponent)this.getTaskOwner()).nodeinfo.nodeIdentifier() + "] updated sensor data: " + ((SensorNodeComponent)this.getTaskOwner()).processingNode.getSensorData(sensorIdentifier));
 	            }
 	        },
 	        delay, // init delay
 	        delay, // delay entre 2 task
 	        TimeUnit.MILLISECONDS);
+
 	}
 
-	protected int generateNewTemperatureValue() {
-	    // rand val entre -2 et 2
-	    int change = (int) ((Math.random() * 4) - 2);
+	protected void updateSensorData(String sensorIdentifier, double newValue) {
+		this.sensorData_lock.writeLock().lock();
+		try {
+			Sensor oldSensor = (Sensor) this.processingNode.getSensorData(sensorIdentifier);
+			System.err.println(this.nodeinfo.nodeIdentifier() + " Test before put " + this.processingNode.getSensorData(sensorIdentifier));
+			if (oldSensor != null) {
+				Sensor newSensor = new Sensor(oldSensor.getNodeIdentifier(),
+						oldSensor.getSensorIdentifier(),
+						oldSensor.getType(),
+						newValue);
+				this.processingNode.addSensorData(sensorIdentifier, newSensor);
+				System.err.println(this.nodeinfo.nodeIdentifier() + " Test apres put " + this.processingNode.getSensorData(sensorIdentifier));
+			}
+		}catch (Exception e){
+			System.err.println("Exception in updateSensorData: " + e.getMessage());
+			e.printStackTrace();
+		}finally {
+			this.sensorData_lock.writeLock().unlock();
+		}
+	}
+
+	protected double generateNewTemperatureValue() {
+		sensorData_lock.readLock().lock();
+		double temperature = 35.0;
+		try {
+			Class<? extends Serializable> type = this.processingNode.getSensorData("temperature").getType();
+			if(type == double.class) {
+				temperature = (double) this.processingNode.getSensorData("temperature").getValue();
+			} else if (type == Integer.class) {
+				temperature =  ((Integer)this.processingNode.getSensorData("temperature").getValue()).doubleValue();;
+			} else {
+				System.err.println("Type de temperature non supporté"+type);
+			}
+		}catch (Exception e) {
+			System.err.println("Exception in generateNewTemperatureValue: " + e.getMessage());
+			e.printStackTrace();
+		}finally {
+			sensorData_lock.readLock().unlock();
+		}
+
+		// rand val entre -2 et 2
+		Random rand = new Random();
+	    double change =  rand.nextInt(4) - 2;
 	    // init val 35
-	    return 35 + change;
+	    return temperature + change;
 	}
 
 	// ---------------------------------------------------------------------
@@ -230,6 +303,16 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
     public void start() throws ComponentStartException {
 		this.logMessage("SensorNodeComponent "+ this.nodeinfo.nodeIdentifier() +" started.");
         super.start();
+		this.runTask(new AbstractComponent.AbstractTask() {
+			@Override
+			public void run() {
+				try {
+					((SensorNodeComponent)this.getTaskOwner()).startSensorDataUpdateTask();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
     }
 	
 	@Override
@@ -243,17 +326,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			delay_register = this.ac.nanoDelayUntilInstant(instant_register);
 		}
 
-		//exectuer parallels
-		this.runTask(new AbstractComponent.AbstractTask() {
-			@Override
-			public void run() {
-				try {
-					((SensorNodeComponent)this.getTaskOwner()).startSensorDataUpdateTask();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
 		//instant1:register+connecter
 		this.scheduleTask(new AbstractComponent.AbstractTask() {
 			@Override
@@ -307,6 +379,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// Traiter les requetes from Client
 	// ---------------------------------------------------------------------
 	public QueryResultI processRequest(RequestI request) throws Exception{
+//		this.sensorData_lock.readLock().lock();
 		this.logMessage("----------------Receive Query------------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		Interpreter interpreter = new Interpreter();
@@ -315,6 +388,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         data.updateProcessingNode(this.processingNode);
         
         QueryResult result = (QueryResult) query.eval(interpreter, data);
+//		this.sensorData_lock.readLock().unlock();
 		this.logMessage("----------------Res Actuel----------------------");
 		this.logMessage("Resultat du query: " + result);
          
@@ -330,13 +404,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("------------------Res ALL----------------------");
 		this.logMessage("Resultat du query: " + result_all);
 		this.logMessage("--------------------------------------");
-
 		return result_all;
 	 }
 	// ---------------------------------------------------------------------
 	// Traiter les requetes Async from Client
 	// ---------------------------------------------------------------------
 	public void processRequest_Async(RequestI request) throws Exception{
+//		this.sensorData_lock.readLock().lock();
 		this.logMessage("----------------Receive Query Async------------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request Async");	
 		Interpreter interpreter = new Interpreter();
@@ -345,6 +419,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         data.updateProcessingNode(this.processingNode);
         
         QueryResult result = (QueryResult) query.eval(interpreter, data);
+//		this.sensorData_lock.readLock().unlock();
 		this.logMessage("----------------Res Actuel----------------------");
 		this.logMessage("Resultat du query: " + result);
          
@@ -372,6 +447,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// ---------------------------------------------------------------------
 	public void propagerQuery(RequestContinuationI request) throws Exception {
 		this.logMessage("-----------------Propager Query------------------");
+//		this.sensorData_lock.readLock().lock();
 		ExecutionState data = (ExecutionState) request.getExecutionState();
 		//deal with direction
 		if(data.isDirectional()) {
@@ -413,10 +489,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		} else {
 			System.err.println("Erreur type de Cont");
 		}
+//		this.sensorData_lock.readLock().unlock();
 	}
 	
 	//deal with les request continuation recu par les nodes
 	public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
+//		this.sensorData_lock.readLock().lock();
 		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
 		//pour eviter le Probleme: deadlock caused by Call_back
 		//ex: node 1 send request flooding to node2,node2 send encore request to node1
@@ -437,7 +515,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //				this.logMessage("Hors distance");
 				return data.getCurrentResult();
 			}
-//			this.logMessage(this.nodeinfo.nodeIdentifier()+"passe test 2");
 		}
 		 if(data.isDirectional()){
 				data.incrementHops();
@@ -453,12 +530,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         
 		this.propagerQuery(requestCont);
 		this.logMessage("------------------------------------");
-
+//		this.sensorData_lock.readLock().unlock();
 		return result;
 	 }
 	
 	//process Request Continuation Async 
 	public void processRequestContinuation_Asyn(RequestContinuationI requestCont) throws Exception{
+//		this.sensorData_lock.readLock().lock();
 		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
 		//pour eviter le Probleme: deadlock caused by Call_back
 		//ex: node 1 send request flooding to node2,node2 send encore request to node1
@@ -497,7 +575,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//traiter la fin du request:
 		if(data.isDirectional()){
 			//si no more hops ou pas de neighbours pour la direction demandé,on renvoie le resultat au client
-			if(data.noMoreHops() || checkNeighboursDansDirection(requestCont)) {
+			if(data.noMoreHops()) {
+                this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No more hops");
+				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+				renvoyerAsyncRes(requestCont);
+				return;
+			} else if (checkNeighboursDansDirection(requestCont)) {
+				this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No neighbours dans la direction");
 				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
 				renvoyerAsyncRes(requestCont);
 				return;
@@ -506,6 +590,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			// verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
 			//si cest le cas,renvoyer le res actuel au client
 			if(checkNeighboursDansPortee(requestCont)) {
+				this.logMessage("Requete flooding fini "+requestCont.requestURI()+" : No neighbours dans le portee");
 				this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
 				renvoyerAsyncRes(requestCont);
 				return;
@@ -517,22 +602,26 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		
 		
 		}
+//		this.sensorData_lock.readLock().unlock();
 	 }
 	 //verifier si il y a pas de neighbours dans la direction de request Directional
 	public Boolean checkNeighboursDansDirection (RequestContinuationI requestCont) {
 	    ExecutionState data = (ExecutionState) requestCont.getExecutionState();
 	    Set<Direction> dirs = data.getDirections_ast();
+		this.neighbours_lock.readLock().lock();
 	    for (Direction dir : dirs) {
 	        NodeInfoI neighbour = neighbours.get(dir);
 	        if (neighbour != null) {
 	            return false;
 	        }
 	    }
+		this.neighbours_lock.readLock().unlock();
 	    return true;
 	}
 
 	 // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
 	public Boolean checkNeighboursDansPortee (RequestContinuationI requestCont) {
+		this.neighbours_lock.readLock().lock();
 	    for (Map.Entry<Direction, NodeInfoI> entry : neighbours.entrySet()) {
 	        NodeInfoI neighbour = entry.getValue();
 	        //si ce neighbours est deja visite
@@ -546,6 +635,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	            return false;
 	        }
 	    }
+		this.neighbours_lock.readLock().unlock();
 	    //tous les neighbours non visitees est dehors le portee:
 	    return true;
 	}
@@ -555,9 +645,11 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
     	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getInboundPortURI();
     	 if(this.node_asynRequest_Outport.connected()) {
-    		 this.node_asynRequest_Outport.doDisconnection();
+			 this.doPortDisconnection(this.node_asynRequest_Outport.getPortURI());
+//    		 this.node_asynRequest_Outport.doDisconnection();
     	 }
-    	 this.node_asynRequest_Outport.doConnection(InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
+		 this.doPortConnection(this.node_asynRequest_Outport.getPortURI(),InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
+//    	 this.node_asynRequest_Outport.doConnection(InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
     	 ExecutionState data = (ExecutionState) request.getExecutionState();
     	 QueryResult result_all = (QueryResult) data.getCurrentResult();
     	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
@@ -570,16 +662,19 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
 		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
-		     
+		     this.neighbours_lock.writeLock().lock();
 		     for (NodeInfoI neighbour : neighbours) {
 		    	 Direction dir = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
 		    	 this.neighbours.put(dir, neighbour);
 		     }
+			 this.neighbours_lock.writeLock().unlock();
 		     this.logMessage("--------------Register() neighbours:--------------");
 		     this.logMessage("neighbours:");
+			 this.neighbours_lock.readLock().lock();
 		     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 		         this.logMessage("neighbour de driection "+neighbour.getKey()+" :"+((NodeInfo)neighbour.getValue()).toString());
 		     }
+			 this.neighbours_lock.readLock().unlock();
 		     
 		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
@@ -596,18 +691,20 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 //		System.out.println("TestPosition neighbours: "+newNeighbour.nodePosition() );
 	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
-
+        this.neighbours_lock.writeLock().lock();
 	    // check if deja connected
 	    if (selectedOutboundPort.connected()) {
 	        // si on trouve que cet node est deja connecte au newNeighbour,on fait rien et sort fonction
 	            //disconnter d'abord
-			this.doPortDisconnection(selectedOutboundPort.getPortURI());
+			    this.doPortDisconnection(selectedOutboundPort.getPortURI());
 	            // connecter
 	            this.connecter(direction, selectedOutboundPort, newNeighbour);
 	    } else {
 	        // si pas de connection pour le outport,on fait connecter
 	        connecter(direction, selectedOutboundPort, newNeighbour);
 	    }
+		this.neighbours.put(direction, newNeighbour);
+		this.neighbours_lock.writeLock().unlock();
 	}
 
 	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
@@ -615,10 +712,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 
+		this.neighbours_lock.writeLock().lock();
 	    if (selectedOutboundPort.connected()) {
 	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de disconnect:"+neighbour.nodeIdentifier());
 	        this.doPortDisconnection(selectedOutboundPort.getPortURI());
 	    }
+		  this.neighbours.remove(direction);
+		this.neighbours_lock.writeLock().unlock();
 	}
 
 	//retourne les outport correspondant selon le direction donnee
@@ -656,6 +756,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void connecterNeighbours() throws Exception {
 		this.logMessage("----------------Connecter Neighbours-----------------");
 		this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] start connecter ses neighbours");
+	     this.neighbours_lock.readLock().lock();
 	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 
 	    	    Direction direction = neighbour.getKey();
@@ -675,6 +776,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	        System.err.println("No outbound port selected for direction " + direction);
 	    	    } 
 	     }
+		 this.neighbours_lock.readLock().unlock();
 	     this.logMessage("----------------------------------------------");
 	}
 

@@ -44,14 +44,14 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 
 	@Override
 	public QueryResultI execute(RequestContinuationI request) throws Exception {
-		return this.getOwner().handleRequest(owner -> {
+		return this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_receiveSync(),owner -> {
 	       return ((SensorNodeComponent) owner).processRequestContinuation(request);
 	    });
 	}
 
 	@Override
 	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-		this.getOwner().runTask(new AbstractComponent.AbstractTask() {
+		this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {
             @Override
             public void run() {
                 try {

@@ -158,7 +158,7 @@ public class CVM extends AbstractCVM {
      		        new Position(10.0, 10.0),
      		        new Position(1.0, -1.0)
      		    };
-     		double[] temperatures = {35.0, 40.0, 10.0, 90.0};
+     		double[] temperatures = {35.0, 40.0, 10.0, 45.0};
      		double[] ranges = {10.0, 10.0, 10.0, 3.0};
      	    boolean[] smokes = {false, true, true, true};
      	    // creer des composants
