@@ -63,7 +63,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	    }
 	 
 	    @Override
-	    public Object visit(GQuery ast,ExecutionState data) throws Exception  {
+	    public QueryResultI visit(GQuery ast,ExecutionState data) throws Exception  {
 		        ProcessingNodeI CurrentNode = data.getProcessingNode();
 		        ArrayList<String> list_sensorid = (ArrayList<String>) ast.getGather().eval(this, data);
 //	            ArrayList<String> list_sensorid = (ArrayList<String>) visit(ast.getGather(),data);
@@ -79,7 +79,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	    }
 	    
 		@Override
-		public Object visit(BQuery ast, ExecutionState data) throws Exception {
+		public QueryResultI visit(BQuery ast, ExecutionState data) throws Exception {
 			ProcessingNodeI CurrentNode = data.getProcessingNode();
 //			Cont cont = (Cont)visit(ast.getCont(),data);
 			Cont cont = (Cont)ast.getCont().eval(this, data);
@@ -96,7 +96,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	 
 //dir
 	    @Override
-		public Object visit(Direction ast, ExecutionState data) throws Exception{
+		public Direction visit(Direction ast, ExecutionState data) throws Exception{
 			return ast.getDirection();
 		}
 
@@ -112,7 +112,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		}
 		
 		@Override
-		public Object visit(FDirs ast, ExecutionState data) throws Exception {
+		public Set<Direction> visit(FDirs ast, ExecutionState data) throws Exception {
 			Set<Direction> directions = new HashSet<>();
 			
 			directions.add((Direction)ast.getDir().eval(this, data));
@@ -121,7 +121,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		}
 
 		@Override
-		public Object visit(RDirs ast, ExecutionState data) throws Exception {
+		public Set<Direction> visit(RDirs ast, ExecutionState data) throws Exception {
 			    Set<Direction> directions = new HashSet<>();
 //			    ArrayList<Direction> directions = new ArrayList<Direction>();		    
 			    Direction dir = ast.getDir();
@@ -147,14 +147,14 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	    }
 
 		@Override
-		public Object visit(FGather ast, ExecutionState data) throws Exception {
+		public ArrayList<String> visit(FGather ast, ExecutionState data) throws Exception {
 			ArrayList<String> ids = new ArrayList<String>(); 
 			ids.add(ast.getSensorID());
 			return ids;
 		}
 
 		@Override
-		public Object visit(RGather ast, ExecutionState data) throws Exception {
+		public ArrayList<String> visit(RGather ast, ExecutionState data) throws Exception {
 			ArrayList<String> ids = new ArrayList<String>();   		
 	        Gather gathers=ast.getGather();
 	        ArrayList<String> ids_suite =(ArrayList<String>) gathers.eval(this, data);
@@ -178,7 +178,7 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 	    }
 	    
 		@Override
-		public Object visit(CRand ast, ExecutionState data) throws Exception {
+		public Double visit(CRand ast, ExecutionState data) throws Exception {
 			return  ast.getVal();
 		}
 
@@ -197,12 +197,12 @@ public class Interpreter implements IASTvisitor<Object, ExecutionState, Exceptio
 		}
 		
 		@Override
-		public Object visit(ABase ast, ExecutionState data) throws Exception {
+		public PositionI visit(ABase ast, ExecutionState data) throws Exception {
 			return ast.getPosition();
 		}
 
 		@Override
-		public Object visit(RBase ast, ExecutionState data) throws Exception {
+		public PositionI visit(RBase ast, ExecutionState data) throws Exception {
 			ProcessingNodeI CurrentNode = data.getProcessingNode();
 			return CurrentNode.getPosition();
 		}

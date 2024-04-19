@@ -314,14 +314,18 @@ public class ClientComponent extends AbstractComponent {
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
 		Instant instant_findConnecter = start_instant.plusSeconds(3);
-		Instant instant_sendAsync = start_instant.plusSeconds(4);
+		Instant instant_sendAsync = start_instant.plusSeconds(5);
+		Instant instant_sendAsync2 = start_instant.plusSeconds(7);
 		long delay = 1L;
 		long delay_send = 1L;
+		long delay_send2 = 1L;
 
 		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
 		delay = ac.nanoDelayUntilInstant(instant_findConnecter);
 		if(instant_sendAsync.isAfter(this.ac.currentInstant()))
 		delay_send = ac.nanoDelayUntilInstant(instant_sendAsync);
+		if(instant_sendAsync2.isAfter(this.ac.currentInstant()))
+		delay_send2 = ac.nanoDelayUntilInstant(instant_sendAsync2);
 
 		    this.logMessage("ClientComponent executed.");
 
@@ -348,23 +352,19 @@ public class ClientComponent extends AbstractComponent {
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
 
-					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri",Direction.NE,5) ;
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri") ;
-
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }
 			 }
 		 }, delay, TimeUnit.NANOSECONDS);
 
-			//send async requete en utilisant pool thread distinct (pool thread_sendAsync)
+			//(en premier temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
 			this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
 				@Override
 				public void run() {
 					try {
 						//request Async
-						((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2",Direction.NE,1) ;
+						((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri",Direction.NE,5) ;
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -376,12 +376,37 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2") ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri") ;
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }
 			 }
 		 }, delay_send, TimeUnit.NANOSECONDS);
+
+		//(deuxieme temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
+		 this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
+			 @Override
+			 public void run() {
+				 try {
+					 //request Async
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2",Direction.NE,1) ;
+				 } catch (Exception e) {
+					 e.printStackTrace();
+				 }
+			 }
+		 }, delay_send2, TimeUnit.NANOSECONDS);
+
+		 this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
+			 @Override
+			 public void run() {
+				 try {
+					 //request Async
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2") ;
+				 } catch (Exception e) {
+					 e.printStackTrace();
+				 }
+			 }
+		 }, delay_send2, TimeUnit.NANOSECONDS);
 
 	 }
 	 

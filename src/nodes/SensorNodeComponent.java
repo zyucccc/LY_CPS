@@ -221,7 +221,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// ---------------------------------------------------------------------
 	protected void startSensorDataUpdateTask() {
 	    // mise a jour par secs
-	    long delay = 3_000; // milliseconde
+	    long delay = 2_000; // milliseconde
 
 	    this.scheduleTaskWithFixedDelay(
 	        new AbstractComponent.AbstractTask() {
@@ -232,7 +232,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	                String sensorIdentifier = "temperature";
 	                // generer new val temperature
 	                double newTemperature = ((SensorNodeComponent)this.getTaskOwner()).generateNewTemperatureValue();
-					System.err.println(((SensorNodeComponent)this.getTaskOwner()).nodeinfo.nodeIdentifier()+ " Test generer val: "+newTemperature);
 	                //Mettre en commentaire pour tester
 					try {
 						((SensorNodeComponent) this.getTaskOwner()).updateSensorData(sensorIdentifier, newTemperature);
@@ -240,10 +239,9 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 						System.err.println("Exception in updateSensorData scheduleTask: " + e.getMessage());
 						e.printStackTrace();
 					}
-					System.out.println("SensorNodeComponent [" +((SensorNodeComponent)this.getTaskOwner()).nodeinfo.nodeIdentifier() + "] updated sensor data: " + ((SensorNodeComponent)this.getTaskOwner()).processingNode.getSensorData(sensorIdentifier));
 	            }
 	        },
-	        delay, // init delay
+	        1L, // init delay
 	        delay, // delay entre 2 task
 	        TimeUnit.MILLISECONDS);
 
@@ -253,14 +251,14 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.sensorData_lock.writeLock().lock();
 		try {
 			Sensor oldSensor = (Sensor) this.processingNode.getSensorData(sensorIdentifier);
-			System.err.println(this.nodeinfo.nodeIdentifier() + " Test before put " + this.processingNode.getSensorData(sensorIdentifier));
+//			System.err.println(this.nodeinfo.nodeIdentifier() + " Test before put " + this.processingNode.getSensorData(sensorIdentifier));
 			if (oldSensor != null) {
 				Sensor newSensor = new Sensor(oldSensor.getNodeIdentifier(),
 						oldSensor.getSensorIdentifier(),
 						oldSensor.getType(),
 						newValue);
 				this.processingNode.addSensorData(sensorIdentifier, newSensor);
-				System.err.println(this.nodeinfo.nodeIdentifier() + " Test apres put " + this.processingNode.getSensorData(sensorIdentifier));
+//				System.err.println(this.nodeinfo.nodeIdentifier() + " Test apres put " + this.processingNode.getSensorData(sensorIdentifier));
 			}
 		}catch (Exception e){
 			System.err.println("Exception in updateSensorData: " + e.getMessage());
@@ -379,16 +377,17 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// Traiter les requetes from Client
 	// ---------------------------------------------------------------------
 	public QueryResultI processRequest(RequestI request) throws Exception{
-//		this.sensorData_lock.readLock().lock();
 		this.logMessage("----------------Receive Query------------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		Interpreter interpreter = new Interpreter();
 		Query<?> query = (Query<?>) request.getQueryCode();
 		ExecutionState data = new ExecutionState(); 
         data.updateProcessingNode(this.processingNode);
-        
+
+		this.sensorData_lock.readLock().lock();
         QueryResult result = (QueryResult) query.eval(interpreter, data);
-//		this.sensorData_lock.readLock().unlock();
+		this.sensorData_lock.readLock().unlock();
+
 		this.logMessage("----------------Res Actuel----------------------");
 		this.logMessage("Resultat du query: " + result);
          
@@ -410,16 +409,18 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// Traiter les requetes Async from Client
 	// ---------------------------------------------------------------------
 	public void processRequest_Async(RequestI request) throws Exception{
-//		this.sensorData_lock.readLock().lock();
+
 		this.logMessage("----------------Receive Query Async------------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request Async");	
 		Interpreter interpreter = new Interpreter();
 		Query<?> query = (Query<?>) request.getQueryCode();
 		ExecutionState data = new ExecutionState(); 
         data.updateProcessingNode(this.processingNode);
-        
+
+		this.sensorData_lock.readLock().lock();
         QueryResult result = (QueryResult) query.eval(interpreter, data);
-//		this.sensorData_lock.readLock().unlock();
+		this.sensorData_lock.readLock().unlock();
+
 		this.logMessage("----------------Res Actuel----------------------");
 		this.logMessage("Resultat du query: " + result);
          
@@ -447,7 +448,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// ---------------------------------------------------------------------
 	public void propagerQuery(RequestContinuationI request) throws Exception {
 		this.logMessage("-----------------Propager Query------------------");
-//		this.sensorData_lock.readLock().lock();
 		ExecutionState data = (ExecutionState) request.getExecutionState();
 		//deal with direction
 		if(data.isDirectional()) {
@@ -494,7 +494,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	
 	//deal with les request continuation recu par les nodes
 	public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
-//		this.sensorData_lock.readLock().lock();
 		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
 		//pour eviter le Probleme: deadlock caused by Call_back
 		//ex: node 1 send request flooding to node2,node2 send encore request to node1
@@ -523,20 +522,22 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("---------------Receive Query Continuation---------------");
 		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
 		Query<?> query = (Query<?>) requestCont.getQueryCode();
-        data.updateProcessingNode(this.processingNode);  
-        QueryResultI result = (QueryResult) query.eval(interpreter, data);	
-		this.logMessage("----------------Res Actuel----------------------");
-		this.logMessage("Res Cont de node actuel: " + result);
+        data.updateProcessingNode(this.processingNode);
+
+		this.sensorData_lock.readLock().lock();
+        QueryResultI result = (QueryResult) query.eval(interpreter, data);
+		this.sensorData_lock.readLock().unlock();
+
+		this.logMessage("----------------Resultat Actuel----------------------");
+		this.logMessage("Resultat Continuational de node actuel: " + result);
         
 		this.propagerQuery(requestCont);
 		this.logMessage("------------------------------------");
-//		this.sensorData_lock.readLock().unlock();
 		return result;
 	 }
 	
 	//process Request Continuation Async 
 	public void processRequestContinuation_Asyn(RequestContinuationI requestCont) throws Exception{
-//		this.sensorData_lock.readLock().lock();
 		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
 		//pour eviter le Probleme: deadlock caused by Call_back
 		//ex: node 1 send request flooding to node2,node2 send encore request to node1
@@ -569,7 +570,11 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         
      
 		this.logMessage("----------------Res Actuel----------------------");
-		QueryResultI result = (QueryResult) query.eval(interpreter, data);	
+
+		this.sensorData_lock.readLock().lock();
+		QueryResultI result = (QueryResult) query.eval(interpreter, data);
+		this.sensorData_lock.readLock().unlock();
+
 		this.logMessage("Res Cont de node actuel: " + result);
         
 		//traiter la fin du request:

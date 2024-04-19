@@ -7,6 +7,7 @@ import request.ast.interfaces.IASTvisitor;
 import sensor_network.Position;
 
 public class ABase extends Base{
+    protected PositionI position;
 	
 	public ABase(PositionI position) {
         this.position = position;
