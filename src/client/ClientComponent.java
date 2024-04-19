@@ -65,13 +65,15 @@ public class ClientComponent extends AbstractComponent {
 	//pool thread pour recevoir les resultats des requete Async from Node
 	protected int index_poolthread_receiveAsync;
 	protected String uri_pool_receiveAsync = "client-pool-thread-receiveAsync";
-	protected int nbThreads_poolReceiveAsync = 20;
+	protected int nbThreads_poolReceiveAsync = 40;
 	//pool thread pour envoyer les requetes async aux nodes
 	protected int index_poolthread_sendAsync;
 	protected String uri_pool_sendAsync = "client-pool-thread-sendAsync";
 	protected int nbThreads_poolSendAsync = 5;
+    //le node id on va connecter
+	protected String NodeId = "";
 	
-	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI) throws Exception {
+	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI,String NodeId) throws Exception {
 		super(uri, 1, 2);
 
 		// ---------------------------------------------------------------------
@@ -120,6 +122,8 @@ public class ClientComponent extends AbstractComponent {
 		
 		this.requestResults = new HashMap<>();
 		this.requestTimes = new HashMap<>();
+
+		this.NodeId = NodeId;
         
 		
         AbstractComponent.checkImplementationInvariant(this);
@@ -344,8 +348,8 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 // essayer de connecter de node indiquee
-					 String NodeID = "node1";
-					 ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(NodeID);
+//					 String NodeID = "node1";
+					 ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(((ClientComponent)this.getTaskOwner()).NodeId);
 
 					 //request Sync
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
@@ -411,7 +415,7 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri3",Direction.SW,6) ;
+//					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri3",Direction.SW,6) ;
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }
@@ -423,7 +427,7 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri3",16.0) ;
+//					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri3",16.0) ;
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }

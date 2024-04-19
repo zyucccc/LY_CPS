@@ -30,8 +30,11 @@ public class CVM extends AbstractCVM {
 	// ---------------------------------------------------------------------
 	// URIs statiques
 	// ---------------------------------------------------------------------
-	private int nbNodes = 49;
+	private int nbNodes = 13;
 	private int nbClients = 2;
+	// ---------------------------------------------------------------------
+	// on stocke les uris des ports des clients pour les deconnecter(cycle de vie:Finaliser) plus tard
+	// ---------------------------------------------------------------------
     String[] uris_clientComposant = new String[nbClients];
 	String[] uris_client_Node_outbound = new String[nbClients];
 	String[] uris_client_Registre_outbound = new String[nbClients];
@@ -40,13 +43,18 @@ public class CVM extends AbstractCVM {
 	public static final Instant START_INSTANT = Instant.now().plusSeconds(1);
 	protected static final long START_DELAY = 3000L;
 	public static final double ACCELERATION_FACTOR = 1.0;
-
+	// ---------------------------------------------------------------------
+	// URIs pour le registre
+	// ---------------------------------------------------------------------
 	//component uri
 	protected static final String Registre_COMPONENT_URI = "my-registre-uri";
 	//Registre inbound port
 	protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
 	protected static final String Registre_RegistrationCI_INBOUND_PORT_URI = "registre-RegistrationCI-inbound-uri";
 
+	// ---------------------------------------------------------------------
+	// URIs automatiques pour les clients
+	// ---------------------------------------------------------------------
 	private static final AtomicInteger idCounter_Client = new AtomicInteger(0);
     protected String[] generateClientAndPortsURIs() {
 		int baseId = idCounter_Client.incrementAndGet();
@@ -60,13 +68,6 @@ public class CVM extends AbstractCVM {
 		String Client_AsynReqest_Inbound_PORT_URI="client-asynRequest-inbound-uri" + baseId;
 		return new String[] {CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI, CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI};
 	}
-//    protected static final String CLIENT_COMPONENT_URI = "my-client-uri";
-//    //Client asyn Request InboundPort
-//    String Client_AsynReqest_Inbound_PORT_URI="client-asynRequest-inbound-uri";
-//	//Client outbound port pour des Nodes
-//    protected static final String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri";
-//    //Client outbound port pour Registre
-//    protected static final String CLIENT_Registre_OUTBOUND_PORT_URI = "client-registre-outbound-uri";
 
 	// ---------------------------------------------------------------------
 	// URIs automatiques pour les noeuds
@@ -138,8 +139,8 @@ public class CVM extends AbstractCVM {
     		// Creation phase
     		// ---------------------------------------------------------------------
      		//clock
-		long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
-		AbstractComponent.createComponent(
+			long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
+			AbstractComponent.createComponent(
 				ClocksServer.class.getCanonicalName(),
 				new Object[]{
 						CLOCK_URI, // URI attribuée à l’horloge
@@ -147,16 +148,17 @@ public class CVM extends AbstractCVM {
 						START_INSTANT, // instant de démarrage du scénario
 						ACCELERATION_FACTOR}); // facteur d’acccélération
 
-		// creer registre Component
+			// creer registre Component
+			this.uriRegistreURI =
+					AbstractComponent.createComponent(
+							RegistreComponent.class.getCanonicalName(),
+							new Object[]{Registre_COMPONENT_URI,Registre_RegistrationCI_INBOUND_PORT_URI, Registre_LookupCI_INBOUND_PORT_URI});
+			assert this.isDeployedComponent(this.uriRegistreURI);
+			this.toggleTracing(this.uriRegistreURI);
+			this.toggleLogging(this.uriRegistreURI);
 
-		this.uriRegistreURI =
-				AbstractComponent.createComponent(
-						RegistreComponent.class.getCanonicalName(),
-						new Object[]{Registre_COMPONENT_URI,Registre_RegistrationCI_INBOUND_PORT_URI, Registre_LookupCI_INBOUND_PORT_URI});
-		assert this.isDeployedComponent(this.uriRegistreURI);
-		this.toggleTracing(this.uriRegistreURI);
-		this.toggleLogging(this.uriRegistreURI);
-            
+		    //node ids lesquels les clients veulent connecter
+			String[] NodeIDs = {"node1","node13"};
             // creer client Component
 			for(int i = 0; i < nbClients; i++) {
 				//les uris de client
@@ -175,7 +177,13 @@ public class CVM extends AbstractCVM {
 				this.uriClientURI =
 						AbstractComponent.createComponent(
 							ClientComponent.class.getCanonicalName(),
-							new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI,CLOCK_URI});
+							new Object[]{CLIENT_COMPONENT_URI,
+									CLIENT_Node_OUTBOUND_PORT_URI,
+									CLIENT_Registre_OUTBOUND_PORT_URI,
+									Client_AsynReqest_Inbound_PORT_URI,
+									CLOCK_URI,
+									NodeIDs[i]});
+
 				assert this.isDeployedComponent(this.uriClientURI);
 				this.toggleTracing(this.uriClientURI);
 				this.toggleLogging(this.uriClientURI);
@@ -189,86 +197,66 @@ public class CVM extends AbstractCVM {
 						Registre_LookupCI_INBOUND_PORT_URI,
 						ClientRegistreConnector.class.getCanonicalName());
 			}//boucle pour creer des Clients
-//			String[]
-//            this.uriClientURI =
-//                AbstractComponent.createComponent(
-//                    ClientComponent.class.getCanonicalName(),
-//                    new Object[]{CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI,CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI,CLOCK_URI});
-//            assert this.isDeployedComponent(this.uriClientURI);
-//            this.toggleTracing(this.uriClientURI);
-//            this.toggleLogging(this.uriClientURI);
-                
-              //connection client to registre
-//                this.doPortConnection(
-//                    	this.uriClientURI,
-//                    	CLIENT_Registre_OUTBOUND_PORT_URI,
-//                    	Registre_LookupCI_INBOUND_PORT_URI,
-//                        ClientRegistreConnector.class.getCanonicalName());
 
-
-                
-        //node  
-     	//nodeinfo
-//		     int nbNodes = 49;
      		 Position[] positions = {
      		        new Position(0.0, 0.0),
 					//direction：Nord
 	 		        new Position(0.0, 10.0),
-	 		        new Position(0.0, 20.0),
+//	 		        new Position(0.0, 20.0),
 					//direction: Sud
 					new Position(0.0, -10.0),
-	 		        new Position(0.0, -20.0),
+//	 		        new Position(0.0, -20.0),
 					//direction: Est
 					new Position(10.0, 0.0),
-					new Position(20.0, 0.0),
+//					new Position(20.0, 0.0),
 					//direction: Ouest
 					new Position(-10.0, 0.0),
-					new Position(-20.0, 0.0),
+//					new Position(-20.0, 0.0),
 					//direction: NE
      		        new Position(5.0, 5.0),
      		        new Position(10.0, 10.0),
-					new Position(15.0, 15.0),
-					new Position(20.0, 20.0),
-					new Position(25.0,25.0),
-					new Position(5.0,15.0),
-					new Position(15.0,5.0),
-					new Position(10.0,20.0),
-					new Position(20.0,10.0),
-					new Position(25.0,5.0),
+//					new Position(15.0, 15.0),
+//					new Position(20.0, 20.0),
+//					new Position(25.0,25.0),
+//					new Position(5.0,15.0),
+//					new Position(15.0,5.0),
+//					new Position(10.0,20.0),
+//					new Position(20.0,10.0),
+//					new Position(25.0,5.0),
 
 					//direction: SE
      		        new Position(5.0,-5.0),
 					new Position(10.0,-10.0),
-					new Position(15.0,-15.0),
-					new Position(20.0,-20.0),
-					 new Position(25.0,-25.0),
-					 new Position(5.0,-15.0),
-					 new Position(15.0,-5.0),
-					 new Position(10.0,-20.0),
-					 new Position(20.0,-10.0),
-					 new Position(25.0,-5.0),
+//					new Position(15.0,-15.0),
+//					new Position(20.0,-20.0),
+//					 new Position(25.0,-25.0),
+//					 new Position(5.0,-15.0),
+//					 new Position(15.0,-5.0),
+//					 new Position(10.0,-20.0),
+//					 new Position(20.0,-10.0),
+//					 new Position(25.0,-5.0),
 					//direction: NW
 					new Position(-5.0, 5.0),
 				    new Position(-10.0, 10.0),
-				    new Position(-15.0, 15.0),
-				    new Position(-20.0, 20.0),
-					 new Position(-25.0,25.0),
-					 new Position(-5.0,15.0),
-					 new Position(-15.0,5.0),
-					 new Position(-10.0,20.0),
-					 new Position(-20.0,10.0),
-					 new Position(-25.0,5.0),
+//				    new Position(-15.0, 15.0),
+//				    new Position(-20.0, 20.0),
+//					 new Position(-25.0,25.0),
+//					 new Position(-5.0,15.0),
+//					 new Position(-15.0,5.0),
+//					 new Position(-10.0,20.0),
+//					 new Position(-20.0,10.0),
+//					 new Position(-25.0,5.0),
 					//direction: SW
 					new Position(-5.0,-5.0),
 					new Position(-10.0,-10.0),
-					new Position(-15.0,-15.0),
-					new Position(-20.0,-20.0),
-					 new Position(-25.0,-25.0),
-					 new Position(-5.0,-15.0),
-					 new Position(-15.0,-5.0),
-					 new Position(-10.0,-20.0),
-					 new Position(-20.0,-10.0),
-					 new Position(-25.0,-5.0),
+//					new Position(-15.0,-15.0),
+//					new Position(-20.0,-20.0),
+//					 new Position(-25.0,-25.0),
+//					 new Position(-5.0,-15.0),
+//					 new Position(-15.0,-5.0),
+//					 new Position(-10.0,-20.0),
+//					 new Position(-20.0,-10.0),
+//					 new Position(-25.0,-5.0),
 
      		    };
 	 		//definir les temperatures
@@ -283,9 +271,8 @@ public class CVM extends AbstractCVM {
 			//definir les situations de fumée
 			boolean[] smokes = new boolean[nbNodes];
 			for (int i = 0; i < nbNodes; i++) {
-//				smokes[i] = Math.random() > 0.5;
-				smokes[i] = rand.nextBoolean();
-//				smokes[i] = true;
+//				smokes[i] = rand.nextBoolean();
+				smokes[i] = true;
 			}
 
      	    // creer des Nodes
@@ -293,14 +280,13 @@ public class CVM extends AbstractCVM {
      			//les uris de noeuds
 				String[] uris = generateNodeAndPortsURIs();
      			Position position = positions[i];
-     			double tempera = temperatures[i];
+     			double temperature = temperatures[i];
      			boolean smoke = smokes[i];
      			double range = ranges[i];
-				 //Position position = new Position(Math.random() * 100, Math.random() * 100);
      			EndPointDescriptor uriinfo = new EndPointDescriptor(uris[2]);
          		EndPointDescriptor p2pEndPoint = new EndPointDescriptor(uris[1]);
          		NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,uriinfo);
-         		Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,tempera);
+         		Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,temperature);
                 Sensor SensorData_fumée = new Sensor("node"+(i+1),"fumée",Boolean.class,smoke);
                 HashMap<String, Sensor> sensorsData = new HashMap<String, Sensor>();
                 sensorsData.put("temperature",SensorData_temperature);
@@ -348,12 +334,6 @@ public class CVM extends AbstractCVM {
 			this.doPortDisconnection(uris_clientComposant[i],
 					uris_client_Node_outbound[i]);
 		}
-
-//		this.doPortDisconnection(this.uriClientURI,
-//				CLIENT_Node_OUTBOUND_PORT_URI);
-//		this.doPortDisconnection(this.uriClientURI,
-//				CLIENT_Registre_OUTBOUND_PORT_URI);
-
 		super.finalise();
 	}
     

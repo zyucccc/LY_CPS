@@ -16,6 +16,7 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
+import fr.sorbonne_u.components.examples.basic_cs.interfaces.URIProviderCI;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.ports.PortI;
@@ -82,6 +83,11 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected String uri_pool_receiveSync = "-pool-thread-receiveSync";
 	protected int nbThreads_poolReceiveSync = 10;
 
+	//pool thread pour traiter les requetes de connection(askConnection,askDisconnection
+	protected int index_poolthread_Receiveconnection;
+	protected String uri_pool_Receiveconnection = "-pool-thread-Receiveconnection";
+	protected int nbThreads_Receiveconnection = 4;
+
 	//gestion Concurrence
 	protected final ReentrantReadWriteLock sensorData_lock = new ReentrantReadWriteLock();
 	protected final ReentrantReadWriteLock neighbours_lock = new ReentrantReadWriteLock();
@@ -113,7 +119,7 @@ public class SensorNodeComponent extends AbstractComponent {
 			String CLOCK_URI
             ) throws Exception {
 		
-		super(uriPrefix, 5, 5) ;
+		super(uriPrefix, 7, 7) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
@@ -142,8 +148,10 @@ public class SensorNodeComponent extends AbstractComponent {
 		// ---------------------------------------------------------------------
 		uri_pool_receiveAsync = uriPrefix+uri_pool_receiveAsync;
 		uri_pool_receiveSync = uriPrefix+uri_pool_receiveSync;
+		uri_pool_Receiveconnection = uriPrefix+uri_pool_Receiveconnection;
 		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
         this.index_poolthread_receiveSync = this.createNewExecutorService(this.uri_pool_receiveSync, this.nbThreads_poolReceiveSync,false);
+        this.index_poolthread_Receiveconnection = this.createNewExecutorService(this.uri_pool_Receiveconnection, this.nbThreads_Receiveconnection,false);
 
 		this.nodeinfo = (NodeInfo) nodeInfo;
 	    
@@ -214,6 +222,10 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 
 	public int getIndex_poolthread_receiveSync() {
 		return index_poolthread_receiveSync;
+	}
+
+	public int getIndex_poolthread_Receiveconnection() {
+		return index_poolthread_Receiveconnection;
 	}
 
 	// ---------------------------------------------------------------------
@@ -365,20 +377,42 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	            this.node_registre_port.doDisconnection();
 	        }
 	        this.node_registre_port.unpublishPort();
-	        super.finalise();
+		    super.finalise();
 	    }
 	 
 	 @Override
 	    public void shutdown() throws ComponentShutdownException {
-	        super.shutdown();
+		 try {
+			 PortI[] p = this.findPortsFromInterface(RequestingCI.class);
+			 p[0].unpublishPort();
+			 PortI[] q = this.findPortsFromInterface(SensorNodeP2PCI.class);
+			 q[0].unpublishPort();
+
+		 } catch (Exception e) {
+			 throw new ComponentShutdownException(e);
+		 }
+		 super.shutdown();
+	    }
+		@Override
+		public void shutdownNow() throws ComponentShutdownException {
+			try {
+				PortI[] p = this.findPortsFromInterface(RequestingCI.class);
+				p[0].unpublishPort();
+				PortI[] q = this.findPortsFromInterface(SensorNodeP2PCI.class);
+				q[0].unpublishPort();
+
+			} catch (Exception e) {
+				throw new ComponentShutdownException(e);
+			}
+			super.shutdownNow();
 	    }
 
 	// ---------------------------------------------------------------------
 	// Traiter les requetes from Client
 	// ---------------------------------------------------------------------
 	public QueryResultI processRequest(RequestI request) throws Exception{
-		this.logMessage("----------------Receive Query------------------");
-		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
+		this.logMessage("----------------Receive Query Sync------------------");
+		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request Sync");
 		Interpreter interpreter = new Interpreter();
 		Query<?> query = (Query<?>) request.getQueryCode();
 		ExecutionState data = new ExecutionState(); 
@@ -389,7 +423,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.sensorData_lock.readLock().unlock();
 
 		this.logMessage("----------------Res Actuel----------------------");
-		this.logMessage("Resultat du query: " + result);
+		this.logMessage("Resultat du requete Sync: " + result);
          
          if(data.isDirectional()||data.isFlooding()) {
         	 RequestContinuation requestCont = new RequestContinuation(request,data);
@@ -401,7 +435,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         QueryResult result_all = (QueryResult) data.getCurrentResult();
 
 		this.logMessage("------------------Res ALL----------------------");
-		this.logMessage("Resultat du query: " + result_all);
+		this.logMessage("Resultat du requete Sync: " + result_all);
 		this.logMessage("--------------------------------------");
 		return result_all;
 	 }
@@ -421,14 +455,38 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         QueryResult result = (QueryResult) query.eval(interpreter, data);
 		this.sensorData_lock.readLock().unlock();
 
-		this.logMessage("----------------Res Actuel----------------------");
-		this.logMessage("Resultat du query: " + result);
+		this.logMessage("----------------Resultat Async Actuel----------------------");
+		this.logMessage("Resultat du quete Async: " + result);
          
          if(data.isDirectional()||data.isFlooding()) {
         	 //if cest un request continuation
         	 RequestContinuation requestCont = new RequestContinuation(request,data);
         	 //pour enregister les nodes deja traite pour ce request
         	 requestCont.addVisitedNode(this.nodeinfo);
+			 //traiter la fin du request:
+			 if(data.isDirectional()){
+				 //si no more hops ou pas de neighbours pour la direction demandé,on renvoie le resultat au client
+				 if(data.noMoreHops()) {
+					 this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No more hops");
+					 this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+					 renvoyerAsyncRes(requestCont);
+					 return;
+				 } else if (checkNeighboursDansDirection(requestCont)) {
+					 this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No neighbours dans la direction");
+					 this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+					 renvoyerAsyncRes(requestCont);
+					 return;
+				 }
+			 }else if(data.isFlooding()) {
+				 // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
+				 //si cest le cas,renvoyer le res actuel au client
+				 if(checkNeighboursDansPortee(requestCont)) {
+					 this.logMessage("Requete flooding fini "+requestCont.requestURI()+" : No neighbours dans le portee");
+					 this.logMessage(this.nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
+					 renvoyerAsyncRes(requestCont);
+					 return;
+				 }
+			 }
         	 this.propagerQuery(requestCont);
          }else{
         	 //if cest un request ECont,renvoyer directement le res a Client
@@ -476,7 +534,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir); 
 	    	  if(selectedOutboundPort.connected()) {	
 	    		  if(!request.isAsynchronous()) {
-	    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request flooding dir :"+dir);
+	    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request Sync flooding dir :"+dir);
 	    		   selectedOutboundPort.execute(request);
 	    		  }else {
 		    		  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request Async flooding dir :"+dir);
@@ -508,7 +566,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//si oui ,on continue a collecter les infos de node actuel
 		//si non,on return le res precedent
 		if(data.isFlooding()) {
-			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request");
+			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request Sync");
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
 			if(!data.withinMaximalDistance(actuel_position)) {
 //				this.logMessage("Hors distance");
@@ -519,8 +577,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 				data.incrementHops();
 			}
 		 
-		this.logMessage("---------------Receive Query Continuation---------------");
-		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request");	
+		this.logMessage("---------------Receive Query Continuation Sync---------------");
+		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request sync");
 		Query<?> query = (Query<?>) requestCont.getQueryCode();
         data.updateProcessingNode(this.processingNode);
 
@@ -528,7 +586,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
         QueryResultI result = (QueryResult) query.eval(interpreter, data);
 		this.sensorData_lock.readLock().unlock();
 
-		this.logMessage("----------------Resultat Actuel----------------------");
+		this.logMessage("----------------Resultat Actuel Sync----------------------");
 		this.logMessage("Resultat Continuational de node actuel: " + result);
         
 		this.propagerQuery(requestCont);
@@ -552,7 +610,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		//si oui ,on continue a collecter les infos de node actuel
 		//si non,on return le res precedent
 		if(data.isFlooding()) {
-			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request asyn");
+			this.logMessage(this.nodeinfo.nodeIdentifier()+" receive flooding request Async");
 			Position actuel_position = (Position) this.nodeinfo.nodePosition();
 			if(!data.withinMaximalDistance(actuel_position)) {
 //				this.logMessage("Hors distance");
@@ -564,12 +622,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			}
 		 
 		this.logMessage("---------------Receive Query Continuation Async---------------");
-		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request async");	
+		this.logMessage("SensorNodeComponent "+this.nodeinfo.nodeIdentifier()+" : receive request Async");
 		Query<?> query = (Query<?>) requestCont.getQueryCode();
         data.updateProcessingNode(this.processingNode);  
         
      
-		this.logMessage("----------------Res Actuel----------------------");
+		this.logMessage("----------------Res Actuel Async----------------------");
 
 		this.sensorData_lock.readLock().lock();
 		QueryResultI result = (QueryResult) query.eval(interpreter, data);

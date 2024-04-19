@@ -182,7 +182,7 @@ public class RegistreComponent extends AbstractComponent {
     	this.logMessage("------------Receive Client Request (By Id)---------------\n"+"RegistreComponent receive request de Client : findByIdentifer() avec NodeID :"+ sensorNodeId);
     	NodeInfo nodeInfo = registeredNodes.get(sensorNodeId);
         if (nodeInfo != null) {
-//        	this.logMessage("RegistreComponent : findByIdentifer() NodeID :"+ sensorNodeId + "NodeInfo : " + nodeInfo);
+        	this.logMessage("RegistreComponent : findByIdentifer() NodeID :"+ sensorNodeId + "NodeInfo : " + nodeInfo);
             return new ConnectionInfo(sensorNodeId, nodeInfo.endPointInfo());
         }
         return null;
