@@ -39,7 +39,7 @@ public class RegistreComponent extends AbstractComponent {
     //pool thread node
     protected int index_poolthread_node;
     protected String uri_pool_node = "registre-pool-thread-node";
-    protected int nbThreads_poolNode = 60;
+    protected int nbThreads_poolNode = 50;
 
     //Gestion Concurrence : Technique concurrentHashMap
     //hashmap pour stocker les noeuds deja register
@@ -179,11 +179,10 @@ public class RegistreComponent extends AbstractComponent {
     // Partie Lookup.CI   for client
     // ---------------------------------------------------------------------
     public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
-    	this.logMessage("------------Receive Client Request (By Id)---------------");
-    	this.logMessage("RegistreComponent receive request de Client : findByIdentifer() avec NodeID :"+ sensorNodeId);
+    	this.logMessage("------------Receive Client Request (By Id)---------------\n"+"RegistreComponent receive request de Client : findByIdentifer() avec NodeID :"+ sensorNodeId);
     	NodeInfo nodeInfo = registeredNodes.get(sensorNodeId);
         if (nodeInfo != null) {
-        	this.logMessage("RegistreComponent : findByIdentifer() NodeID :"+ sensorNodeId + "NodeInfo : " + nodeInfo);
+//        	this.logMessage("RegistreComponent : findByIdentifer() NodeID :"+ sensorNodeId + "NodeInfo : " + nodeInfo);
             return new ConnectionInfo(sensorNodeId, nodeInfo.endPointInfo());
         }
         return null;

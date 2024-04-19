@@ -335,7 +335,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 					e.printStackTrace();
 				}
 			}
-		}, delay_register, TimeUnit.NANOSECONDS);
+		}, 1L, TimeUnit.NANOSECONDS);
     }
 	
 	 @Override
@@ -651,10 +651,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
     	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getInboundPortURI();
     	 if(this.node_asynRequest_Outport.connected()) {
 			 this.doPortDisconnection(this.node_asynRequest_Outport.getPortURI());
-//    		 this.node_asynRequest_Outport.doDisconnection();
     	 }
 		 this.doPortConnection(this.node_asynRequest_Outport.getPortURI(),InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
-//    	 this.node_asynRequest_Outport.doConnection(InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
     	 ExecutionState data = (ExecutionState) request.getExecutionState();
     	 QueryResult result_all = (QueryResult) data.getCurrentResult();
     	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
@@ -770,7 +768,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	    if (selectedOutboundPort != null) {
 	    	        try {
 	    	           if(selectedOutboundPort.connected()) {
-	    	        	   selectedOutboundPort.doDisconnection();
+						   this.doPortDisconnection(selectedOutboundPort.getPortURI());
+//	    	        	   selectedOutboundPort.doDisconnection();
 	    	           }
                        this.connecter(direction,selectedOutboundPort, neighbourInfo);
 	    	           selectedOutboundPort.ask4Connection(nodeinfo);

@@ -65,11 +65,11 @@ public class ClientComponent extends AbstractComponent {
 	//pool thread pour recevoir les resultats des requete Async from Node
 	protected int index_poolthread_receiveAsync;
 	protected String uri_pool_receiveAsync = "client-pool-thread-receiveAsync";
-	protected int nbThreads_poolReceiveAsync = 10;
+	protected int nbThreads_poolReceiveAsync = 20;
 	//pool thread pour envoyer les requetes async aux nodes
 	protected int index_poolthread_sendAsync;
 	protected String uri_pool_sendAsync = "client-pool-thread-sendAsync";
-	protected int nbThreads_poolSendAsync = 10;
+	protected int nbThreads_poolSendAsync = 5;
 	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI) throws Exception {
 		super(uri, 1, 2);
@@ -196,9 +196,7 @@ public class ClientComponent extends AbstractComponent {
     	this.logMessage("-----------------Client Send Requete Async (Direction) ------------------");
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
         ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
-//        int nb_saut = 2;
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(dir),nb_saut));
-//        String requestURI = "gather-request-Async-uri";
 		this.logMessage("ClientComponent Sending Request Async Direction: "+requestURI);
         RequestI request = new Request(requestURI,test,true,connection_info);
         this.client_node_port.executeAsync(request);
@@ -209,15 +207,14 @@ public class ClientComponent extends AbstractComponent {
 	}
 
 	//Request Flooding Async
-	public void sendRequest_flooding_Asyn(String requestURI) throws Exception{
+	public void sendRequest_flooding_Asyn(String requestURI,double max_distance) throws Exception{
 		this.logMessage("-----------------Client Send Requete Async (Flooding)------------------");
 		
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
 	    ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
 		 
-		double max_distance =8.0;
+//		double max_distance =8.0;
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
-//        String requestURI = "flood-request-Async-uri";
 		this.logMessage("ClientComponent Sending request Async Flooding: "+requestURI);
         RequestI request = new Request(requestURI,test,true,connection_info);
        
@@ -313,9 +310,11 @@ public class ClientComponent extends AbstractComponent {
 	 @Override
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
-		Instant instant_findConnecter = start_instant.plusSeconds(3);
-		Instant instant_sendAsync = start_instant.plusSeconds(5);
-		Instant instant_sendAsync2 = start_instant.plusSeconds(7);
+		//3
+		Instant instant_findConnecter = start_instant.plusSeconds(8);
+		//5,7
+		Instant instant_sendAsync = start_instant.plusSeconds(10);
+		Instant instant_sendAsync2 = start_instant.plusSeconds(10);
 		long delay = 1L;
 		long delay_send = 1L;
 		long delay_send2 = 1L;
@@ -376,7 +375,7 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri") ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri",8.0) ;
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }
@@ -389,7 +388,7 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2",Direction.NE,1) ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2",Direction.NW,5) ;
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }
@@ -401,7 +400,30 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2") ;
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2",12.0) ;
+				 } catch (Exception e) {
+					 e.printStackTrace();
+				 }
+			 }
+		 }, delay_send2, TimeUnit.NANOSECONDS);
+		 this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
+			 @Override
+			 public void run() {
+				 try {
+					 //request Async
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri3",Direction.SW,6) ;
+				 } catch (Exception e) {
+					 e.printStackTrace();
+				 }
+			 }
+		 }, delay_send2, TimeUnit.NANOSECONDS);
+
+		 this.scheduleTask(this.index_poolthread_sendAsync,new AbstractComponent.AbstractTask() {
+			 @Override
+			 public void run() {
+				 try {
+					 //request Async
+					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri3",16.0) ;
 				 } catch (Exception e) {
 					 e.printStackTrace();
 				 }

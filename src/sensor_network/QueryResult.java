@@ -1,7 +1,7 @@
 package sensor_network;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.*;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
@@ -40,10 +40,24 @@ public class QueryResult implements QueryResultI,Serializable{
 
     public void mergeRes(QueryResultI otherResult) {
         if (otherResult.isBooleanRequest()) {
-            this.positiveSensorNodes.addAll(otherResult.positiveSensorNodes());
+            //traiter les doublons en utilisant hashset
+            Set<String> uniqueSensorNodes = new HashSet<>(this.positiveSensorNodes);
+            uniqueSensorNodes.addAll(otherResult.positiveSensorNodes());
+            this.positiveSensorNodes = new ArrayList<>(uniqueSensorNodes);
         }
         if (otherResult.isGatherRequest()) {
-            this.gatheredSensorsValues.addAll(otherResult.gatheredSensorsValues());
+            //traiter les doublons en utilisant hashmap
+            Map<String, SensorDataI> uniqueSensors = new HashMap<>();
+            for (SensorDataI sensorData : this.gatheredSensorsValues) {
+                String key = sensorData.getNodeIdentifier() + ":" + sensorData.getSensorIdentifier();
+                uniqueSensors.put(key, sensorData);
+            }
+            for (SensorDataI newSensorData : otherResult.gatheredSensorsValues()) {
+                String key = newSensorData.getNodeIdentifier() + ":" + newSensorData.getSensorIdentifier();
+                uniqueSensors.put(key, newSensorData);
+            }
+            this.gatheredSensorsValues = new ArrayList<>(uniqueSensors.values());
+//            this.gatheredSensorsValues.addAll(otherResult.gatheredSensorsValues());
         }
     }
     
@@ -75,38 +89,6 @@ public class QueryResult implements QueryResultI,Serializable{
         return gatheredSensorsValues;
     }
     
-//    @Override
-//    public String toString() {
-//        StringBuilder sb = new StringBuilder();
-//        if (isBooleanRequest) {
-//            sb.append("Boolean Query Result: \n");
-//            if (positiveSensorNodes.isEmpty()) {
-//                sb.append("No positive sensor nodes.");
-//            } else {
-//                sb.append("Positive Sensor Nodes: ");
-//                sb.append(String.join(", ", positiveSensorNodes));
-//            }
-//        }
-//        if (isGatherRequest) {
-//            if (sb.length() > 0) {
-//                sb.append("\n"); // 如果已经有内容，添加换行符
-//            }
-//            sb.append("Gather Query Result: \n");
-//            if (gatheredSensorsValues.isEmpty()) {
-//                sb.append("No sensor data gathered.");
-//            } else {
-//                sb.append("Gathered Sensors Values: [");
-//                ArrayList<String> sensorValues = new ArrayList<>();
-//                for (SensorDataI sensorData : gatheredSensorsValues) {
-//                    sensorValues.add(sensorData.toString()); // 假设SensorDataI也重写了toString方法
-//                }
-//                sb.append(String.join(", ", sensorValues));
-//                sb.append("]");
-//            }
-//        }
-//        return sb.toString();
-//    }
-    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -121,7 +103,7 @@ public class QueryResult implements QueryResultI,Serializable{
         }
         if (isGatherRequest) {
             if (sb.length() > 0) {
-                sb.append("\n"); // 如果已经有内容，添加换行符
+                sb.append("\n");
             }
             sb.append("Gather Query Result: \n");
             if (gatheredSensorsValues.isEmpty()) {
@@ -130,14 +112,12 @@ public class QueryResult implements QueryResultI,Serializable{
                 sb.append("Gathered Sensors Values: ");
                 ArrayList<String> sensorValues = new ArrayList<>();
                 for (SensorDataI sensorData : gatheredSensorsValues) {
-                    // 修改此处以满足新的格式要求
                     String sensorValueString = String.format("[Node ID: %s, Sensor ID: %s, Value: %s]", 
                         sensorData.getNodeIdentifier(), 
                         sensorData.getSensorIdentifier(), 
                         sensorData.getValue().toString());
                     sensorValues.add(sensorValueString);
                 }
-                // 使用";"作为分隔符
                 sb.append("[" + String.join(";", sensorValues) + "]");
             }
         }

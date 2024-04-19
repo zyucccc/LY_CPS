@@ -45,12 +45,24 @@ public class Sensor implements SensorDataI {
     public Instant getTimestamp() {
         return timestamp;
     }
-    
-//    @Override
-//    public String toString() {
-//        return String.format("Node ID: %s, Sensor ID: %s, Value: %s, Timestamp: %s", 
-//                             nodeIdentifier, sensorIdentifier, value.toString(), timestamp.toString());
-//    }
+
+    //on override equals et hashcode pour pouvoir comparer et merger les sensordatas(QueryResult)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Sensor other = (Sensor) obj;
+        return nodeIdentifier.equals(other.nodeIdentifier) &&
+                sensorIdentifier.equals(other.sensorIdentifier);
+    }
+    @Override
+    public int hashCode() {
+        return 31 * nodeIdentifier.hashCode() + sensorIdentifier.hashCode();
+    }
     
     @Override
     public String toString() {
