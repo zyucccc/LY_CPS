@@ -90,12 +90,12 @@ public class SensorNodeComponent extends AbstractComponent {
 
 	//gestion Concurrence
 	protected final ReentrantReadWriteLock sensorData_lock = new ReentrantReadWriteLock();
-	protected final ReentrantReadWriteLock neighbours_lock = new ReentrantReadWriteLock();
+//	protected final ReentrantReadWriteLock neighbours_lock = new ReentrantReadWriteLock();
 
 	//on utilise les pools de threads par defaut pour traiter les fonctions register,connecter
 	//on introduit 2 pools de threads distincts pour traiter les requetes recus
 	
-	protected Map<Direction,NodeInfoI> neighbours;
+	protected ConcurrentHashMap<Direction,NodeInfoI> neighbours;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
 	{
@@ -157,7 +157,7 @@ public class SensorNodeComponent extends AbstractComponent {
 	    
 	    String NodeID = this.nodeinfo.nodeIdentifier();
 		Position position = (Position) this.nodeinfo.nodePosition();
-		this.neighbours = new HashMap<>();
+		this.neighbours = new ConcurrentHashMap<>();
 		
 		this.processingNode = new ProcessingNode(NodeID,position,sensorsData);
 		
@@ -377,6 +377,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	            this.node_registre_port.doDisconnection();
 	        }
 	        this.node_registre_port.unpublishPort();
+
+			if(this.node_asynRequest_Outport.connected()) {
+				this.node_asynRequest_Outport.doDisconnection();
+			}
+			this.node_asynRequest_Outport.unpublishPort();
+
 		    super.finalise();
 	    }
 	 
@@ -671,20 +677,20 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public Boolean checkNeighboursDansDirection (RequestContinuationI requestCont) {
 	    ExecutionState data = (ExecutionState) requestCont.getExecutionState();
 	    Set<Direction> dirs = data.getDirections_ast();
-		this.neighbours_lock.readLock().lock();
+//		this.neighbours_lock.readLock().lock();
 	    for (Direction dir : dirs) {
 	        NodeInfoI neighbour = neighbours.get(dir);
 	        if (neighbour != null) {
 	            return false;
 	        }
 	    }
-		this.neighbours_lock.readLock().unlock();
+//		this.neighbours_lock.readLock().unlock();
 	    return true;
 	}
 
 	 // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
 	public Boolean checkNeighboursDansPortee (RequestContinuationI requestCont) {
-		this.neighbours_lock.readLock().lock();
+//		this.neighbours_lock.readLock().lock();
 	    for (Map.Entry<Direction, NodeInfoI> entry : neighbours.entrySet()) {
 	        NodeInfoI neighbour = entry.getValue();
 	        //si ce neighbours est deja visite
@@ -698,7 +704,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	            return false;
 	        }
 	    }
-		this.neighbours_lock.readLock().unlock();
+//		this.neighbours_lock.readLock().unlock();
 	    //tous les neighbours non visitees est dehors le portee:
 	    return true;
 	}
@@ -723,19 +729,19 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     Boolean registed_before = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered before register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_before);
 		     Set<NodeInfoI> neighbours = this.node_registre_port.register(nodeInfo);
-		     this.neighbours_lock.writeLock().lock();
+//		     this.neighbours_lock.writeLock().lock();
 		     for (NodeInfoI neighbour : neighbours) {
 		    	 Direction dir = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
 		    	 this.neighbours.put(dir, neighbour);
 		     }
-			 this.neighbours_lock.writeLock().unlock();
+//			 this.neighbours_lock.writeLock().unlock();
 		     this.logMessage("--------------Register() neighbours:--------------");
 		     this.logMessage("neighbours:");
-			 this.neighbours_lock.readLock().lock();
+//			 this.neighbours_lock.readLock().lock();
 		     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 		         this.logMessage("neighbour de driection "+neighbour.getKey()+" :"+((NodeInfo)neighbour.getValue()).toString());
 		     }
-			 this.neighbours_lock.readLock().unlock();
+//			 this.neighbours_lock.readLock().unlock();
 		     
 		     Boolean registed_after = this.node_registre_port.registered(nodeInfo.nodeIdentifier());
 		     this.logMessage("Registered after register? " + nodeInfo.nodeIdentifier()+"Boolean:"+registed_after);
@@ -747,25 +753,31 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// fonctions Pour connection entre Nodes
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
 		this.logMessage(this.nodeinfo.nodeIdentifier()+" receive ask4Connection from "+newNeighbour.nodeIdentifier());
-	    // check direction de newNeighbour
-//		System.out.println("TestPosition actuel: "+this.nodeinfo.nodePosition() );
-//		System.out.println("TestPosition neighbours: "+newNeighbour.nodePosition() );
+//		this.neighbours_lock.writeLock().lock();
+		System.err.println("ask4Connection: "+this.nodeinfo.nodeIdentifier() + " Trying to connect to neighbour " + newNeighbour.nodeIdentifier());
+		// check direction de newNeighbour
+		try {
 	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
-        this.neighbours_lock.writeLock().lock();
-	    // check if deja connected
-	    if (selectedOutboundPort.connected()) {
-	        // si on trouve que cet node est deja connecte au newNeighbour,on fait rien et sort fonction
-	            //disconnter d'abord
-			    this.doPortDisconnection(selectedOutboundPort.getPortURI());
-	            // connecter
-	            this.connecter(direction, selectedOutboundPort, newNeighbour);
-	    } else {
-	        // si pas de connection pour le outport,on fait connecter
-	        connecter(direction, selectedOutboundPort, newNeighbour);
-	    }
-		this.neighbours.put(direction, newNeighbour);
-		this.neighbours_lock.writeLock().unlock();
+			// check if deja connected
+			if (selectedOutboundPort.connected()) {
+				// si on trouve que cet node est deja connecte au newNeighbour,on fait rien et sort fonction
+				//disconnter d'abord
+				this.doPortDisconnection(selectedOutboundPort.getPortURI());
+				System.err.println("ask4Connection: "+this.nodeinfo.nodeIdentifier() + " after do port disconnection " + newNeighbour.nodeIdentifier());
+				// connecter
+				this.connecter(direction, selectedOutboundPort, newNeighbour);
+			} else {
+				// si pas de connection pour le outport,on fait connecter
+				connecter(direction, selectedOutboundPort, newNeighbour);
+			}
+			this.neighbours.put(direction, newNeighbour);
+		}catch (Exception e) {
+			System.err.println("ask4Connection: "+this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour " + newNeighbour.nodeIdentifier() + ": " + e.getMessage());
+		}finally {
+//			this.neighbours_lock.writeLock().unlock();
+		}
+//		this.neighbours_lock.writeLock().unlock();
 	}
 
 	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
@@ -773,13 +785,13 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
 	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 
-		this.neighbours_lock.writeLock().lock();
+//		this.neighbours_lock.writeLock().lock();
 	    if (selectedOutboundPort.connected()) {
 	    	this.logMessage(this.nodeinfo.nodeIdentifier()+"essayer de disconnect:"+neighbour.nodeIdentifier());
 	        this.doPortDisconnection(selectedOutboundPort.getPortURI());
 	    }
 		  this.neighbours.remove(direction);
-		this.neighbours_lock.writeLock().unlock();
+//		this.neighbours_lock.writeLock().unlock();
 	}
 
 	//retourne les outport correspondant selon le direction donnee
@@ -817,7 +829,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void connecterNeighbours() throws Exception {
 		this.logMessage("----------------Connecter Neighbours-----------------");
 		this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] start connecter ses neighbours");
-	     this.neighbours_lock.readLock().lock();
+//	     this.neighbours_lock.readLock().lock();
 	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 
 	    	    Direction direction = neighbour.getKey();
@@ -827,7 +839,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	        try {
 	    	           if(selectedOutboundPort.connected()) {
 						   this.doPortDisconnection(selectedOutboundPort.getPortURI());
-//	    	        	   selectedOutboundPort.doDisconnection();
 	    	           }
                        this.connecter(direction,selectedOutboundPort, neighbourInfo);
 	    	           selectedOutboundPort.ask4Connection(nodeinfo);
@@ -838,7 +849,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	    	        System.err.println("No outbound port selected for direction " + direction);
 	    	    } 
 	     }
-		 this.neighbours_lock.readLock().unlock();
+//		 this.neighbours_lock.readLock().unlock();
 	     this.logMessage("----------------------------------------------");
 	}
 

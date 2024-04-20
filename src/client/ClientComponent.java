@@ -147,7 +147,7 @@ public class ClientComponent extends AbstractComponent {
 	public void sendRequest_direction() throws Exception{
 		this.logMessage("----------------- Query Resultat Sync (Direction) ------------------");
 		 this.logMessage("ClientComponent Sending request Sync Direction....");
-		 int nb_saut = 1;
+		 int nb_saut = 5;
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
         String requestURI = "gather-request-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
