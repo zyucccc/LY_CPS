@@ -37,6 +37,7 @@ public class RegistreComponent extends AbstractComponent {
     protected String uri_pool_client = "registre-pool-thread-client";
     protected int nbThreads_poolClient = 5;
     //pool thread node
+    //plus rapide pour des node,moins rapide pour des clients
     protected int index_poolthread_node;
     protected String uri_pool_node = "registre-pool-thread-node";
     protected int nbThreads_poolNode = 50;
@@ -217,6 +218,12 @@ public class RegistreComponent extends AbstractComponent {
 
     @Override
     public void shutdown() throws ComponentShutdownException {
+        try{
+             this.shutdownExecutorService(this.uri_pool_client);
+             this.shutdownExecutorService(this.uri_pool_node);
+        }catch (Exception e) {
+            throw new ComponentShutdownException(e);
+        }
         super.shutdown();
         this.logMessage("RegistreComponent shutting down.");
     }

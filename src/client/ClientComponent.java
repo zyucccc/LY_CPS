@@ -14,6 +14,7 @@ import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
+import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.ports.PortI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
@@ -47,6 +48,7 @@ import nodes.connectors.NodeClientConnector;
 public class ClientComponent extends AbstractComponent {
 	protected ClientOutboundPort client_node_port;
 	protected ClientRegistreOutboundPort client_registre_port;
+	protected ClientAsynRequestInboundPort InboundPort_AsynRequest;
 	protected String ClientAsyncInboundPortURI = null;
 	//accelerated clock
 	protected AcceleratedClock ac;
@@ -102,8 +104,9 @@ public class ClientComponent extends AbstractComponent {
 		// Gestion des Port
 		// ---------------------------------------------------------------------
 		//publish InboundPort
-		 PortI InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
-		 InboundPort_AsynRequest.publishPort();
+		 this.InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
+//		 PortI InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
+		 this.InboundPort_AsynRequest.publishPort();
 		
         // init port (required interface)
         this.client_node_port = new ClientOutboundPort(Client_Node_outboundPortURI, this);
@@ -449,7 +452,23 @@ public class ClientComponent extends AbstractComponent {
 	            this.client_registre_port.doDisconnection();
 	        }
 	     this.client_registre_port.unpublishPort();
+		 if(this.InboundPort_AsynRequest.connected()){
+			 this.InboundPort_AsynRequest.doDisconnection();
+		 }
+		 this.InboundPort_AsynRequest.unpublishPort();
 	     super.finalise();
+	    }
+
+		@Override
+	public void shutdown() throws ComponentShutdownException {
+		try {
+			this.shutdownExecutorService(this.uri_pool_receiveAsync);
+			this.shutdownExecutorService(this.uri_pool_sendAsync);
+		}
+		catch (Exception e) {
+			throw new ComponentShutdownException(e);
+		}
+			super.shutdown();
 	    }
 	
 	
