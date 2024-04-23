@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import client.plugins.ClientPlugin;
 import client.ports.ClientAsynRequestInboundPort;
 import client.ports.ClientOutboundPort;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
@@ -43,11 +45,9 @@ import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.connectors.NodeClientConnector;
 
-@RequiredInterfaces(required = {RequestingCI.class,LookupCI.class,ClocksServerCI.class})
+@RequiredInterfaces(required = {ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestResultCI.class})
 public class ClientComponent extends AbstractComponent {
-	protected ClientOutboundPort client_node_port;
-	protected ClientRegistreOutboundPort client_registre_port;
 	protected ClientAsynRequestInboundPort InboundPort_AsynRequest;
 	protected String ClientAsyncInboundPortURI = null;
 	//accelerated clock
@@ -74,6 +74,9 @@ public class ClientComponent extends AbstractComponent {
 	protected int nbThreads_poolSendAsync = 5;
     //le node id on va connecter
 	protected String NodeId = "";
+
+	//plugin
+	protected String ClientPluginURI;
 	
 	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI,String NodeId) throws Exception {
 		super(uri, 1, 2);
@@ -100,22 +103,21 @@ public class ClientComponent extends AbstractComponent {
         //pool thread pour les requete Async from Node
 		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
 		this.index_poolthread_sendAsync = this.createNewExecutorService(this.uri_pool_sendAsync,this.nbThreads_poolSendAsync,true);
+
+		// ---------------------------------------------------------------------
+		// Gestion des plugins
+		// ---------------------------------------------------------------------
+		ClientPlugin clientPlugin = new ClientPlugin(Client_Node_outboundPortURI,Client_Registre_outboundPortURI);
+		this.ClientPluginURI = AbstractPort.generatePortURI();
+		clientPlugin.setPluginURI(this.ClientPluginURI);
+		this.installPlugin(clientPlugin);
+
 		// ---------------------------------------------------------------------
 		// Gestion des Port
 		// ---------------------------------------------------------------------
 		//publish InboundPort
 		 this.InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
-//		 PortI InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
 		 this.InboundPort_AsynRequest.publishPort();
-		
-        // init port (required interface)
-        this.client_node_port = new ClientOutboundPort(Client_Node_outboundPortURI, this);
-        //publish port(an outbound port is always local)
-        this.client_node_port.localPublishPort();
-        
-        //client - registre - LookupCI
-        this.client_registre_port = new ClientRegistreOutboundPort(Client_Registre_outboundPortURI,this);
-        this.client_registre_port.localPublishPort();
         
         //Async port URI
         this.ClientAsyncInboundPortURI = Client_AsynRequest_inboundPortURI;
@@ -127,8 +129,7 @@ public class ClientComponent extends AbstractComponent {
 		this.requestTimes = new HashMap<>();
 
 		this.NodeId = NodeId;
-        
-		
+
         AbstractComponent.checkImplementationInvariant(this);
 		AbstractComponent.checkInvariant(this);
     }
@@ -154,8 +155,11 @@ public class ClientComponent extends AbstractComponent {
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(Direction.NE),nb_saut));
         String requestURI = "gather-request-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
-        QueryResult result = (QueryResult) this.client_node_port.execute(request);
-        this.logMessage("ClientComponentr Receive resultat de request:");
+
+		//plugin:
+		QueryResult result = (QueryResult) ((ClientPlugin)this.getPlugin(this.ClientPluginURI)).execute(request);
+
+		this.logMessage("ClientComponentr Receive resultat de request:");
         this.logMessage("" + result);
         this.logMessage("--------------------------------------");
 	}
@@ -168,29 +172,13 @@ public class ClientComponent extends AbstractComponent {
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
         String requestURI = "flood-request-uri";	      
         RequestI request = new Request(requestURI,test,false,null);
-        QueryResult result = (QueryResult) this.client_node_port.execute(request);
-        this.logMessage("ClientComponentr Receive resultat de request:");
+
+        //plugin:
+		QueryResult result = (QueryResult) ((ClientPlugin)this.getPlugin(this.ClientPluginURI)).execute(request);
+
+		this.logMessage("ClientComponentr Receive resultat de request:");
         this.logMessage("" + result);
         this.logMessage("-------------------------------------");
-	}
-
-	// ---------------------------------------------------------------------
-	// Obtenir connection info from Registre et connecter
-	// ---------------------------------------------------------------------
-	
-	public void findEtConnecterByIdentifer(String NodeID) throws Exception {
-		this.logMessage("---------------Connect to Node-------------------");
-		this.logMessage("ClientComponent search and connect Node :" + NodeID);
-		ConnectionInfo connectionInfo = (ConnectionInfo) this.client_registre_port.findByIdentifier(NodeID);
-		if (connectionInfo != null) {
-		String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getInboundPortURI();
-		this.doPortConnection(this.client_node_port.getPortURI(), InboundPortURI,NodeClientConnector.class.getCanonicalName());
-
-		this.logMessage("ClientComponent : Connection established with Node: " + NodeID);
-		}else {
-			this.logMessage("Node " + NodeID + " not found or cannot connect.");
-		}
-		this.logMessage("----------------------------------");
 	}
 
 	// ---------------------------------------------------------------------
@@ -206,7 +194,9 @@ public class ClientComponent extends AbstractComponent {
 		GQuery test = new GQuery(new FGather("temperature"),new DCont(new FDirs(dir),nb_saut));
 		this.logMessage("ClientComponent Sending Request Async Direction: "+requestURI);
         RequestI request = new Request(requestURI,test,true,connection_info);
-        this.client_node_port.executeAsync(request);
+
+		//plugin:
+		((ClientPlugin)this.getPlugin(this.ClientPluginURI)).executeAsync(request);
         
         }else {
         	System.err.println("ClientAsyncInboundPortURI NULL");
@@ -219,14 +209,15 @@ public class ClientComponent extends AbstractComponent {
 		
 		EndPointDescriptor endpointDescriptor = new EndPointDescriptor(ClientAsyncInboundPortURI);
 	    ConnectionInfo connection_info = new ConnectionInfo("client",endpointDescriptor);
-		 
-//		double max_distance =8.0;
+
 		BQuery test = new BQuery(new SBExp("fumée"),new FCont(new RBase(),max_distance));
 		this.logMessage("ClientComponent Sending request Async Flooding: "+requestURI);
         RequestI request = new Request(requestURI,test,true,connection_info);
-       
-        this.client_node_port.executeAsync(request);
+
+		//plugin:
+		((ClientPlugin)this.getPlugin(this.ClientPluginURI)).executeAsync(request);
 	}
+
 
 	
 	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
@@ -277,7 +268,6 @@ public class ClientComponent extends AbstractComponent {
 				new AbstractComponent.AbstractTask() {
 					@Override
 					public void run() {
-//						((ClientComponent)this.getTaskOwner()).logMessage("check start time");
 						Instant currentInstant = ac.currentInstant();
 						ArrayList<String> toRemove = new ArrayList<>();
 						requestTimes_lock.readLock().lock();
@@ -351,9 +341,7 @@ public class ClientComponent extends AbstractComponent {
 			 public void run() {
 				 try {
 					 // essayer de connecter de node indiquee
-//					 String NodeID = "node1";
-					 ((ClientComponent)this.getTaskOwner()).findEtConnecterByIdentifer(((ClientComponent)this.getTaskOwner()).NodeId);
-
+					 ((ClientPlugin)((ClientComponent)this.getTaskOwner()).getPlugin(((ClientComponent)this.getTaskOwner()).ClientPluginURI)).findEtConnecterByIdentifer(NodeId);
 					 //request Sync
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
@@ -443,25 +431,18 @@ public class ClientComponent extends AbstractComponent {
 	    public void finalise() throws Exception {
 		 this.logMessage("stopping Client component.") ;
 		 this.printExecutionLogOnFile("Client");
-		 
-		 if (this.client_node_port.connected()) {
-	            this.client_node_port.doDisconnection();
-	        }
-	     this.client_node_port.unpublishPort();
-	     if (this.client_registre_port.connected()) {
-	            this.client_registre_port.doDisconnection();
-	        }
-	     this.client_registre_port.unpublishPort();
+
 		 if(this.InboundPort_AsynRequest.connected()){
 			 this.InboundPort_AsynRequest.doDisconnection();
 		 }
-		 this.InboundPort_AsynRequest.unpublishPort();
+
 	     super.finalise();
 	    }
 
 		@Override
 	public void shutdown() throws ComponentShutdownException {
 		try {
+			this.InboundPort_AsynRequest.unpublishPort();
 			this.shutdownExecutorService(this.uri_pool_receiveAsync);
 			this.shutdownExecutorService(this.uri_pool_sendAsync);
 		}

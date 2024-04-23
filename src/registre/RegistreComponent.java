@@ -42,6 +42,7 @@ public class RegistreComponent extends AbstractComponent {
     protected String uri_pool_node = "registre-pool-thread-node";
     protected int nbThreads_poolNode = 50;
 
+
     //Gestion Concurrence : Technique concurrentHashMap
     //hashmap pour stocker les noeuds deja register
     private ConcurrentHashMap<String, NodeInfo> registeredNodes;

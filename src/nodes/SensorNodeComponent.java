@@ -364,48 +364,50 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	        if (this.node_node_NE_Outport.connected()) {
 	            this.node_node_NE_Outport.doDisconnection();
 	        }
-	        this.node_node_NE_Outport.unpublishPort();
 
 	        if (this.node_node_NW_Outport.connected()) {
 	            this.node_node_NW_Outport.doDisconnection();
 	        }
-	        this.node_node_NW_Outport.unpublishPort();
 
 	        if (this.node_node_SE_Outport.connected()) {
 	            this.node_node_SE_Outport.doDisconnection();
 	        }
-	        this.node_node_SE_Outport.unpublishPort();
 
 	        if (this.node_node_SW_Outport.connected()) {
 	            this.node_node_SW_Outport.doDisconnection();
 	        }
-	        this.node_node_SW_Outport.unpublishPort();
 
 	        if (this.node_registre_port.connected()) {
 	            this.node_registre_port.doDisconnection();
 	        }
-	        this.node_registre_port.unpublishPort();
 
 			if(this.node_asynRequest_Outport.connected()) {
 				this.node_asynRequest_Outport.doDisconnection();
 			}
-			this.node_asynRequest_Outport.unpublishPort();
 
 			if(this.InboundPort_P2PtoNode.connected()){
 				this.InboundPort_P2PtoNode.doDisconnection();
 			}
-            this.InboundPort_P2PtoNode.unpublishPort();
 
 			if(this.InboundPort_toClient.connected()){
 				this.InboundPort_toClient.doDisconnection();
 			}
-			this.InboundPort_toClient.unpublishPort();
+
 		    super.finalise();
 	    }
 	 
 	 @Override
 	    public void shutdown() throws ComponentShutdownException {
 		 try {
+			 //depublish les ports
+			 this.node_node_NE_Outport.unpublishPort();
+			 this.node_node_NW_Outport.unpublishPort();
+			 this.node_node_SE_Outport.unpublishPort();
+			 this.node_node_SW_Outport.unpublishPort();
+			 this.node_registre_port.unpublishPort();
+			 this.node_asynRequest_Outport.unpublishPort();
+			 this.InboundPort_P2PtoNode.unpublishPort();
+			 this.InboundPort_toClient.unpublishPort();
 			 //fermer les pools des threads explicitement
 			 this.shutdownExecutorService(this.uri_pool_receiveAsync);
              this.shutdownExecutorService(this.uri_pool_receiveAsync_Client);
@@ -526,10 +528,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 				  NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(dir);
 				  if(selectedOutboundPort.connected()) {
 					  if(!request.isAsynchronous()) {
+						  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request Sync Directional dir to :"+dir);
 					   selectedOutboundPort.execute(request);}
 					  else {
 						  //if async,on fait un copie du request
 						  RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
+						  this.logMessage(this.nodeinfo.nodeIdentifier()+" Sending request ASync Directional dir to:"+dir);
 						  selectedOutboundPort.executeAsync(copie_request);
 					  }
 				  }
@@ -583,7 +587,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			}
 		}
 		 if(data.isDirectional()){
-				data.incrementHops();
+			 this.logMessage(this.nodeinfo.nodeIdentifier()+" receive directional request Sync");
+			 data.incrementHops();
 			}
 		 
 		this.logMessage("---------------Receive Query Continuation Sync---------------");
@@ -631,6 +636,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			}
 		}
 		 if(data.isDirectional()){
+			    this.logMessage(this.nodeinfo.nodeIdentifier()+" receive directional request Async");
 				data.incrementHops();
 			}
 		 
@@ -755,21 +761,21 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// fonctions Pour connection entre Nodes
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
 		this.logMessage(this.nodeinfo.nodeIdentifier()+" receive ask4Connection from "+newNeighbour.nodeIdentifier());
-		// check direction de newNeighbour
-		Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
-		NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 		//proteger neighbours avec OutBoundPorts,on s'assure que les operations sur les neighbours et les OutBoundPorts ne vont pas etre interrompu
 		this.neighbours_OutPorts_lock.lock();
 		try {
+			// check direction de newNeighbour
+			Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(newNeighbour.nodePosition());
+			NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 			// check if deja connected
 			if (selectedOutboundPort.connected()) {
 				//disconnter d'abord
 				this.doPortDisconnection(selectedOutboundPort.getPortURI());
 				// connecter
-				this.connecter(direction, selectedOutboundPort, newNeighbour);
+				this.connecter(selectedOutboundPort, newNeighbour);
 			} else {
 				// si pas de connection pour le outport,on fait connecter
-				connecter(direction, selectedOutboundPort, newNeighbour);
+				connecter(selectedOutboundPort, newNeighbour);
 			}
 			this.neighbours.put(direction, newNeighbour);
 		}catch (Exception e) {
@@ -780,12 +786,11 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	}
 
 	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-
-	    Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
-	    NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 		//proteger neighbours avec OutBoundPorts,on s'assure que les operations sur les neighbours et les OutBoundPorts ne vont pas etre interrompu
 		this.neighbours_OutPorts_lock.lock();
         try {
+			Direction direction = ((Position)this.nodeinfo.nodePosition()).directionTo_ast(neighbour.nodePosition());
+			NodeNodeOutboundPort selectedOutboundPort = getOutboundPortByDirection(direction);
 			if (selectedOutboundPort.connected()) {
 				this.logMessage(this.nodeinfo.nodeIdentifier() + "essayer de disconnect:" + neighbour.nodeIdentifier());
 				this.doPortDisconnection(selectedOutboundPort.getPortURI());
@@ -815,7 +820,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	}
 	
 	//deleguer les operation de connecter un outport choisi a un neighbour
-	public void connecter(Direction direction,NodeNodeOutboundPort selectedOutboundPort,NodeInfoI newNeighbour) throws Exception {
+	public void connecter(NodeNodeOutboundPort selectedOutboundPort,NodeInfoI newNeighbour) throws Exception {
 	    EndPointDescriptor endpointDescriptor = (EndPointDescriptor) newNeighbour.p2pEndPointInfo();
 	    if (endpointDescriptor != null) {
 	        String neighbourInboundPortURI = endpointDescriptor.getInboundPortURI();
@@ -832,25 +837,35 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	public void connecterNeighbours() throws Exception {
 		this.logMessage("----------------Connecter Neighbours-----------------");
 		this.logMessage("SensorNodeComponent [" + this.nodeinfo.nodeIdentifier() + "] start connecter ses neighbours");
-	     for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
+	    //ici on utilise neighbours_OutPorts_lock parce que on veut proteger la processus de connecter les neighbours
+		//ca veut dire que la processus de connecter les neighbours ne peut pas etre interrompu par ask4connection ou ask4disconnection from d'autre nodes
+		//sinon ca va poser des problemes de connection:
+		//exemple: node1 est encours de connecter ses neighbours:node2,3,4.mais apres de connecter 2 et 3,node1 recevoir un ask4connection
+		//mais apres de traiter l'ask4connection,node1 va pas continuer de connecter 4,c'est pourquoi on introduit un lock ici
+		this.neighbours_OutPorts_lock.lock();
+		try {
+			for (Map.Entry<Direction, NodeInfoI> neighbour : this.neighbours.entrySet()) {
 
-	    	    Direction direction = neighbour.getKey();
-	    	    NodeInfoI neighbourInfo = neighbour.getValue();
-	    	    NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(direction);
-	    	    if (selectedOutboundPort != null) {
-	    	        try {
-	    	           if(selectedOutboundPort.connected()) {
-						   this.doPortDisconnection(selectedOutboundPort.getPortURI());
-	    	           }
-                       this.connecter(direction,selectedOutboundPort, neighbourInfo);
-	    	           selectedOutboundPort.ask4Connection(nodeinfo);
-	    	        } catch (Exception e) {
-	    	            System.err.println("connecterNeighbours: "+this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
-	    	        }
-	    	    } else {
-	    	        System.err.println("No outbound port selected for direction " + direction);
-	    	    } 
-	     }
+				Direction direction = neighbour.getKey();
+				NodeInfoI neighbourInfo = neighbour.getValue();
+				NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(direction);
+				if (selectedOutboundPort != null) {
+					try {
+						if (selectedOutboundPort.connected()) {
+							this.doPortDisconnection(selectedOutboundPort.getPortURI());
+						}
+						this.connecter(selectedOutboundPort, neighbourInfo);
+						selectedOutboundPort.ask4Connection(nodeinfo);
+					} catch (Exception e) {
+						System.err.println("connecterNeighbours: " + this.nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
+					}
+				} else {
+					System.err.println("No outbound port selected for direction " + direction);
+				}
+			}
+		}finally {
+			this.neighbours_OutPorts_lock.unlock();
+		}
 	     this.logMessage("----------------------------------------------");
 	}
 

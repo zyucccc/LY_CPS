@@ -12,6 +12,8 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.connectors.NodeClientConnector;
+import sensor_network.ConnectionInfo;
+import sensor_network.EndPointDescriptor;
 
 import java.util.Set;
 
@@ -20,12 +22,12 @@ public class ClientPlugin extends AbstractPlugin {
     private static final long serialVersionUID = 1L;
     protected ClientOutboundPort client_node_port;
     protected ClientRegistreOutboundPort client_registre_port;
-//    protected String registreInboundPortURI;
     protected String nodeInboundPortURI;
 
     protected String client_node_OutboundPortUri;
     protected String client_registre_OutboundPortUri;
 
+    //nous transmettons les URI des ports ici car nous fait la connection entre client et registre dans CVM
     public ClientPlugin(String client_node_OutPortUri,String client_registre_OutPortUri) throws Exception {
         super();
         this.client_node_OutboundPortUri = client_node_OutPortUri;
@@ -39,9 +41,14 @@ public class ClientPlugin extends AbstractPlugin {
     public void	installOn(ComponentI owner) throws Exception
     {
         super.installOn(owner);
+        try{
         this.addRequiredInterface(RequestingCI.class);
         this.addRequiredInterface(LookupCI.class);
+        }catch (Exception e){
+            System.err.println("Erreur Client-Plugin : installOn "+e.toString());
+        }
     }
+
     @Override
     public void	initialise() throws Exception
     {
@@ -61,11 +68,9 @@ public class ClientPlugin extends AbstractPlugin {
         if (this.client_node_port.connected()) {
             this.client_node_port.doDisconnection();
         }
-        this.client_node_port.unpublishPort();
         if (this.client_registre_port.connected()) {
             this.client_registre_port.doDisconnection();
         }
-        this.client_registre_port.unpublishPort();
         super.finalise();
     }
 
@@ -82,31 +87,52 @@ public class ClientPlugin extends AbstractPlugin {
     // -------------------------------------------------------------------------
     // Plug-in methods
     // -------------------------------------------------------------------------
-
-//    public void createAndPublishOutboundPort(String client_node_portUri,String client_registre_portUri) throws Exception {
-//        this.client_node_port =
-//                new ClientOutboundPort(client_node_portUri,this.getOwner());
-//        this.client_node_port.localPublishPort();
-//        this.client_registre_port =
-//                new ClientRegistreOutboundPort(client_registre_portUri,this.getOwner());
-//        this.client_registre_port.localPublishPort();
-//    }
-
-//    public void setRegistreInboundPortURI(String uri) {
-//       this.registreInboundPortURI = uri;
-//    }
-
+    //Soit on fait set uri puis connectNode() ,soit on connect directement avec connectNode(uri)
     public void setNodeInboundPortURI(String uri) {
         this.nodeInboundPortURI = uri;
     }
 
     public void connectNode() throws Exception {
+        try{
         this.getOwner().doPortConnection(
-                this.client_registre_port.getPortURI(),
+                this.client_node_port.getPortURI(),
                 this.nodeInboundPortURI,
+                NodeClientConnector.class.getCanonicalName()
+        );}
+        catch (Exception e){
+            System.err.println("Erreur connectNode:"+e.toString());
+        }
+    }
+
+    public void connectNode(String uri) throws Exception {
+        this.getOwner().doPortConnection(
+                this.client_node_port.getPortURI(),
+                uri,
                 NodeClientConnector.class.getCanonicalName()
         );
     }
+
+    // ---------------------------------------------------------------------
+    // Obtenir connection info from Registre et connecter
+    // ---------------------------------------------------------------------
+
+    public void findEtConnecterByIdentifer(String NodeID) throws Exception {
+        this.logMessage("---------------Connect to Node-------------------");
+        this.logMessage("ClientComponent search and connect Node :" + NodeID);
+
+        ConnectionInfo connectionInfo = (ConnectionInfo) this.findByIdentifier(NodeID);
+
+        if (connectionInfo != null) {
+            String InboundPortURI = ((EndPointDescriptor)connectionInfo.endPointInfo()).getInboundPortURI();
+            this.connectNode(InboundPortURI);
+            this.logMessage("ClientComponent : Connection established with Node: " + NodeID);
+        }else {
+            this.logMessage("Node " + NodeID + " not found or cannot connect.");
+        }
+        this.logMessage("----------------------------------");
+    }
+
+
     // -------------------------------------------------------------------------
     // Look-up CI methods
     // -------------------------------------------------------------------------
