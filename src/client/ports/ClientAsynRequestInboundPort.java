@@ -27,6 +27,7 @@ public class ClientAsynRequestInboundPort extends AbstractInboundPort implements
                 try {
                     ((ClientComponent)getOwner()).acceptRequestResult(requestURI, result);
                 } catch (Exception e) {
+                    System.err.println("Erreur: Client accept result Async : "+e.toString());
                     e.printStackTrace();
                 }
             }

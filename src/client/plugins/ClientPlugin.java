@@ -3,6 +3,7 @@ package client.plugins;
 import client.ports.ClientOutboundPort;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractPlugin;
+import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
@@ -26,6 +27,12 @@ public class ClientPlugin extends AbstractPlugin {
 
     protected String client_node_OutboundPortUri;
     protected String client_registre_OutboundPortUri;
+
+    //Introduire les pools threads
+    //pool thread pour envoyer les requetes async aux nodes
+    protected int index_poolthread_sendAsync;
+    protected String uri_pool_sendAsync = AbstractPort.generatePortURI();
+    protected int nbThreads_poolSendAsync = 5;
 
     //nous transmettons les URI des ports ici car nous fait la connection entre client et registre dans CVM
     public ClientPlugin(String client_node_OutPortUri,String client_registre_OutPortUri) throws Exception {
@@ -53,12 +60,20 @@ public class ClientPlugin extends AbstractPlugin {
     public void	initialise() throws Exception
     {
         super.initialise();
+        // ---------------------------------------------------------------------
+        // publish des ports
+        // ---------------------------------------------------------------------
         this.client_node_port =
                 new ClientOutboundPort(this.client_node_OutboundPortUri,this.getOwner());
         this.client_node_port.localPublishPort();
         this.client_registre_port =
                 new ClientRegistreOutboundPort(this.client_registre_OutboundPortUri,this.getOwner());
         this.client_registre_port.localPublishPort();
+        // ---------------------------------------------------------------------
+        // Configuration des pools de threads
+        // ---------------------------------------------------------------------
+        //pool thread pour les requete Async from Node
+        this.index_poolthread_sendAsync = this.createNewExecutorService(this.uri_pool_sendAsync,this.nbThreads_poolSendAsync,true);
 
     }
 
@@ -87,6 +102,10 @@ public class ClientPlugin extends AbstractPlugin {
     // -------------------------------------------------------------------------
     // Plug-in methods
     // -------------------------------------------------------------------------
+    public int get_Index_poolthread_sendAsync(){
+       return this.index_poolthread_sendAsync;
+    }
+
     //Soit on fait set uri puis connectNode() ,soit on connect directement avec connectNode(uri)
     public void setNodeInboundPortURI(String uri) {
         this.nodeInboundPortURI = uri;

@@ -731,6 +731,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		 this.doPortConnection(this.node_asynRequest_Outport.getPortURI(),InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
     	 ExecutionState data = (ExecutionState) request.getExecutionState();
     	 QueryResult result_all = (QueryResult) data.getCurrentResult();
+		 this.logMessage("Connecter au Client "+InboundPortUri+" successfully! renvoyer Result.....");
     	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
 	}
 	
@@ -796,6 +797,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 				this.doPortDisconnection(selectedOutboundPort.getPortURI());
 			}
 			this.neighbours.remove(direction);
+		}catch (Exception e) {
+			System.err.println("ask4Disconnection: "+this.nodeinfo.nodeIdentifier() + " Failed to Disconnect to neighbour : " + e.getMessage());
 		}finally {
 			this.neighbours_OutPorts_lock.unlock();
 		}

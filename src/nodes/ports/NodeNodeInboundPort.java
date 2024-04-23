@@ -24,22 +24,48 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 		assert owner instanceof SensorNodeComponent ;
 	}
 
-	@Override
-	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {	
-		  this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),owner -> {
-			  ((SensorNodeComponent)owner).ask4Disconnection(neighbour);
-			  return null;
-		  }); 
-	}
+//	@Override
+//	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
+//		  this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),owner -> {
+//			  ((SensorNodeComponent)owner).ask4Disconnection(neighbour);
+//			  return null;
+//		  });
+//	}
+@Override
+public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
+	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
+		@Override
+		public void run() {
+			try {
+				((SensorNodeComponent) owner).ask4Disconnection(neighbour);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	});
+}
 
 	
-	@Override
-	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-	    this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),owner -> {
-	        ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
-	        return null;
-	    });
-	}
+//	@Override
+//	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
+//	    this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),owner -> {
+//	        ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
+//	        return null;
+//	    });
+//	}
+@Override
+public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
+	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
+		@Override
+		public void run() {
+            try {
+                ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+	});
+}
 
 
 	@Override
