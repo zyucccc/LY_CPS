@@ -42,6 +42,9 @@ public class RegistreComponent extends AbstractComponent {
     protected String uri_pool_node = "registre-pool-thread-node";
     protected int nbThreads_poolNode = 50;
 
+    //port
+    protected RegistrationInboundPort registrationPort;
+    protected LookupInboundPort lookupPort;
 
     //Gestion Concurrence : Technique concurrentHashMap
     //hashmap pour stocker les noeuds deja register
@@ -62,11 +65,11 @@ public class RegistreComponent extends AbstractComponent {
         this.index_poolthread_client = this.createNewExecutorService(uri_pool_client, nbThreads_poolClient, false);
         this.index_poolthread_node = this.createNewExecutorService(uri_pool_node, nbThreads_poolNode, false);
         
-        RegistrationInboundPort registrationPort = new RegistrationInboundPort(registrationInboundPortURI, this);
-        registrationPort.publishPort();
+        this.registrationPort = new RegistrationInboundPort(registrationInboundPortURI, this);
+        this.registrationPort.publishPort();
 
-        LookupInboundPort lookupPort = new LookupInboundPort(lookupInboundPortURI, this);
-        lookupPort.publishPort();
+        this.lookupPort = new LookupInboundPort(lookupInboundPortURI, this);
+        this.lookupPort.publishPort();
         
 		if (AbstractCVM.isDistributed) {
 			this.getLogger().setDirectory(System.getProperty("user.dir"));
@@ -220,6 +223,8 @@ public class RegistreComponent extends AbstractComponent {
     @Override
     public void shutdown() throws ComponentShutdownException {
         try{
+             this.registrationPort.unpublishPort();
+             this.lookupPort.unpublishPort();
              this.shutdownExecutorService(this.uri_pool_client);
              this.shutdownExecutorService(this.uri_pool_node);
         }catch (Exception e) {

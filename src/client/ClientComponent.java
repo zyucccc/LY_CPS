@@ -63,14 +63,7 @@ public class ClientComponent extends AbstractComponent {
 	protected final ReentrantReadWriteLock requestResults_lock = new ReentrantReadWriteLock();
 	protected final ReentrantReadWriteLock requestTimes_lock = new ReentrantReadWriteLock();
 
-	//introduire les pools threads
-	//pool thread pour recevoir les resultats des requete Async from Node
-	protected int index_poolthread_receiveAsync;
-	protected String uri_pool_receiveAsync = AbstractPort.generatePortURI();
-//	protected String uri_pool_receiveAsync = "client-pool-thread-receiveAsync";
-	protected int nbThreads_poolReceiveAsync = 40;
-
-    //le node id on va connecter
+	//le node id on va connecter
 	protected String NodeId = "";
 
 	//plugin
@@ -105,12 +98,6 @@ public class ClientComponent extends AbstractComponent {
 		this.installPlugin(clientPlugin);
 
 		// ---------------------------------------------------------------------
-		// Configuration des pools de threads
-		// ---------------------------------------------------------------------
-        //pool thread pour les requete Async from Node
-		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
-
-		// ---------------------------------------------------------------------
 		// Gestion des Port
 		// ---------------------------------------------------------------------
 		//publish InboundPort
@@ -132,12 +119,23 @@ public class ClientComponent extends AbstractComponent {
 		AbstractComponent.checkInvariant(this);
     }
 	// ---------------------------------------------------------------------
-	// Partie getters pour les pools threads
+	// Partie getters pour les pools des threads defini dans plug-in
 	// ---------------------------------------------------------------------
-	//pool de thread pour les requetes async (renvoyer resultats) from nodes
-    public int getIndex_poolthread_receiveAsync() {
-		return index_poolthread_receiveAsync;
-	}
+     	public int get_Index_poolthread_receiveAsync() {
+		return ((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_receiveAsync();
+		}
+
+		public int get_Index_poolthread_sendAsync() {
+		return ((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync();
+		}
+
+		public String get_Uri_pool_sendAsync() {
+		return ((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Uri_pool_sendAsync();
+		}
+
+		public String get_Uri_pool_receiveAsync() {
+		return ((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Uri_pool_receiveAsync();
+		}
 
 	// ---------------------------------------------------------------------
 	// Partie Sync
@@ -256,8 +254,8 @@ public class ClientComponent extends AbstractComponent {
 
 	//Vérifier régulièrement si les requetes ont atteint le temps d'attente maximum
 	public void checkRequestResults() {
-		// check every 3 secs
-		long delay = 3_000;
+		// check chaque secs
+		long delay = 1_000;
 		this.scheduleTaskWithFixedDelay(
 				new AbstractComponent.AbstractTask() {
 					@Override
@@ -311,12 +309,12 @@ public class ClientComponent extends AbstractComponent {
 		//5,7
 		Instant instant_sendAsync = start_instant.plusSeconds(10);
 		Instant instant_sendAsync2 = start_instant.plusSeconds(10);
-		long delay = 1L;
+		long delay_connect = 1L;
 		long delay_send = 1L;
 		long delay_send2 = 1L;
 
 		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
-		delay = ac.nanoDelayUntilInstant(instant_findConnecter);
+		delay_connect = ac.nanoDelayUntilInstant(instant_findConnecter);
 		if(instant_sendAsync.isAfter(this.ac.currentInstant()))
 		delay_send = ac.nanoDelayUntilInstant(instant_sendAsync);
 		if(instant_sendAsync2.isAfter(this.ac.currentInstant()))
@@ -349,10 +347,10 @@ public class ClientComponent extends AbstractComponent {
 					 e.printStackTrace();
 				 }
 			 }
-		 }, delay, TimeUnit.NANOSECONDS);
+		 }, delay_connect, TimeUnit.NANOSECONDS);
 
 			//(en premier temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
-			this.scheduleTask(((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+			this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
 				@Override
 				public void run() {
 					try {
@@ -364,7 +362,7 @@ public class ClientComponent extends AbstractComponent {
 				}
 			}, delay_send, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
 			 @Override
 			 public void run() {
 				 try {
@@ -377,7 +375,7 @@ public class ClientComponent extends AbstractComponent {
 		 }, delay_send, TimeUnit.NANOSECONDS);
 
 		//(deuxieme temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
-		 this.scheduleTask(((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
 			 @Override
 			 public void run() {
 				 try {
@@ -389,7 +387,7 @@ public class ClientComponent extends AbstractComponent {
 			 }
 		 }, delay_send2, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
 			 @Override
 			 public void run() {
 				 try {
@@ -400,7 +398,7 @@ public class ClientComponent extends AbstractComponent {
 				 }
 			 }
 		 }, delay_send2, TimeUnit.NANOSECONDS);
-		 this.scheduleTask(((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
 			 @Override
 			 public void run() {
 				 try {
@@ -412,7 +410,7 @@ public class ClientComponent extends AbstractComponent {
 			 }
 		 }, delay_send2, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(((ClientPlugin)this.getPlugin(this.ClientPluginURI)).get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
 			 @Override
 			 public void run() {
 				 try {
@@ -431,10 +429,6 @@ public class ClientComponent extends AbstractComponent {
 		 this.logMessage("stopping Client component.") ;
 		 this.printExecutionLogOnFile("Client");
 
-		 if(this.InboundPort_AsynRequest.connected()){
-			 this.InboundPort_AsynRequest.doDisconnection();
-		 }
-
 	     super.finalise();
 	    }
 
@@ -442,8 +436,8 @@ public class ClientComponent extends AbstractComponent {
 	public void shutdown() throws ComponentShutdownException {
 		try {
 			this.InboundPort_AsynRequest.unpublishPort();
-			this.shutdownExecutorService(this.uri_pool_receiveAsync);
-//			this.shutdownExecutorService(this.uri_pool_sendAsync);
+			this.shutdownExecutorService(this.get_Uri_pool_receiveAsync());
+			this.shutdownExecutorService(this.get_Uri_pool_sendAsync());
 		}
 		catch (Exception e) {
 			throw new ComponentShutdownException(e);

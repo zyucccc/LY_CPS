@@ -29,6 +29,10 @@ public class ClientPlugin extends AbstractPlugin {
     protected String client_registre_OutboundPortUri;
 
     //Introduire les pools threads
+    //pool thread pour recevoir les resultats des requete Async from Node
+    protected int index_poolthread_receiveAsync;
+    protected String uri_pool_receiveAsync = AbstractPort.generatePortURI();
+    protected int nbThreads_poolReceiveAsync = 40;
     //pool thread pour envoyer les requetes async aux nodes
     protected int index_poolthread_sendAsync;
     protected String uri_pool_sendAsync = AbstractPort.generatePortURI();
@@ -69,9 +73,12 @@ public class ClientPlugin extends AbstractPlugin {
         this.client_registre_port =
                 new ClientRegistreOutboundPort(this.client_registre_OutboundPortUri,this.getOwner());
         this.client_registre_port.localPublishPort();
+
         // ---------------------------------------------------------------------
         // Configuration des pools de threads
         // ---------------------------------------------------------------------
+        //pool thread pour les requete Async from Node
+        this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
         //pool thread pour les requete Async from Node
         this.index_poolthread_sendAsync = this.createNewExecutorService(this.uri_pool_sendAsync,this.nbThreads_poolSendAsync,true);
 
@@ -94,16 +101,32 @@ public class ClientPlugin extends AbstractPlugin {
     {
         this.client_node_port.unpublishPort();
         this.client_registre_port.unpublishPort();
+
         this.removeRequiredInterface(RequestingCI.class);
         this.removeRequiredInterface(LookupCI.class);
+
+
         super.uninstall();
     }
 
     // -------------------------------------------------------------------------
     // Plug-in methods
     // -------------------------------------------------------------------------
+    //publier les infos des pools de threads
     public int get_Index_poolthread_sendAsync(){
        return this.index_poolthread_sendAsync;
+    }
+
+    public String get_Uri_pool_sendAsync(){
+        return this.uri_pool_sendAsync;
+    }
+
+    public int get_Index_poolthread_receiveAsync(){
+        return this.index_poolthread_receiveAsync;
+    }
+
+    public String get_Uri_pool_receiveAsync(){
+        return this.uri_pool_receiveAsync;
     }
 
     //Soit on fait set uri puis connectNode() ,soit on connect directement avec connectNode(uri)

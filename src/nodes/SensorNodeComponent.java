@@ -385,14 +385,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 				this.node_asynRequest_Outport.doDisconnection();
 			}
 
-			if(this.InboundPort_P2PtoNode.connected()){
-				this.InboundPort_P2PtoNode.doDisconnection();
-			}
-
-			if(this.InboundPort_toClient.connected()){
-				this.InboundPort_toClient.doDisconnection();
-			}
-
 		    super.finalise();
 	    }
 	 
@@ -723,16 +715,20 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	
 	//deleguer les operations de connecter Client via Port Async et appeler acceptRequest pour renvoyer res
 	public void renvoyerAsyncRes (RequestContinuationI request) throws Exception {
-		 ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
-    	 String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getInboundPortURI();
-    	 if(this.node_asynRequest_Outport.connected()) {
-			 this.doPortDisconnection(this.node_asynRequest_Outport.getPortURI());
-    	 }
-		 this.doPortConnection(this.node_asynRequest_Outport.getPortURI(),InboundPortUri,ClientAsynRequestConnector.class.getCanonicalName());
-    	 ExecutionState data = (ExecutionState) request.getExecutionState();
-    	 QueryResult result_all = (QueryResult) data.getCurrentResult();
-		 this.logMessage("Connecter au Client "+InboundPortUri+" successfully! renvoyer Result.....");
-    	 this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
+		try {
+			ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
+			String InboundPortUri = ((EndPointDescriptor) co_info.endPointInfo()).getInboundPortURI();
+			if (this.node_asynRequest_Outport.connected()) {
+				this.doPortDisconnection(this.node_asynRequest_Outport.getPortURI());
+			}
+			this.doPortConnection(this.node_asynRequest_Outport.getPortURI(), InboundPortUri, ClientAsynRequestConnector.class.getCanonicalName());
+			ExecutionState data = (ExecutionState) request.getExecutionState();
+			QueryResult result_all = (QueryResult) data.getCurrentResult();
+			this.logMessage("Connecter au Client "+InboundPortUri+" successfully! renvoyer Result.....");
+			this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
+		}catch (Exception e) {
+			System.err.println("renvoyerAsyncRes: "+this.nodeinfo.nodeIdentifier() + " Failed to send result to client: " + e.getMessage());
+		}
 	}
 	
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {

@@ -18,10 +18,10 @@ public class ClientAsynRequestInboundPort extends AbstractInboundPort implements
         super(RequestResultCI.class, owner);
         assert owner instanceof ClientComponent;
     }
-
+// ((ClientComponent)getOwner()).getIndex_poolthread_receiveAsync()
     @Override
     public void acceptRequestResult(String requestURI, QueryResultI result) throws Exception {
-        this.getOwner().runTask( ((ClientComponent)getOwner()).getIndex_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {
+        this.getOwner().runTask(((ClientComponent)getOwner()).get_Index_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {
             @Override
             public void run() {
                 try {
