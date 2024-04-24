@@ -12,9 +12,7 @@ import nodes.SensorNodeComponent;
 
 public class NodeNodeOutboundPort extends AbstractOutboundPort implements SensorNodeP2PCI{
 	private static final long serialVersionUID = 1L;
-	private String connectedNodePortURI = null; 
-	
-	
+
 	public NodeNodeOutboundPort(String uri,ComponentI owner) throws Exception {
 		 super(uri, SensorNodeP2PCI.class, owner);
 	        assert uri != null && owner instanceof SensorNodeComponent;
@@ -46,25 +44,5 @@ public class NodeNodeOutboundPort extends AbstractOutboundPort implements Sensor
 		((SensorNodeP2PCI) this.getConnector()).executeAsync(requestContinuation);
 		
 	}
-	
-	
-	
-	 // 调用连接时，保存节点标识符
-    @Override
-    public void doConnection(String otherPortURI, ConnectorI connector) throws Exception {
-        super.doConnection(otherPortURI, connector);
-        this.connectedNodePortURI = connectedNodePortURI; 
-    }
 
-    // 断开连接时，清除节点标识符
-    @Override
-    public void doDisconnection() throws Exception {
-        super.doDisconnection();
-        this.connectedNodePortURI = null;
-    }
-
-    // 提供获取当前连接的节点标识符的方法
-    public String getConnectedNodePortURI() {
-        return this.connectedNodePortURI;
-    }
 }

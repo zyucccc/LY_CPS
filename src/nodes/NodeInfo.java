@@ -16,12 +16,6 @@ public class NodeInfo implements NodeInfoI {
     private  EndPointDescriptorI clientEndPoint;
 
     public NodeInfo(String nodeId, PositionI position, double range, EndPointDescriptorI p2pEndPoint, EndPointDescriptorI clientEndPoint) {
-//        assert nodeId != null && !nodeId.isEmpty() : "NodeInfo.constructor: nodeId cannot be null or empty";
-//        assert position != null : "NodeInfo.constructor: null position";
-//        assert range > 0.0 : "NodeInfo.constructor: range must be positive";
-//        assert p2pEndPoint != null : "NodeInfo.constructor: null p2pEndPoint";
-//        assert clientEndPoint != null : "NodeInfo.constructor: null clientEndPoint";
-
         this.nodeId = nodeId;
         this.position = (Position) position;
         this.range = range;
@@ -53,6 +47,7 @@ public class NodeInfo implements NodeInfoI {
     public EndPointDescriptorI endPointInfo() {
         return this.clientEndPoint;
     }
+
     public void Setp2pendPointInfo(EndPointDescriptor uriinfo) {
         this.p2pEndPoint = uriinfo;
     }
@@ -69,17 +64,5 @@ public class NodeInfo implements NodeInfoI {
                 ", clientEndPoint=" + clientEndPoint +
                 '}';
     }
-    
-//    @Override
-//    public String toString() {
-//        return "NodeInfo{" +
-//                "nodeId='" + nodeId + '\'' +
-//                ", position=" + position +
-//                ", range=" + range +
-//                ", p2pEndPoint=" + p2pEndPoint +
-//                ", clientEndPoint=" + clientEndPoint +
-//                '}';
-//    }
-
 
 }

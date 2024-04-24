@@ -57,7 +57,6 @@ public class QueryResult implements QueryResultI,Serializable{
                 uniqueSensors.put(key, newSensorData);
             }
             this.gatheredSensorsValues = new ArrayList<>(uniqueSensors.values());
-//            this.gatheredSensorsValues.addAll(otherResult.gatheredSensorsValues());
         }
     }
     

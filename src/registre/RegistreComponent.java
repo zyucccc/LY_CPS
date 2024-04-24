@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
@@ -20,14 +18,16 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.NodeInfo;
 import registre.ports.LookupInboundPort;
 import registre.interfaces.RegistrationCI;
-//import registry.ports.RegistrationInboundPort;
-//import registry.ports.LookupInboundPort;
 import registre.ports.RegistrationInboundPort;
 import request.ast.Direction;
 import sensor_network.Position;
 import sensor_network.ConnectionInfo;
 
-
+//nous redefinissons registrationCI
+//car nous avons cree notre propre class Direction
+//et nous ne utilisons pas celui du package fourni(Direction dans sorbonne_u.cps.sensor_network.interfaces)
+//du coup pour correspondre a notre propre class Direction
+//nous devons redefinir registrationCI
 @OfferedInterfaces(offered = {RegistrationCI.class, LookupCI.class})
 public class RegistreComponent extends AbstractComponent {
     protected String registrationInboundPortURI;

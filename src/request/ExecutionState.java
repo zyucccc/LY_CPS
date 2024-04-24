@@ -101,16 +101,15 @@ public class ExecutionState implements ExecutionStateI {
     @Override
     public boolean isContinuationSet() {
     	return this.isContinuationSet;
-//        return this.isDirectional || this.isFlooding;
     }
 
     @Override
     public boolean isDirectional() {
         return this.isDirectional;
     }
-    
 
-   
+    //nous creer une fonction getDirections_ast() nous_meme car dans nos asts,pour la direction
+    //nous avons cree une class Direction nous-meme mais pas utiliser celui du package fourni(Direction dans sorbonne)
     public Set<Direction> getDirections_ast() {
         return this.directions;
     }
@@ -119,15 +118,12 @@ public class ExecutionState implements ExecutionStateI {
     public boolean noMoreHops() {
         return this.current_hops >= this.hops;
     }
-    
-    public int Hops_Left() {
-    	return this.hops-this.current_hops;
-    }
-    
+
     public int getHops()
     {
     	return this.hops;
     }
+
     @Override
     public void incrementHops() {
         this.current_hops++;
@@ -148,12 +144,6 @@ public class ExecutionState implements ExecutionStateI {
     
     public double getMaximalDistance() {
     	return this.maximalDistance;
-    }
-   
-    
-    // check continuation Vide
-    public boolean isVide() {
-        return this.isContinuationSet && (!this.isDirectional) && (!this.isFlooding) ;
     }
 
     // set direction//flooding //

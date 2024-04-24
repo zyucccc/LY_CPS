@@ -27,37 +27,40 @@ public class Position implements PositionI {
         throw new IllegalArgumentException("Unsupported PositionI implementation.");
     }
     
-    // 根据相对位置返回方向
-    //正西属于西北
-    //正南属于西南
-    //正东属于东南
-    //正北属于东北
-    
+    //ici,nous redefinissons les 2 fonctions_ast nous-meme,
+    //c'est parce que nous utilisons la class Direction cree par nous-meme
+    //mais pas celui du package fourni(Direction dans sorbonne_u.cps.sensor_network.interfaces)
+
+    //retouner la direction selon la position
+    //d'ailleurs,nous imposons:
+    //ouest est dans le nord-ouest
+    //sud est dans le sud-ouest
+    //est est dans le sud-est
+    //nord est dans le nord-est
     public Direction directionFrom_ast(PositionI p) {     
     	  Position other = (Position) p;
-          // 判断两点在x轴和y轴的相对位置，并考虑正方向归属的改变
+
           boolean north = this.y > other.y;
           boolean south = this.y < other.y;
           boolean east = this.x > other.x;
           boolean west = this.x < other.x;
 
-          // 东西方向上的对比需要结合南北方向来决定具体归属
           if (north && !east && !west) {
-              return Direction.NE; // 正北属于东北
+              return Direction.NE;
           } else if (south && !east && !west) {
-              return Direction.SW; // 正南属于西南
+              return Direction.SW;
           } else if (west && !north && !south) {
-              return Direction.NW; // 正西属于西北
+              return Direction.NW;
           } else if (east && !north && !south) {
-              return Direction.SE; // 正东属于东南
+              return Direction.SE;
           } else if (north && east) {
-              return Direction.NE; // 东北
+              return Direction.NE;
           } else if (north && west) {
-              return Direction.NW; // 西北
+              return Direction.NW;
           } else if (south && east) {
-              return Direction.SE; // 东南
+              return Direction.SE;
           } else if (south && west) {
-              return Direction.SW; // 西南
+              return Direction.SW;
           }
         throw new IllegalArgumentException("Unsupported PositionI implementation.");
     }
@@ -91,8 +94,7 @@ public class Position implements PositionI {
         throw new IllegalArgumentException("Unsupported PositionI implementation.");
     }
 
-
-    // 判断相对位置
+    //distinguer les cas de position
     @Override
     public boolean northOf(PositionI p) {
     	Position other = (Position) p;
