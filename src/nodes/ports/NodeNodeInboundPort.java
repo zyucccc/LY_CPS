@@ -8,8 +8,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
+import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import nodes.SensorNodeComponent;
+import nodes.plugins.NodePlugin;
 
 public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorNodeP2PCI{
 	private static final long serialVersionUID = 1L;
@@ -24,20 +26,36 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 		assert owner instanceof SensorNodeComponent ;
 	}
 
-//	@Override
-//	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-//		  this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),owner -> {
-//			  ((SensorNodeComponent)owner).ask4Disconnection(neighbour);
-//			  return null;
-//		  });
-//	}
+	public NodeNodeInboundPort (String uri,ComponentI owner,String pluginURI) throws Exception{
+		super(uri,SensorNodeP2PCI.class, owner,pluginURI,null);
+		assert	owner.isInstalled(pluginURI);
+	}
+
+	public NodeNodeInboundPort (ComponentI owner,String pluginURI) throws Exception{
+          super(SensorNodeP2PCI.class, owner,pluginURI,null);
+		  assert	owner.isInstalled(pluginURI);
+	}
+
+//@Override
+//public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
+//	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
+//		@Override
+//		public void run() {
+//			try {
+//				((SensorNodeComponent) owner).ask4Disconnection(neighbour);
+//			} catch (Exception e) {
+//				throw new RuntimeException(e);
+//			}
+//		}
+//	});
+//}
 @Override
 public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
+	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask(this.getPluginURI()) {
 		@Override
 		public void run() {
 			try {
-				((SensorNodeComponent) owner).ask4Disconnection(neighbour);
+				((SensorNodeP2PImplI)this.getTaskProviderReference()).ask4Disconnection(neighbour);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -45,27 +63,33 @@ public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
 	});
 }
 
-	
-//	@Override
-//	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-//	    this.getOwner().handleRequest(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),owner -> {
-//	        ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
-//	        return null;
-//	    });
-//	}
 @Override
 public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
+	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask(this.getPluginURI()) {
 		@Override
 		public void run() {
-            try {
-                ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+			try {
+				((NodePlugin)this.getTaskProviderReference()).ask4Connection(newNeighbour);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 	});
 }
+
+//@Override
+//public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
+//	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
+//		@Override
+//		public void run() {
+//            try {
+//                ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+//	});
+//}
 
 
 	@Override

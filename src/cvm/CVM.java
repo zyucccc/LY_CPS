@@ -75,23 +75,12 @@ public class CVM extends AbstractCVM {
         String SENSORNODE_INBOUND_PORT_URI="sensornode-inbound-uri" + baseId;
         //SensorNode outbound port pour Registre
         String SensorNode_Registre_OUTBOUND_PORT_URI = "node-registre-outbound-uri" + baseId;
-        //NWES
-        String SensorNode_Node_NE_OUTBOUND_PORT_URI = "node-node-NE-outbound-uri" + baseId;
-        String SensorNode_Node_NW_OUTBOUND_PORT_URI = "node-node-NW-outbound-uri" +baseId;
-        String SensorNode_Node_SE_OUTBOUND_PORT_URI = "node-node-SE-outbound-uri1"+baseId;
-        String SensorNode_Node_SW_OUTBOUND_PORT_URI = "node-node-SW-outbound-uri1"+baseId;
-        //asyn outbound port uri for Sensor node
-        String sensorNodeAsyn_OutboundPortURI = "sensornode-async-outbound-uri" + baseId;
         
         return new String[] {SENSORNODE_COMPONENT_URI
         		, NODE_P2P_INBOUND_PORT_URI
         		, SENSORNODE_INBOUND_PORT_URI
         		,SensorNode_Registre_OUTBOUND_PORT_URI
-        		,SensorNode_Node_NE_OUTBOUND_PORT_URI
-        		,SensorNode_Node_NW_OUTBOUND_PORT_URI
-        		,SensorNode_Node_SE_OUTBOUND_PORT_URI
-        		,SensorNode_Node_SW_OUTBOUND_PORT_URI
-        		,sensorNodeAsyn_OutboundPortURI};
+        		};
     }
 
     public CVM() throws Exception {
@@ -276,22 +265,17 @@ public class CVM extends AbstractCVM {
                 this.uriSensorNodeURI=
                         AbstractComponent.createComponent(
                             SensorNodeComponent.class.getCanonicalName(),
-                            new Object[]{nodeinfo,uris[0], 
+                            new Object[]{nodeinfo,
                             		uris[2],
                             		uris[3],
-                            		uris[4],
-                            		uris[5],
-                            		uris[6],
-                            		uris[7],
-                            		uris[1] ,
+                            		uris[1],
                             		sensorsData,
-                            		uris[8],
 									CLOCK_URI});
                     assert this.isDeployedComponent(this.uriSensorNodeURI);
                     this.toggleTracing(this.uriSensorNodeURI);
                     this.toggleLogging(this.uriSensorNodeURI);
                     
-                  //conection node1 to registre
+                  //conection node to registre
                     this.doPortConnection(
                         	this.uriSensorNodeURI,
                         	uris[3],
