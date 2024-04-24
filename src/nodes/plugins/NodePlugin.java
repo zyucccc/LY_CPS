@@ -2,23 +2,36 @@ package nodes.plugins;
 
 import fr.sorbonne_u.components.AbstractPlugin;
 import fr.sorbonne_u.components.ComponentI;
+import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
+import nodes.ports.NodeNodeInboundPort;
 import nodes.ports.NodeNodeOutboundPort;
+import nodes.ports.SensorNodeInboundPort;
 import nodes.ports.SensorNodeRegistreOutboundPort;
 import registre.interfaces.RegistrationCI;
+import request.ExecutionState;
+import request.ProcessingNode;
+import request.RequestContinuation;
 import request.ast.Direction;
+import request.ast.Query;
+import request.ast.interpreter.Interpreter;
 import sensor_network.Position;
+import sensor_network.QueryResult;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class NodePlugin extends AbstractPlugin{
     private static final long serialVersionUID = 1L;
@@ -33,14 +46,23 @@ public class NodePlugin extends AbstractPlugin{
     protected NodeNodeOutboundPort node_node_SE_Outport;
     protected NodeNodeOutboundPort node_node_SW_Outport;
 
+    //inbound port for client et node2node
+    protected SensorNodeInboundPort InboundPort_toClient;
+    protected NodeNodeInboundPort InboundPort_P2PtoNode;
+    //inbound port URI
+    protected String sensorNodeInboundPortURI;
+    protected String node_node_InboundPortURI;
+
     //gestion Concurrence
     //proteger neighbours avec OutBoundPorts
     protected final ReentrantLock neighbours_OutPorts_lock = new ReentrantLock();
 
 
-        public NodePlugin(String node_Registre_outboundPortURI) {
+        public NodePlugin(String node_Registre_outboundPortURI,String sensorNodeInboundPortURI,String node_node_InboundPortURI) {
             super();
             this.node_Registre_outboundPortURI = node_Registre_outboundPortURI;
+            this.sensorNodeInboundPortURI = sensorNodeInboundPortURI;
+            this.node_node_InboundPortURI = node_node_InboundPortURI;
         }
 
     // -------------------------------------------------------------------------
@@ -51,6 +73,7 @@ public class NodePlugin extends AbstractPlugin{
     {
         super.installOn(owner);
         this.addRequiredInterface(RegistrationCI.class);
+        this.addRequiredInterface(SensorNodeP2PCI.class);
         this.addOfferedInterface(SensorNodeP2PCI.class);
     }
 
@@ -60,6 +83,12 @@ public class NodePlugin extends AbstractPlugin{
         // ---------------------------------------------------------------------
         // publish des ports
         // ---------------------------------------------------------------------
+        this.InboundPort_P2PtoNode = new NodeNodeInboundPort(this.node_node_InboundPortURI,this.getOwner(),this.getPluginURI());
+        this.InboundPort_P2PtoNode.publishPort();
+
+        this.InboundPort_toClient = new SensorNodeInboundPort(this.sensorNodeInboundPortURI,this.getOwner(),this.getPluginURI());
+        this.InboundPort_toClient.publishPort();
+
         this.node_registre_port = new SensorNodeRegistreOutboundPort(this.node_Registre_outboundPortURI, this.getOwner());
         this.node_registre_port.localPublishPort();
 
@@ -96,6 +125,10 @@ public class NodePlugin extends AbstractPlugin{
         if (this.node_node_SW_Outport.connected()) {
             this.node_node_SW_Outport.doDisconnection();
         }
+
+        if(this.InboundPort_P2PtoNode.connected()) {
+            this.InboundPort_P2PtoNode.doDisconnection();
+        }
         super.finalise();
     }
 
@@ -110,9 +143,16 @@ public class NodePlugin extends AbstractPlugin{
 
         this.node_registre_port.unpublishPort();
 
-
+        try{
+        this.InboundPort_P2PtoNode.unpublishPort();
+        this.InboundPort_toClient.unpublishPort();
+        }catch (Exception e){
+//            throw new ComponentShutdownException(e);
+            e.printStackTrace();
+        }
 
         this.removeRequiredInterface(RegistrationCI.class);
+        this.removeRequiredInterface(SensorNodeP2PCI.class);
         this.removeOfferedInterface(SensorNodeP2PCI.class);
 
         super.uninstall();
@@ -281,6 +321,100 @@ public class NodePlugin extends AbstractPlugin{
         }
     }
 
+    // -------------------------------------------------------------------------
+    // SensorNodeP2PCI.class required methodes
+    // -------------------------------------------------------------------------
+
+
+    // ---------------------------------------------------------------------
+    // Traiter les requetes Sync from Client
+    // ---------------------------------------------------------------------
+    public QueryResultI processRequest(RequestI request) throws Exception{
+        NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
+        ReentrantReadWriteLock sensorData_lock = ((SensorNodeComponent)this.getOwner()).getSensorData_lock();
+
+        this.logMessage("----------------Receive Query Sync------------------");
+        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request Sync");
+        Interpreter interpreter = new Interpreter();
+        Query<?> query = (Query<?>) request.getQueryCode();
+        ExecutionState data = new ExecutionState();
+        data.updateProcessingNode(((SensorNodeComponent)this.getOwner()).getProcessingNode());
+
+        sensorData_lock.readLock().lock();
+        QueryResult result = (QueryResult) query.eval(interpreter, data);
+        sensorData_lock.readLock().unlock();
+
+        this.logMessage("----------------Res Actuel----------------------");
+        this.logMessage("Resultat du requete Sync: " + result);
+
+        if(data.isDirectional()||data.isFlooding()) {
+            RequestContinuation requestCont = new RequestContinuation(request,data);
+            //pour enregister les nodes deja traite pour ce request
+            requestCont.addVisitedNode(nodeinfo);
+            ((SensorNodeComponent)this.getOwner()).propagerQuery(requestCont);
+        }
+
+        QueryResult result_all = (QueryResult) data.getCurrentResult();
+
+        this.logMessage("------------------Res ALL----------------------");
+        this.logMessage("Resultat du requete Sync: " + result_all);
+        this.logMessage("--------------------------------------");
+        return result_all;
+    }
+
+    // ---------------------------------------------------------------------
+    // Traiter les requetes Sync from Nodes
+    // ---------------------------------------------------------------------
+    public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
+        NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
+        ProcessingNode processingNode = ((SensorNodeComponent)this.getOwner()).getProcessingNode();
+        ReentrantReadWriteLock sensorData_lock = ((SensorNodeComponent)this.getOwner()).getSensorData_lock();
+        //si cette node actuel est deja traite par cette request recu,on ignorer et return direct
+        //pour eviter le Probleme: deadlock caused by Call_back
+        //ex: node 1 send request flooding to node2,node2 send encore request to node1
+        if (((RequestContinuation)requestCont).getVisitedNodes().contains(nodeinfo)) {
+            return null;
+        }
+        ((RequestContinuation) requestCont).addVisitedNode(nodeinfo);
+        Interpreter interpreter = new Interpreter();
+        ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+        //chaque fois on recevoit un request de flooding
+        //on check si ce node est dans max_distance de propager ce request
+        //si oui ,on continue a collecter les infos de node actuel
+        //si non,on return le res precedent
+        if(data.isFlooding()) {
+            this.logMessage(nodeinfo.nodeIdentifier()+" receive flooding request Sync");
+            Position actuel_position = (Position) nodeinfo.nodePosition();
+            if(!data.withinMaximalDistance(actuel_position)) {
+//				this.logMessage("Hors distance");
+                return data.getCurrentResult();
+            }
+        }
+        if(data.isDirectional()){
+            this.logMessage(nodeinfo.nodeIdentifier()+" receive directional request Sync");
+            data.incrementHops();
+        }
+
+        this.logMessage("---------------Receive Query Continuation Sync---------------");
+        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request sync");
+        Query<?> query = (Query<?>) requestCont.getQueryCode();
+        data.updateProcessingNode(processingNode);
+
+        sensorData_lock.readLock().lock();
+        QueryResultI result;
+        try {
+            result = (QueryResult) query.eval(interpreter, data);
+        }finally {
+            sensorData_lock.readLock().unlock();
+        }
+
+        this.logMessage("----------------Resultat Actuel Sync----------------------");
+        this.logMessage("Resultat Continuational de node actuel: " + result);
+
+        ((SensorNodeComponent)this.getOwner()).propagerQuery(requestCont);
+        this.logMessage("------------------------------------");
+        return result;
+    }
 
 
 

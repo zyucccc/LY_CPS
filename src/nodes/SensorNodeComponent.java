@@ -61,7 +61,7 @@ import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
 //@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
-@RequiredInterfaces(required = {SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
+@RequiredInterfaces(required = {RequestResultCI.class,ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestingCI.class})
 //@OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
 public class SensorNodeComponent extends AbstractComponent {
@@ -69,10 +69,7 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected NodeInfo nodeinfo;
 	protected ProcessingNode processingNode;
 	//inbound port for client et node2node
-	protected SensorNodeInboundPort InboundPort_toClient;
-	protected NodeNodeInboundPort InboundPort_P2PtoNode;
-	//inbound port URI
-	protected String InboundPort_P2PtoNode_URI = AbstractPort.generatePortURI();
+//	protected SensorNodeInboundPort InboundPort_toClient;
 
 	//outbound port for AsynRequest
 	protected SensorNodeAsynRequestOutboundPort node_asynRequest_Outport;
@@ -149,7 +146,7 @@ public class SensorNodeComponent extends AbstractComponent {
 		// ---------------------------------------------------------------------
 		// Gestion des plugins
 		// ---------------------------------------------------------------------
-        NodePlugin nodePlugin = new NodePlugin(node_Registre_outboundPortURI);
+        NodePlugin nodePlugin = new NodePlugin(node_Registre_outboundPortURI,sensorNodeInboundPortURI,node_node_InboundPortURI);
 		this.NodePluginURI = AbstractPort.generatePortURI();
         nodePlugin.setPluginURI(this.NodePluginURI);
 		this.installPlugin(nodePlugin);
@@ -171,12 +168,11 @@ public class SensorNodeComponent extends AbstractComponent {
 		
 		//Inbound Port publish
 		//node - client - requestingI
-		this.InboundPort_toClient = new SensorNodeInboundPort(sensorNodeInboundPortURI,this);
-		this.InboundPort_toClient.publishPort();
+//		this.InboundPort_toClient = new SensorNodeInboundPort(sensorNodeInboundPortURI,this,this.NodePluginURI);
+//		this.InboundPort_toClient.publishPort();
         //node - node - SensorNodeP2PCI
-//		this.InboundPort_P2PtoNode = new NodeNodeInboundPort(node_node_InboundPortURI,this);
-		this.InboundPort_P2PtoNode = new NodeNodeInboundPort(node_node_InboundPortURI,this,this.NodePluginURI);
-		this.InboundPort_P2PtoNode.publishPort();
+//		this.InboundPort_P2PtoNode = new NodeNodeInboundPort(node_node_InboundPortURI,this,this.NodePluginURI);
+//		this.InboundPort_P2PtoNode.publishPort();
         
         //node async request outbound port
         this.node_asynRequest_Outport = new SensorNodeAsynRequestOutboundPort(this);
@@ -234,6 +230,10 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// ---------------------------------------------------------------------
     public NodeInfo getNodeinfo() {
 		return this.nodeinfo;
+	}
+
+	public ProcessingNode getProcessingNode() {
+		return this.processingNode;
 	}
 
 	// ---------------------------------------------------------------------
@@ -387,8 +387,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		 try {
 			 //depublish les ports
 			 this.node_asynRequest_Outport.unpublishPort();
-			 this.InboundPort_P2PtoNode.unpublishPort();
-			 this.InboundPort_toClient.unpublishPort();
+
 			 //fermer les pools des threads explicitement
 			 this.shutdownExecutorService(this.uri_pool_receiveAsync);
              this.shutdownExecutorService(this.uri_pool_receiveAsync_Client);
@@ -399,9 +398,9 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		 }
 		 super.shutdown();
 	    }
-
+/*
 	// ---------------------------------------------------------------------
-	// Traiter les requetes from Client
+	// Traiter les requetes Sync from Client
 	// ---------------------------------------------------------------------
 	public QueryResultI processRequest(RequestI request) throws Exception{
 		this.logMessage("----------------Receive Query Sync------------------");
@@ -432,6 +431,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("--------------------------------------");
 		return result_all;
 	 }
+ */
 	// ---------------------------------------------------------------------
 	// Traiter les requetes Async from Client
 	// ---------------------------------------------------------------------
@@ -544,8 +544,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			System.err.println("Erreur type de Cont");
 		}
 	}
-	
-	//deal with les request continuation recu par les nodes
+	/*
+	//deal with les request sync continuation recu par les nodes
 	public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
 		//si cette node actuel est deja traite par cette request recu,on ignorer et return direct
 		//pour eviter le Probleme: deadlock caused by Call_back
@@ -593,6 +593,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		this.logMessage("------------------------------------");
 		return result;
 	 }
+	 */
 	
 	//process Request Continuation Async
 	public void processRequestContinuation_Asyn(RequestContinuationI requestCont) throws Exception{

@@ -4,9 +4,11 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import nodes.SensorNodeComponent;
+import nodes.plugins.NodePlugin;
 
 public class SensorNodeInboundPort extends	AbstractInboundPort implements RequestingCI{
 	
@@ -22,10 +24,30 @@ public class SensorNodeInboundPort extends	AbstractInboundPort implements Reques
 		assert owner instanceof SensorNodeComponent ;
 	}
 
-	@Override
-	public QueryResultI execute(RequestI request) throws Exception {
-		return this.getOwner().handleRequest(owner -> ((SensorNodeComponent)owner).processRequest(request));
+	public SensorNodeInboundPort (ComponentI owner,String pluginURI) throws Exception{
+		super(RequestingCI.class, owner,pluginURI,null);
+		assert	owner.isInstalled(pluginURI);
 	}
+
+	public SensorNodeInboundPort (String uri,ComponentI owner,String pluginURI) throws Exception{
+		super(uri,RequestingCI.class, owner,pluginURI,null);
+		assert	owner.isInstalled(pluginURI);
+	}
+
+//	@Override
+//	public QueryResultI execute(RequestI request) throws Exception {
+//		return this.getOwner().handleRequest(owner -> ((SensorNodeComponent)owner).processRequest(request));
+//	}
+@Override
+public QueryResultI execute(RequestI request) throws Exception {
+	return this.getOwner().handleRequest(
+			new AbstractComponent.AbstractService<QueryResultI>(this.getPluginURI()){
+				@Override
+				public QueryResultI call() throws Exception {
+					return ((NodePlugin)this.getServiceProviderReference()).processRequest(request);
+				}
+			});
+}
 
 	//ici,nous appelons le pool de thread distinct pour traiter les requêtes async provenant du client
 	@Override

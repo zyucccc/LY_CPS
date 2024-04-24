@@ -36,19 +36,6 @@ public class NodeNodeInboundPort extends	AbstractInboundPort  implements SensorN
 		  assert	owner.isInstalled(pluginURI);
 	}
 
-//@Override
-//public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-//	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
-//		@Override
-//		public void run() {
-//			try {
-//				((SensorNodeComponent) owner).ask4Disconnection(neighbour);
-//			} catch (Exception e) {
-//				throw new RuntimeException(e);
-//			}
-//		}
-//	});
-//}
 @Override
 public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
 	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask(this.getPluginURI()) {
@@ -77,40 +64,31 @@ public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
 	});
 }
 
-//@Override
-//public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-//	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_Receiveconnection(),new AbstractComponent.AbstractTask() {
-//		@Override
-//		public void run() {
-//            try {
-//                ((SensorNodeComponent) owner).ask4Connection(newNeighbour);
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
-//	});
-//}
+
+@Override
+public QueryResultI execute(RequestContinuationI request) throws Exception {
+	return this.getOwner().handleRequest(
+			new AbstractComponent.AbstractService<QueryResultI>(this.getPluginURI()){
+				@Override
+				public QueryResultI call() throws Exception {
+					return ((NodePlugin)this.getServiceProviderReference()).processRequestContinuation(request);
+				}
+	});
+}
 
 
-	@Override
-	public QueryResultI execute(RequestContinuationI request) throws Exception {
-		return this.getOwner().handleRequest(owner -> {
-	       return ((SensorNodeComponent) owner).processRequestContinuation(request);
-	    });
-	}
-
-	//ici,nous appelons le pool de thread distinct pour traiter les requêtes async provenant des noeuds
-	@Override
-	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-		this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {
-            @Override
-            public void run() {
-                try {
-                    ((SensorNodeComponent)getOwner()).processRequestContinuation_Asyn(requestContinuation);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-	}
+//ici,nous appelons le pool de thread distinct pour traiter les requêtes async provenant des noeuds
+@Override
+public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
+	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {
+		@Override
+		public void run() {
+			try {
+				((SensorNodeComponent)getOwner()).processRequestContinuation_Asyn(requestContinuation);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	});
+}
 }
