@@ -1,5 +1,6 @@
 package nodes.plugins;
 
+import client.connectors.ClientAsynRequestConnector;
 import fr.sorbonne_u.components.AbstractPlugin;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
@@ -11,12 +12,11 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
+import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingImplI;
 import nodes.NodeInfo;
 import nodes.SensorNodeComponent;
-import nodes.ports.NodeNodeInboundPort;
-import nodes.ports.NodeNodeOutboundPort;
-import nodes.ports.SensorNodeInboundPort;
-import nodes.ports.SensorNodeRegistreOutboundPort;
+import nodes.connectors.NodeNodeConnector;
+import nodes.ports.*;
 import registre.interfaces.RegistrationCI;
 import request.ExecutionState;
 import request.ProcessingNode;
@@ -24,6 +24,8 @@ import request.RequestContinuation;
 import request.ast.Direction;
 import request.ast.Query;
 import request.ast.interpreter.Interpreter;
+import sensor_network.ConnectionInfo;
+import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
@@ -33,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class NodePlugin extends AbstractPlugin{
+public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, RequestingImplI {
     private static final long serialVersionUID = 1L;
 
     //outbound port for Registre
@@ -72,9 +74,13 @@ public class NodePlugin extends AbstractPlugin{
     public void	installOn(ComponentI owner) throws Exception
     {
         super.installOn(owner);
+
         this.addRequiredInterface(RegistrationCI.class);
+
         this.addRequiredInterface(SensorNodeP2PCI.class);
         this.addOfferedInterface(SensorNodeP2PCI.class);
+
+        this.addOfferedInterface(RequestingCI.class);
     }
 
     @Override
@@ -152,8 +158,11 @@ public class NodePlugin extends AbstractPlugin{
         }
 
         this.removeRequiredInterface(RegistrationCI.class);
+
         this.removeRequiredInterface(SensorNodeP2PCI.class);
         this.removeOfferedInterface(SensorNodeP2PCI.class);
+
+        this.removeOfferedInterface(RequestingCI.class);
 
         super.uninstall();
     }
@@ -214,7 +223,7 @@ public class NodePlugin extends AbstractPlugin{
                         if (selectedOutboundPort.connected()) {
                             this.getOwner().doPortDisconnection(selectedOutboundPort.getPortURI());
                         }
-                        ((SensorNodeComponent)this.getOwner()).connecter(selectedOutboundPort, neighbourInfo);
+                        this.connecter(selectedOutboundPort, neighbourInfo);
                         selectedOutboundPort.ask4Connection(nodeinfo);
                     } catch (Exception e) {
                         System.err.println("connecterNeighbours: " + nodeinfo.nodeIdentifier() + " Failed to connect to neighbour at direction " + direction + ": " + e.getMessage());
@@ -265,6 +274,10 @@ public class NodePlugin extends AbstractPlugin{
     public void	unregister(String nodeIdentifier) throws Exception{
         this.node_registre_port.unregister(nodeIdentifier);
     }
+    // -------------------------------------------------------------------------
+    // SensorNodeP2PCI.class required methodes
+    // -------------------------------------------------------------------------
+
 
     // -------------------------------------------------------------------------
     // SensorNodeP2PCI.class offered methodes
@@ -308,10 +321,10 @@ public class NodePlugin extends AbstractPlugin{
                 //disconnter d'abord
                 this.getOwner().doPortDisconnection(selectedOutboundPort.getPortURI());
                 // connecter
-                ((SensorNodeComponent)this.getOwner()).connecter(selectedOutboundPort, newNeighbour);
+                this.connecter(selectedOutboundPort, newNeighbour);
             } else {
                 // si pas de connection pour le outport,on fait connecter
-                ((SensorNodeComponent)this.getOwner()).connecter(selectedOutboundPort, newNeighbour);
+                this.connecter(selectedOutboundPort, newNeighbour);
             }
             self_neighbours.put(direction, newNeighbour);
         }catch (Exception e) {
@@ -321,15 +334,79 @@ public class NodePlugin extends AbstractPlugin{
         }
     }
 
-    // -------------------------------------------------------------------------
-    // SensorNodeP2PCI.class required methodes
-    // -------------------------------------------------------------------------
+    //deleguer les operation de connecter un outport choisi a un neighbour
+    public void connecter(NodeNodeOutboundPort selectedOutboundPort,NodeInfoI newNeighbour) throws Exception {
+        NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
+        EndPointDescriptor endpointDescriptor = (EndPointDescriptor) newNeighbour.p2pEndPointInfo();
+        if (endpointDescriptor != null) {
+            String neighbourInboundPortURI = endpointDescriptor.getInboundPortURI();
+            this.logMessage("SensorNodeComponent :"+ nodeinfo.nodeIdentifier() +" start connect : Uri obtenue to connect :" + neighbourInboundPortURI);
 
+            this.getOwner().doPortConnection(selectedOutboundPort.getPortURI(),neighbourInboundPortURI, NodeNodeConnector.class.getCanonicalName());
+
+            this.logMessage("SensorNodeComponent : "+ nodeinfo.nodeIdentifier() + ": Connection established with Node :" + newNeighbour.nodeIdentifier());
+        } else {
+            throw new Exception("p2pEndPointInfo() did not return an instance of EndPointDescriptor");
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // continuer a propager les request continuation
+    // ---------------------------------------------------------------------
+    public void propagerQuery(RequestContinuationI request) throws Exception {
+        this.logMessage("-----------------Propager Query------------------");
+        NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
+
+        ExecutionState data = (ExecutionState) request.getExecutionState();
+        //deal with direction
+        if(data.isDirectional()) {
+            Set<Direction> dirs = data.getDirections_ast();
+            //if noMoreHops , on stop propager Request Direction
+            if(!data.noMoreHops()) {
+                for (Direction dir : dirs) {
+                    //plugin:
+                    NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(dir);
+                    if(selectedOutboundPort.connected()) {
+                        if(!request.isAsynchronous()) {
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Sync Directional dir to :"+dir);
+                            selectedOutboundPort.execute(request);}
+                        else {
+                            //if async,on fait un copie du request
+                            RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request ASync Directional dir to:"+dir);
+                            selectedOutboundPort.executeAsync(copie_request);
+                        }
+                    }
+                }
+            }
+        }else
+            //deal with fooding
+            if(data.isFlooding()){
+                //propager flooding query a tous les directions
+                for(Direction dir : Direction.values()) {
+                    //plugin:
+                    NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(dir);
+                    if(selectedOutboundPort.connected()) {
+                        if(!request.isAsynchronous()) {
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Sync flooding dir :"+dir);
+                            selectedOutboundPort.execute(request);
+                        }else {
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Async flooding dir :"+dir);
+                            //if async,on fait un copie du request
+                            RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
+                            selectedOutboundPort.executeAsync(copie_request);
+                        }
+                    }
+                }
+            } else {
+                System.err.println("Erreur type de Cont");
+            }
+    }
 
     // ---------------------------------------------------------------------
     // Traiter les requetes Sync from Client
     // ---------------------------------------------------------------------
-    public QueryResultI processRequest(RequestI request) throws Exception{
+    public QueryResultI execute(RequestI request) throws Exception{
         NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
         ReentrantReadWriteLock sensorData_lock = ((SensorNodeComponent)this.getOwner()).getSensorData_lock();
 
@@ -351,7 +428,7 @@ public class NodePlugin extends AbstractPlugin{
             RequestContinuation requestCont = new RequestContinuation(request,data);
             //pour enregister les nodes deja traite pour ce request
             requestCont.addVisitedNode(nodeinfo);
-            ((SensorNodeComponent)this.getOwner()).propagerQuery(requestCont);
+            this.propagerQuery(requestCont);
         }
 
         QueryResult result_all = (QueryResult) data.getCurrentResult();
@@ -365,7 +442,7 @@ public class NodePlugin extends AbstractPlugin{
     // ---------------------------------------------------------------------
     // Traiter les requetes Sync from Nodes
     // ---------------------------------------------------------------------
-    public QueryResultI processRequestContinuation(RequestContinuationI requestCont) throws Exception{
+    public QueryResultI execute(RequestContinuationI requestCont) throws Exception{
         NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
         ProcessingNode processingNode = ((SensorNodeComponent)this.getOwner()).getProcessingNode();
         ReentrantReadWriteLock sensorData_lock = ((SensorNodeComponent)this.getOwner()).getSensorData_lock();
@@ -411,10 +488,195 @@ public class NodePlugin extends AbstractPlugin{
         this.logMessage("----------------Resultat Actuel Sync----------------------");
         this.logMessage("Resultat Continuational de node actuel: " + result);
 
-        ((SensorNodeComponent)this.getOwner()).propagerQuery(requestCont);
+        this.propagerQuery(requestCont);
         this.logMessage("------------------------------------");
         return result;
     }
+
+    // ---------------------------------------------------------------------
+    // Traiter les requetes Async from Client
+    // ---------------------------------------------------------------------
+    public void executeAsync(RequestI request) throws Exception{
+        NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
+        ProcessingNode processingNode = ((SensorNodeComponent)this.getOwner()).getProcessingNode();
+        ReentrantReadWriteLock sensorData_lock = ((SensorNodeComponent)this.getOwner()).getSensorData_lock();
+        SensorNodeAsynRequestOutboundPort node_asynRequest_Outport = ((SensorNodeComponent)this.getOwner()).getNode_asynRequest_Outport();
+
+        this.logMessage("----------------Receive Query Async------------------");
+        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request Async");
+        Interpreter interpreter = new Interpreter();
+        Query<?> query = (Query<?>) request.getQueryCode();
+        ExecutionState data = new ExecutionState();
+        data.updateProcessingNode(processingNode);
+
+        sensorData_lock.readLock().lock();
+        QueryResult result = (QueryResult) query.eval(interpreter, data);
+        sensorData_lock.readLock().unlock();
+
+        this.logMessage("----------------Resultat Async Actuel----------------------");
+        this.logMessage("Resultat du quete Async: " + result);
+
+        if(data.isDirectional()||data.isFlooding()) {
+            //if cest un request continuation
+            RequestContinuation requestCont = new RequestContinuation(request,data);
+            //pour enregister les nodes deja traite pour ce request
+            requestCont.addVisitedNode(nodeinfo);
+            //traiter la fin du request:
+            if(data.isDirectional()){
+                //si no more hops ou pas de neighbours pour la direction demandé,on renvoie le resultat au client
+                if(data.noMoreHops()) {
+                    this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No more hops");
+                    this.logMessage(nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+                    ((SensorNodeComponent)this.getOwner()).renvoyerAsyncRes(requestCont);
+                    return;
+                } else if (checkNeighboursDansDirection(requestCont)) {
+                    this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No neighbours dans la direction");
+                    this.logMessage(nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+                    ((SensorNodeComponent)this.getOwner()).renvoyerAsyncRes(requestCont);
+                    return;
+                }
+            }else if(data.isFlooding()) {
+                // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
+                //si cest le cas,renvoyer le res actuel au client
+                if(checkNeighboursDansPortee(requestCont)) {
+                    this.logMessage("Requete flooding fini "+requestCont.requestURI()+" : No neighbours dans le portee");
+                    this.logMessage(nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
+                    ((SensorNodeComponent)this.getOwner()).renvoyerAsyncRes(requestCont);
+                    return;
+                }
+            }
+            this.propagerQuery(requestCont);
+        }else{
+            //if cest un request ECont,renvoyer directement le res a Client
+            ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
+            String InboundPortUri = ((EndPointDescriptor)co_info.endPointInfo()).getInboundPortURI();
+            if(node_asynRequest_Outport.connected()) {
+                node_asynRequest_Outport.doDisconnection();
+            }
+            node_asynRequest_Outport.doConnection(InboundPortUri, ClientAsynRequestConnector.class.getCanonicalName());
+            QueryResult result_all = (QueryResult) data.getCurrentResult();
+            node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Traiter les requetes Async from Nodes
+    // ---------------------------------------------------------------------
+    public void executeAsync(RequestContinuationI requestCont) throws Exception{
+        NodeInfo nodeinfo = ((SensorNodeComponent)this.getOwner()).getNodeinfo();
+        ProcessingNode processingNode = ((SensorNodeComponent)this.getOwner()).getProcessingNode();
+        ReentrantReadWriteLock sensorData_lock = ((SensorNodeComponent)this.getOwner()).getSensorData_lock();
+
+        //si cette node actuel est deja traite par cette request recu,on ignorer et return direct
+        //pour eviter le Probleme: deadlock caused by Call_back
+        //ex: node 1 send request flooding to node2,node2 send encore request to node1
+        if (!((RequestContinuation)requestCont).getVisitedNodes().contains(nodeinfo)) {
+
+
+            ((RequestContinuation) requestCont).addVisitedNode(nodeinfo);
+            Interpreter interpreter = new Interpreter();
+            ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+            //chaque fois on recevoit un request de flooding
+            //on check si ce node est dans max_distance de propager ce request
+            //si oui ,on continue a collecter les infos de node actuel
+            //si non,on return le res precedent
+            if(data.isFlooding()) {
+                this.logMessage(nodeinfo.nodeIdentifier()+" receive flooding request Async");
+                Position actuel_position = (Position) nodeinfo.nodePosition();
+                if(!data.withinMaximalDistance(actuel_position)) {
+//				this.logMessage("Hors distance");
+                    return;
+                }
+            }
+            if(data.isDirectional()){
+                this.logMessage(nodeinfo.nodeIdentifier()+" receive directional request Async");
+                data.incrementHops();
+            }
+
+            this.logMessage("---------------Receive Query Continuation Async---------------");
+            this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request Async");
+            Query<?> query = (Query<?>) requestCont.getQueryCode();
+            data.updateProcessingNode(processingNode);
+
+
+            this.logMessage("----------------Res Actuel Async----------------------");
+
+            sensorData_lock.readLock().lock();
+            QueryResultI result;
+            try {
+                result = (QueryResult) query.eval(interpreter, data);
+            }finally {
+                sensorData_lock.readLock().unlock();
+            }
+
+            this.logMessage("Res Cont de node actuel: " + result);
+
+            //traiter la fin du request:
+            if(data.isDirectional()){
+                //si no more hops ou pas de neighbours pour la direction demandé,on renvoie le resultat au client
+                if(data.noMoreHops()) {
+                    this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No more hops");
+                    this.logMessage(nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+                    ((SensorNodeComponent)this.getOwner()).renvoyerAsyncRes(requestCont);
+                    return;
+                } else if (checkNeighboursDansDirection(requestCont)) {
+                    this.logMessage("Requete directionnelle fini "+requestCont.requestURI()+" : No neighbours dans la direction");
+                    this.logMessage(nodeinfo.nodeIdentifier() + " envoyer Res du request Async Direction: "+requestCont.getExecutionState().getCurrentResult() );
+                    ((SensorNodeComponent)this.getOwner()).renvoyerAsyncRes(requestCont);
+                    return;
+                }
+            }else if(data.isFlooding()) {
+                // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
+                //si cest le cas,renvoyer le res actuel au client
+                if(checkNeighboursDansPortee(requestCont)) {
+                    this.logMessage("Requete flooding fini "+requestCont.requestURI()+" : No neighbours dans le portee");
+                    this.logMessage(nodeinfo.nodeIdentifier() + " envoyer Res du request Async Flooding: "+requestCont.getExecutionState().getCurrentResult() );
+                    ((SensorNodeComponent)this.getOwner()).renvoyerAsyncRes(requestCont);
+                    return;
+                }
+            }
+
+            this.propagerQuery(requestCont);
+            this.logMessage("------------------------------------");
+
+        }
+    }
+
+    //verifier si il y a pas de neighbours dans la direction de request Directional
+    public Boolean checkNeighboursDansDirection (RequestContinuationI requestCont) {
+        ConcurrentHashMap<Direction, NodeInfoI> self_neighbours = ((SensorNodeComponent)this.getOwner()).getNeighbours();
+        ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+        Set<Direction> dirs = data.getDirections_ast();
+        for (Direction dir : dirs) {
+            NodeInfoI neighbour = self_neighbours.get(dir);
+            if (neighbour != null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // verifier si tous les neighbours ne sont pas dans le portee de request flooding (sauf les neighbous deja visite)
+    public Boolean checkNeighboursDansPortee (RequestContinuationI requestCont) {
+        ConcurrentHashMap<Direction, NodeInfoI> self_neighbours = ((SensorNodeComponent)this.getOwner()).getNeighbours();
+        for (Map.Entry<Direction, NodeInfoI> entry : self_neighbours.entrySet()) {
+            NodeInfoI neighbour = entry.getValue();
+            //si ce neighbours est deja visite
+            if (((RequestContinuation) requestCont).getVisitedNodes().contains(neighbour)) {
+                continue;
+            }
+            // check les autres neighbours
+            ExecutionState data = (ExecutionState) requestCont.getExecutionState();
+            if (data.withinMaximalDistance(neighbour.nodePosition())) {
+                // si au moins 1 neighbours non visite est dans portee,return false
+                return false;
+            }
+        }
+        //tous les neighbours non visitees est dehors le portee:
+        return true;
+    }
+
+
 
 
 

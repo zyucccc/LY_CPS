@@ -56,7 +56,7 @@ public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
 		@Override
 		public void run() {
 			try {
-				((NodePlugin)this.getTaskProviderReference()).ask4Connection(newNeighbour);
+				((SensorNodeP2PImplI)this.getTaskProviderReference()).ask4Connection(newNeighbour);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -71,20 +71,19 @@ public QueryResultI execute(RequestContinuationI request) throws Exception {
 			new AbstractComponent.AbstractService<QueryResultI>(this.getPluginURI()){
 				@Override
 				public QueryResultI call() throws Exception {
-					return ((NodePlugin)this.getServiceProviderReference()).processRequestContinuation(request);
+					return ((SensorNodeP2PImplI )this.getServiceProviderReference()).execute(request);
 				}
 	});
 }
 
-
 //ici,nous appelons le pool de thread distinct pour traiter les requêtes async provenant des noeuds
 @Override
 public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {
+	this.getOwner().runTask(((SensorNodeComponent)owner).getIndex_poolthread_receiveAsync(),new AbstractComponent.AbstractTask(this.getPluginURI()) {
 		@Override
 		public void run() {
 			try {
-				((SensorNodeComponent)getOwner()).processRequestContinuation_Asyn(requestContinuation);
+				((SensorNodeP2PImplI )this.getTaskProviderReference()).executeAsync(requestContinuation);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
