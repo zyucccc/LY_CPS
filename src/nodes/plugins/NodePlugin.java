@@ -56,9 +56,8 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
     protected String node_node_InboundPortURI;
 
     //gestion Concurrence
-    //proteger neighbours avec OutBoundPorts
+    //proteger neighbours avec 4 OutBoundPorts (NE,NW,SE,SW
     protected final ReentrantLock neighbours_OutPorts_lock = new ReentrantLock();
-
 
         public NodePlugin(String node_Registre_outboundPortURI,String sensorNodeInboundPortURI,String node_node_InboundPortURI) {
             super();

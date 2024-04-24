@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import client.ClientComponent;
 import client.connectors.ClientAsynRequestConnector;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
@@ -18,16 +17,14 @@ import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
-import fr.sorbonne_u.components.examples.basic_cs.interfaces.URIProviderCI;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
-import fr.sorbonne_u.components.ports.PortI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
+import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.utils.aclocks.*;
 import nodes.plugins.NodePlugin;
@@ -44,9 +41,9 @@ import sensor_network.Position;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
+//@OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
 //@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
 @RequiredInterfaces(required = {RequestResultCI.class,ClocksServerCI.class})
-//@OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
 public class SensorNodeComponent extends AbstractComponent {
 	protected AcceleratedClock ac;
 	protected NodeInfo nodeinfo;
@@ -75,14 +72,11 @@ public class SensorNodeComponent extends AbstractComponent {
 	//gestion Concurrence
 	//proteger les donnees de sensors
 	protected final ReentrantReadWriteLock sensorData_lock = new ReentrantReadWriteLock();
-	//proteger neighbours avec OutBoundPorts
-	protected final ReentrantLock neighbours_OutPorts_lock = new ReentrantLock();
 	//proteger la processus pour renvoyer les resultats aux clients
 	protected final ReentrantLock envoyer_res_lock = new ReentrantLock();
 
 	//on utilise les pools de threads par defaut pour traiter les fonctions register,connecter
 	//on introduit 2 pools de threads distincts pour traiter les requetes recus
-	
 	protected ConcurrentHashMap<Direction,NodeInfoI> neighbours;
 	
 	protected static void	checkInvariant(SensorNodeComponent c)
@@ -144,7 +138,6 @@ public class SensorNodeComponent extends AbstractComponent {
 	    String NodeID = this.nodeinfo.nodeIdentifier();
 		Position position = (Position) this.nodeinfo.nodePosition();
 		this.neighbours = new ConcurrentHashMap<>();
-		
 		this.processingNode = new ProcessingNode(NodeID,position,sensorsData);
         
         //node async request outbound port
@@ -170,7 +163,7 @@ assert	this.isPortExisting(sensorNodeInboundPortURI) :
 assert	this.findPortFromURI(sensorNodeInboundPortURI).
 			getImplementedInterface().equals(RequestingCI.class) :
 			new PostconditionException("The component must have a "
-					+ "port with implemented interface URIProviderI");
+					+ "port with implemented interface RequestingCI");
 assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			new PostconditionException("The component must have a "
 					+ "port published with URI " + sensorNodeInboundPortURI);
@@ -214,10 +207,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// ---------------------------------------------------------------------
     public ReentrantReadWriteLock getSensorData_lock() {
 		return this.sensorData_lock;
-	}
-
-	public ReentrantLock getNeighbours_OutPorts_lock() {
-		return this.neighbours_OutPorts_lock;
 	}
 
 	public ReentrantLock getEnvoyer_res_lock() {
@@ -337,13 +326,12 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		}
 
 		//instant1:register+connecter
-		this.scheduleTask(new AbstractComponent.AbstractTask() {
+		this.scheduleTask(new AbstractComponent.AbstractTask(this.NodePluginURI) {
 			@Override
 			public void run() {
 				try {
-					((NodePlugin)((SensorNodeComponent)this.getTaskOwner()).getPlugin(((SensorNodeComponent)this.getTaskOwner()).NodePluginURI)).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
-//					((SensorNodeComponent)this.getTaskOwner()).connecterNeighbours();
-					((NodePlugin)((SensorNodeComponent)this.getTaskOwner()).getPlugin(((SensorNodeComponent)this.getTaskOwner()).NodePluginURI)).connecterNeighbours();
+					((NodePlugin)this.getTaskProviderReference()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
+					((NodePlugin)this.getTaskProviderReference()).connecterNeighbours();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

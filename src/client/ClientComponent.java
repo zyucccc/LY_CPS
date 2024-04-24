@@ -28,6 +28,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import nodes.SensorNodeComponent;
+import nodes.plugins.NodePlugin;
 import request.Request;
 import request.ast.Direction;
 import request.ast.astBase.RBase;
@@ -303,10 +304,10 @@ public class ClientComponent extends AbstractComponent {
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
 		//3
-		Instant instant_findConnecter = start_instant.plusSeconds(8);
+		Instant instant_findConnecter = start_instant.plusSeconds(3);
 		//5,7
-		Instant instant_sendAsync = start_instant.plusSeconds(10);
-		Instant instant_sendAsync2 = start_instant.plusSeconds(10);
+		Instant instant_sendAsync = start_instant.plusSeconds(5);
+		Instant instant_sendAsync2 = start_instant.plusSeconds(5);
 		long delay_connect = 1L;
 		long delay_send = 1L;
 		long delay_send2 = 1L;
@@ -320,7 +321,7 @@ public class ClientComponent extends AbstractComponent {
 
 		    this.logMessage("ClientComponent executed.");
 
-			this.runTask(new AbstractComponent.AbstractTask() {
+			this.runTask(new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 				@Override
 				public void run() {
 					try {
@@ -331,12 +332,12 @@ public class ClientComponent extends AbstractComponent {
 				}
 			});
 
-		    this.scheduleTask(new AbstractComponent.AbstractTask() {
+		    this.scheduleTask(new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 			 @Override
 			 public void run() {
 				 try {
 					 // essayer de connecter de node indiquee
-					 ((ClientPlugin)((ClientComponent)this.getTaskOwner()).getPlugin(((ClientComponent)this.getTaskOwner()).ClientPluginURI)).findEtConnecterByIdentifer(NodeId);
+					 ((ClientPlugin)this.getTaskProviderReference()).findEtConnecterByIdentifer(NodeId);
 					 //request Sync
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction() ;
 					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding() ;
@@ -348,7 +349,7 @@ public class ClientComponent extends AbstractComponent {
 		 }, delay_connect, TimeUnit.NANOSECONDS);
 
 			//(en premier temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
-			this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+			this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 				@Override
 				public void run() {
 					try {
@@ -360,7 +361,7 @@ public class ClientComponent extends AbstractComponent {
 				}
 			}, delay_send, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 			 @Override
 			 public void run() {
 				 try {
@@ -373,7 +374,7 @@ public class ClientComponent extends AbstractComponent {
 		 }, delay_send, TimeUnit.NANOSECONDS);
 
 		//(deuxieme temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 			 @Override
 			 public void run() {
 				 try {
@@ -385,7 +386,7 @@ public class ClientComponent extends AbstractComponent {
 			 }
 		 }, delay_send2, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 			 @Override
 			 public void run() {
 				 try {
@@ -396,7 +397,7 @@ public class ClientComponent extends AbstractComponent {
 				 }
 			 }
 		 }, delay_send2, TimeUnit.NANOSECONDS);
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 			 @Override
 			 public void run() {
 				 try {
@@ -408,7 +409,7 @@ public class ClientComponent extends AbstractComponent {
 			 }
 		 }, delay_send2, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask() {
+		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
 			 @Override
 			 public void run() {
 				 try {
