@@ -14,6 +14,7 @@ import client.ClientComponent;
 import client.connectors.ClientAsynRequestConnector;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
@@ -30,6 +31,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 //import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.utils.aclocks.*;
+import nodes.plugins.NodePlugin;
 import registre.interfaces.RegistrationCI;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
@@ -58,7 +60,8 @@ import sensor_network.Position;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
-@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
+//@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
+@RequiredInterfaces(required = {SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
 public class SensorNodeComponent extends AbstractComponent {
 	protected AcceleratedClock ac;
@@ -67,8 +70,6 @@ public class SensorNodeComponent extends AbstractComponent {
 	//inbound port for client et node2node
 	protected SensorNodeInboundPort InboundPort_toClient;
 	protected NodeNodeInboundPort InboundPort_P2PtoNode;
-	//outbound port for Registre
-	protected SensorNodeRegistreOutboundPort node_registre_port;
 	//outbound port for Node2Node
 	protected NodeNodeOutboundPort node_node_NE_Outport;
 	protected NodeNodeOutboundPort node_node_NW_Outport;
@@ -76,6 +77,9 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected NodeNodeOutboundPort node_node_SW_Outport;
 	//outbound port for AsynRequest
 	protected SensorNodeAsynRequestOutboundPort node_asynRequest_Outport;
+
+	//plugin URI
+	protected String NodePluginURI;
 
 	//pool thread pour traiter les requetes async provenant des nodes
 	protected int index_poolthread_receiveAsync;
@@ -126,7 +130,7 @@ public class SensorNodeComponent extends AbstractComponent {
 			String CLOCK_URI
             ) throws Exception {
 		
-		super(uriPrefix, 7, 7) ;
+		super(7, 7) ;
 		assert nodeInfo != null : "NodeInfo cannot be null!";
 		//inboudporturi for client
 	    assert sensorNodeInboundPortURI != null && !sensorNodeInboundPortURI.isEmpty() : "InboundPort URI cannot be null or empty!";
@@ -149,17 +153,22 @@ public class SensorNodeComponent extends AbstractComponent {
 		if(this.ac.startTimeNotReached()) {
 			this.ac.waitUntilStart();
 		}
+		// ---------------------------------------------------------------------
+		// Gestion des plugins
+		// ---------------------------------------------------------------------
+        NodePlugin nodePlugin = new NodePlugin(node_Registre_outboundPortURI);
+		this.NodePluginURI = AbstractPort.generatePortURI();
+        nodePlugin.setPluginURI(this.NodePluginURI);
+		this.installPlugin(nodePlugin);
 
 		// ---------------------------------------------------------------------
 		// Configuration des pools de threads
 		// ---------------------------------------------------------------------
 		uri_pool_receiveAsync = uriPrefix+uri_pool_receiveAsync;
 		uri_pool_receiveAsync_Client = uriPrefix+uri_pool_receiveAsync_Client;
-//		uri_pool_receiveSync = uriPrefix+uri_pool_receiveSync;
 		uri_pool_Receiveconnection = uriPrefix+uri_pool_Receiveconnection;
 		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
 		this.index_poolthread_receiveAsync_Client = this.createNewExecutorService(this.uri_pool_receiveAsync_Client, this.nbThreads_poolReceiveAsync_Client,false);
-//        this.index_poolthread_receiveSync = this.createNewExecutorService(this.uri_pool_receiveSync, this.nbThreads_poolReceiveSync,false);
         this.index_poolthread_Receiveconnection = this.createNewExecutorService(this.uri_pool_Receiveconnection, this.nbThreads_Receiveconnection,false);
 
 		this.nodeinfo = (NodeInfo) nodeInfo;
@@ -172,21 +181,13 @@ public class SensorNodeComponent extends AbstractComponent {
 		
 		//Inbound Port publish
 		//node - client - requestingI
-	    //lier URI
-//        PortI p = new SensorNodeInboundPort(sensorNodeInboundPortURI, this);
-//		p.publishPort();
 		this.InboundPort_toClient = new SensorNodeInboundPort(sensorNodeInboundPortURI,this);
 		this.InboundPort_toClient.publishPort();
         //node - node - SensorNodeP2PCI
-//        PortI p2p=new NodeNodeInboundPort(node_node_InboundPortURI,this);
-//        p2p.publishPort();
 		this.InboundPort_P2PtoNode = new NodeNodeInboundPort(node_node_InboundPortURI,this);
 		this.InboundPort_P2PtoNode.publishPort();
 		
 		//Outbound Port pubulish
-		//node - registre - RegistrationCI
-        this.node_registre_port = new SensorNodeRegistreOutboundPort(node_Registre_outboundPortURI,this);
-        this.node_registre_port.localPublishPort();
         //node - node - SensorNodeP2PCI
         this.node_node_NE_Outport = new NodeNodeOutboundPort(node_node_NE_OutboundPortURI,this);
         this.node_node_NE_Outport.localPublishPort();
@@ -230,15 +231,29 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// Partie getters pour les pools threads
 	// ---------------------------------------------------------------------
 	public int getIndex_poolthread_receiveAsync() {
-		return index_poolthread_receiveAsync;
+		return this.index_poolthread_receiveAsync;
 	}
 
 	public int getIndex_poolthread_receiveAsync_Client(){
-		return index_poolthread_receiveAsync_Client;
+		return this.index_poolthread_receiveAsync_Client;
 	}
 
 	public int getIndex_poolthread_Receiveconnection() {
-		return index_poolthread_Receiveconnection;
+		return this.index_poolthread_Receiveconnection;
+	}
+
+	// ---------------------------------------------------------------------
+	// Partie getters pour neighbours
+	// ---------------------------------------------------------------------
+    public ConcurrentHashMap<Direction, NodeInfoI> getNeighbours() {
+		return this.neighbours;
+	}
+
+	// ---------------------------------------------------------------------
+	// Partie getters pour nodeinfo
+	// ---------------------------------------------------------------------
+    	public NodeInfo getNodeinfo() {
+		return this.nodeinfo;
 	}
 
 	// ---------------------------------------------------------------------
@@ -351,7 +366,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			@Override
 			public void run() {
 				try {
-					((SensorNodeComponent)this.getTaskOwner()).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
+					((NodePlugin)((SensorNodeComponent)this.getTaskOwner()).getPlugin(((SensorNodeComponent)this.getTaskOwner()).NodePluginURI)).sendNodeInfoToRegistre(((SensorNodeComponent)this.getTaskOwner()).nodeinfo);
 					((SensorNodeComponent)this.getTaskOwner()).connecterNeighbours();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -379,10 +394,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	            this.node_node_SW_Outport.doDisconnection();
 	        }
 
-	        if (this.node_registre_port.connected()) {
-	            this.node_registre_port.doDisconnection();
-	        }
-
 			if(this.node_asynRequest_Outport.connected()) {
 				this.node_asynRequest_Outport.doDisconnection();
 			}
@@ -398,7 +409,6 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			 this.node_node_NW_Outport.unpublishPort();
 			 this.node_node_SE_Outport.unpublishPort();
 			 this.node_node_SW_Outport.unpublishPort();
-			 this.node_registre_port.unpublishPort();
 			 this.node_asynRequest_Outport.unpublishPort();
 			 this.InboundPort_P2PtoNode.unpublishPort();
 			 this.InboundPort_toClient.unpublishPort();
@@ -736,7 +746,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			envoyer_res_lock.unlock();
 		}
 	}
-	
+	/*
 	public void sendNodeInfoToRegistre(NodeInfoI nodeInfo) throws Exception {
 		     this.logMessage("----------------Register------------------");
 		     this.logMessage("SensorNodeComponent sendNodeInfo to Registre " );
@@ -759,7 +769,7 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 		     this.logMessage("----------------------------------------");
 
 	}
-	
+	*/
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	// fonctions Pour connection entre Nodes
 	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
