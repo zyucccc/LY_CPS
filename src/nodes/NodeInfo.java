@@ -9,13 +9,12 @@ import sensor_network.Position;
 public class NodeInfo implements NodeInfoI {
     private static final long serialVersionUID = 1L;
     
-	private final String nodeId; // 节点的唯一标识符
-    private  Position position; // 节点的位置
-    private final double range; // 节点的通信范围
-    private  EndPointDescriptorI p2pEndPoint; // 用于P2P连接的端点信息
-    private  EndPointDescriptorI clientEndPoint; // 用于客户端连接的端点信息
+	private final String nodeId;
+    private  Position position;
+    private final double range;
+    private  EndPointDescriptorI p2pEndPoint;
+    private  EndPointDescriptorI clientEndPoint;
 
-    // 构造函数
     public NodeInfo(String nodeId, PositionI position, double range, EndPointDescriptorI p2pEndPoint, EndPointDescriptorI clientEndPoint) {
 //        assert nodeId != null && !nodeId.isEmpty() : "NodeInfo.constructor: nodeId cannot be null or empty";
 //        assert position != null : "NodeInfo.constructor: null position";
@@ -30,7 +29,6 @@ public class NodeInfo implements NodeInfoI {
         this.clientEndPoint = clientEndPoint;
     }
 
-    // 实现 NodeInfoI 和 ConnectionInfoI 接口的方法
     @Override
     public String nodeIdentifier() {
         return this.nodeId;

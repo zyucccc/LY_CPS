@@ -2,6 +2,7 @@ package cvm;
 //uri plus automatique
 
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.helpers.CVMDebugModes;
 
@@ -32,11 +33,6 @@ public class CVM extends AbstractCVM {
 	// ---------------------------------------------------------------------
 	private int nbNodes = 13;
 	private int nbClients = 2;
-	// ---------------------------------------------------------------------
-	// on stocke les uris des ports des clients pour les deconnecter(cycle de vie:Finaliser) plus tard
-	// ---------------------------------------------------------------------
-    String[] uris_clientComposant = new String[nbClients];
-	String[] uris_client_Registre_outbound = new String[nbClients];
     //Clock
 	protected static final String CLOCK_URI = "global-clock";
 	public static final Instant START_INSTANT = Instant.now().plusSeconds(1);
@@ -48,40 +44,6 @@ public class CVM extends AbstractCVM {
 	//Registre inbound port
 	protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
 	protected static final String Registre_RegistrationCI_INBOUND_PORT_URI = "registre-RegistrationCI-inbound-uri";
-
-	// ---------------------------------------------------------------------
-	// URIs automatiques pour les clients
-	// ---------------------------------------------------------------------
-	private static final AtomicInteger idCounter_Client = new AtomicInteger(0);
-    protected String generateClientAndPortsURIs() {
-		int baseId = idCounter_Client.incrementAndGet();
-		//Client outbound port pour Registre
-		String CLIENT_Registre_OUTBOUND_PORT_URI = "client-registre-outbound-uri" + baseId;
-		return CLIENT_Registre_OUTBOUND_PORT_URI;
-	}
-
-	// ---------------------------------------------------------------------
-	// URIs automatiques pour les noeuds
-	// ---------------------------------------------------------------------
-    private static final AtomicInteger idCounter = new AtomicInteger(0);
-	//generer les URIS pour les Nodes
-    protected String[] generateNodeAndPortsURIs() {
-        int baseId = idCounter.incrementAndGet(); 
-        //SensorNode component URI
-        String SENSORNODE_COMPONENT_URI = "my-sensornode-uri" + baseId;
-        //SensorNode node P2P
-        String NODE_P2P_INBOUND_PORT_URI = "node"+ baseId +"-inbound-uri" + baseId;
-        //sensor inbound port pour Client
-        String SENSORNODE_INBOUND_PORT_URI="sensornode-inbound-uri" + baseId;
-        //SensorNode outbound port pour Registre
-        String SensorNode_Registre_OUTBOUND_PORT_URI = "node-registre-outbound-uri" + baseId;
-        
-        return new String[] {SENSORNODE_COMPONENT_URI
-        		, NODE_P2P_INBOUND_PORT_URI
-        		, SENSORNODE_INBOUND_PORT_URI
-        		,SensorNode_Registre_OUTBOUND_PORT_URI
-        		};
-    }
 
     public CVM() throws Exception {
         super();
@@ -142,8 +104,7 @@ public class CVM extends AbstractCVM {
             // creer client Component
 			for(int i = 0; i < nbClients; i++) {
 				//Client outbound port pour Registre
-				String CLIENT_Registre_OUTBOUND_PORT_URI = generateClientAndPortsURIs();
-				uris_client_Registre_outbound[i] = CLIENT_Registre_OUTBOUND_PORT_URI;
+				String CLIENT_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
 				//creer des Client Component
 				this.uriClientURI =
 						AbstractComponent.createComponent(
@@ -156,8 +117,6 @@ public class CVM extends AbstractCVM {
 				assert this.isDeployedComponent(this.uriClientURI);
 				this.toggleTracing(this.uriClientURI);
 				this.toggleLogging(this.uriClientURI);
-
-				uris_clientComposant[i] = this.uriClientURI;
 
 				//connection client to registre
 				this.doPortConnection(
@@ -247,17 +206,20 @@ public class CVM extends AbstractCVM {
      	    // creer des Nodes
      		 for(int i = 0; i < nbNodes; i++) {
      			//les uris de noeuds
-				String[] uris = generateNodeAndPortsURIs();
+				String NODE_P2P_INBOUND_PORT_URI = AbstractPort.generatePortURI();
+				String SENSORNODE_INBOUND_PORT_URI = AbstractPort.generatePortURI();
+				String SensorNode_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
+				//les sensor data predefinis
      			Position position = positions[i];
      			double temperature = temperatures[i];
      			boolean smoke = smokes[i];
      			double range = ranges[i];
-     			EndPointDescriptor uriinfo = new EndPointDescriptor(uris[2]);
-         		EndPointDescriptor p2pEndPoint = new EndPointDescriptor(uris[1]);
-         		NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,uriinfo);
+     			EndPointDescriptor clientEndPoint = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI);
+         		EndPointDescriptor p2pEndPoint = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI);
+         		NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,clientEndPoint);
          		Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,temperature);
                 Sensor SensorData_fumée = new Sensor("node"+(i+1),"fumée",Boolean.class,smoke);
-                HashMap<String, Sensor> sensorsData = new HashMap<String, Sensor>();
+                HashMap<String, Sensor> sensorsData = new HashMap<>();
                 sensorsData.put("temperature",SensorData_temperature);
                 sensorsData.put("fumée",SensorData_fumée);
                 
@@ -266,9 +228,9 @@ public class CVM extends AbstractCVM {
                         AbstractComponent.createComponent(
                             SensorNodeComponent.class.getCanonicalName(),
                             new Object[]{nodeinfo,
-                            		uris[2],
-                            		uris[3],
-                            		uris[1],
+									SENSORNODE_INBOUND_PORT_URI,
+									SensorNode_Registre_OUTBOUND_PORT_URI,
+									NODE_P2P_INBOUND_PORT_URI,
                             		sensorsData,
 									CLOCK_URI});
                     assert this.isDeployedComponent(this.uriSensorNodeURI);
@@ -278,7 +240,7 @@ public class CVM extends AbstractCVM {
                   //conection node to registre
                     this.doPortConnection(
                         	this.uriSensorNodeURI,
-                        	uris[3],
+							SensorNode_Registre_OUTBOUND_PORT_URI,
                         	Registre_RegistrationCI_INBOUND_PORT_URI,
                             NodeRegistreConnector.class.getCanonicalName());
      		 }//boucle pour creer des Nodes
@@ -292,10 +254,6 @@ public class CVM extends AbstractCVM {
 	{
 		// Port disconnections can be done here for static architectures
 		// otherwise, they can be done in the finalise methods of components.
-		for(int i = 0; i < nbClients; i++) {
-			this.doPortDisconnection(uris_clientComposant[i],
-					uris_client_Registre_outbound[i]);
-		}
 		super.finalise();
 	}
     
@@ -304,7 +262,6 @@ public class CVM extends AbstractCVM {
 	{
 		assert	this.allFinalised();
 		// any disconnection not done yet can be performed here
-
 		super.shutdown();
 	}
 
@@ -314,8 +271,8 @@ public class CVM extends AbstractCVM {
             CVM cvm = new CVM();
             //execute
             cvm.startStandardLifeCycle(2000000L);
-            Thread.sleep(1000000L); // 等待一段时间以观察输出
-            System.exit(0); // 退出程序
+            Thread.sleep(1000000L); // wait some time to see the traces
+            System.exit(0);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
