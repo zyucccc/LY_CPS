@@ -39,9 +39,10 @@ public class ClientPlugin extends AbstractPlugin {
     protected int nbThreads_poolSendAsync = 5;
 
     //nous transmettons les URI des ports ici car nous fait la connection entre client et registre dans CVM
-    public ClientPlugin(String client_node_OutPortUri,String client_registre_OutPortUri) throws Exception {
+    public ClientPlugin(String client_registre_OutPortUri) throws Exception {
         super();
-        this.client_node_OutboundPortUri = client_node_OutPortUri;
+//        this.client_node_OutboundPortUri = client_node_OutPortUri;
+        this.client_node_OutboundPortUri = AbstractPort.generatePortURI();
         this.client_registre_OutboundPortUri = client_registre_OutPortUri;
     }
 

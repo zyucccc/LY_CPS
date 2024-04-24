@@ -50,8 +50,8 @@ public class RegistreComponent extends AbstractComponent {
     //hashmap pour stocker les noeuds deja register
     private ConcurrentHashMap<String, NodeInfo> registeredNodes;
 
-    protected RegistreComponent(String uriPrefix,String registrationInboundPortURI, String lookupInboundPortURI) throws Exception {
-        super(uriPrefix , 1, 0); // 1 schedule thread
+    protected RegistreComponent(String registrationInboundPortURI, String lookupInboundPortURI) throws Exception {
+        super(1, 0); // 1 schedule thread
         this.registrationInboundPortURI = registrationInboundPortURI;
         this.lookupInboundPortURI = lookupInboundPortURI;
         

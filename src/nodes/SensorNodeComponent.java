@@ -96,6 +96,8 @@ public class SensorNodeComponent extends AbstractComponent {
 	protected final ReentrantReadWriteLock sensorData_lock = new ReentrantReadWriteLock();
 	//proteger neighbours avec OutBoundPorts
 	protected final ReentrantLock neighbours_OutPorts_lock = new ReentrantLock();
+	//proteger la processus pour renvoyer les resultats aux clients
+	protected final ReentrantLock envoyer_res_lock = new ReentrantLock();
 
 	//on utilise les pools de threads par defaut pour traiter les fonctions register,connecter
 	//on introduit 2 pools de threads distincts pour traiter les requetes recus
@@ -715,6 +717,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	
 	//deleguer les operations de connecter Client via Port Async et appeler acceptRequest pour renvoyer res
 	public void renvoyerAsyncRes (RequestContinuationI request) throws Exception {
+		envoyer_res_lock.lock();
+		//proteger les operations de renvoyer res,en meme temps il ne faut que un seul thread pour renvoyer res aux clients
 		try {
 			ConnectionInfo co_info = (ConnectionInfo) request.clientConnectionInfo();
 			String InboundPortUri = ((EndPointDescriptor) co_info.endPointInfo()).getInboundPortURI();
@@ -728,6 +732,8 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			this.node_asynRequest_Outport.acceptRequestResult(request.requestURI(),result_all);
 		}catch (Exception e) {
 			System.err.println("renvoyerAsyncRes: "+this.nodeinfo.nodeIdentifier() + " Failed to send result to client: " + e.getMessage());
+		}finally {
+			envoyer_res_lock.unlock();
 		}
 	}
 	

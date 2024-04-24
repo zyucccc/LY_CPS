@@ -36,7 +36,6 @@ public class CVM extends AbstractCVM {
 	// on stocke les uris des ports des clients pour les deconnecter(cycle de vie:Finaliser) plus tard
 	// ---------------------------------------------------------------------
     String[] uris_clientComposant = new String[nbClients];
-	String[] uris_client_Node_outbound = new String[nbClients];
 	String[] uris_client_Registre_outbound = new String[nbClients];
     //Clock
 	protected static final String CLOCK_URI = "global-clock";
@@ -46,8 +45,6 @@ public class CVM extends AbstractCVM {
 	// ---------------------------------------------------------------------
 	// URIs pour le registre
 	// ---------------------------------------------------------------------
-	//component uri
-	protected static final String Registre_COMPONENT_URI = "my-registre-uri";
 	//Registre inbound port
 	protected static final String Registre_LookupCI_INBOUND_PORT_URI = "registre-LookupCI-inbound-uri";
 	protected static final String Registre_RegistrationCI_INBOUND_PORT_URI = "registre-RegistrationCI-inbound-uri";
@@ -56,17 +53,11 @@ public class CVM extends AbstractCVM {
 	// URIs automatiques pour les clients
 	// ---------------------------------------------------------------------
 	private static final AtomicInteger idCounter_Client = new AtomicInteger(0);
-    protected String[] generateClientAndPortsURIs() {
+    protected String generateClientAndPortsURIs() {
 		int baseId = idCounter_Client.incrementAndGet();
-		//Client component URI
-		String CLIENT_COMPONENT_URI = "my-client-uri" + baseId;
-		//Client outbound port pour des Nodes
-		String CLIENT_Node_OUTBOUND_PORT_URI = "client-outbound-uri" + baseId;
 		//Client outbound port pour Registre
 		String CLIENT_Registre_OUTBOUND_PORT_URI = "client-registre-outbound-uri" + baseId;
-		//Client asyn Request InboundPort
-		String Client_AsynReqest_Inbound_PORT_URI="client-asynRequest-inbound-uri" + baseId;
-		return new String[] {CLIENT_COMPONENT_URI, CLIENT_Node_OUTBOUND_PORT_URI, CLIENT_Registre_OUTBOUND_PORT_URI,Client_AsynReqest_Inbound_PORT_URI};
+		return CLIENT_Registre_OUTBOUND_PORT_URI;
 	}
 
 	// ---------------------------------------------------------------------
@@ -152,7 +143,7 @@ public class CVM extends AbstractCVM {
 			this.uriRegistreURI =
 					AbstractComponent.createComponent(
 							RegistreComponent.class.getCanonicalName(),
-							new Object[]{Registre_COMPONENT_URI,Registre_RegistrationCI_INBOUND_PORT_URI, Registre_LookupCI_INBOUND_PORT_URI});
+							new Object[]{Registre_RegistrationCI_INBOUND_PORT_URI, Registre_LookupCI_INBOUND_PORT_URI});
 			assert this.isDeployedComponent(this.uriRegistreURI);
 			this.toggleTracing(this.uriRegistreURI);
 			this.toggleLogging(this.uriRegistreURI);
@@ -161,26 +152,15 @@ public class CVM extends AbstractCVM {
 			String[] NodeIDs = {"node1","node13"};
             // creer client Component
 			for(int i = 0; i < nbClients; i++) {
-				//les uris de client
-				String[] uris_client = generateClientAndPortsURIs();
-				//Client component URI
-				String CLIENT_COMPONENT_URI = uris_client[0];
-				//Client outbound port pour des Nodes
-				String CLIENT_Node_OUTBOUND_PORT_URI = uris_client[1];
-				uris_client_Node_outbound[i] = CLIENT_Node_OUTBOUND_PORT_URI;
 				//Client outbound port pour Registre
-				String CLIENT_Registre_OUTBOUND_PORT_URI = uris_client[2];
+				String CLIENT_Registre_OUTBOUND_PORT_URI = generateClientAndPortsURIs();
 				uris_client_Registre_outbound[i] = CLIENT_Registre_OUTBOUND_PORT_URI;
-				//Client asyn Request InboundPort
-				String Client_AsynReqest_Inbound_PORT_URI=uris_client[3];
 				//creer des Client Component
 				this.uriClientURI =
 						AbstractComponent.createComponent(
 							ClientComponent.class.getCanonicalName(),
-							new Object[]{CLIENT_COMPONENT_URI,
-									CLIENT_Node_OUTBOUND_PORT_URI,
+							new Object[]{
 									CLIENT_Registre_OUTBOUND_PORT_URI,
-									Client_AsynReqest_Inbound_PORT_URI,
 									CLOCK_URI,
 									NodeIDs[i]});
 
@@ -331,8 +311,6 @@ public class CVM extends AbstractCVM {
 		for(int i = 0; i < nbClients; i++) {
 			this.doPortDisconnection(uris_clientComposant[i],
 					uris_client_Registre_outbound[i]);
-			this.doPortDisconnection(uris_clientComposant[i],
-					uris_client_Node_outbound[i]);
 		}
 		super.finalise();
 	}

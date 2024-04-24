@@ -69,9 +69,8 @@ public class ClientComponent extends AbstractComponent {
 	//plugin
 	protected String ClientPluginURI;
 	
-	protected ClientComponent(String uri, String Client_Node_outboundPortURI,String Client_Registre_outboundPortURI,String Client_AsynRequest_inboundPortURI,String CLOCK_URI,String NodeId) throws Exception {
-		super(uri, 1, 2);
-
+	protected ClientComponent(String Client_Registre_outboundPortURI,String CLOCK_URI,String NodeId) throws Exception {
+		super(1, 2);
 		// ---------------------------------------------------------------------
 		// configuration clock
 		// ---------------------------------------------------------------------
@@ -92,7 +91,7 @@ public class ClientComponent extends AbstractComponent {
 		// ---------------------------------------------------------------------
 		// Gestion des plugins
 		// ---------------------------------------------------------------------
-		ClientPlugin clientPlugin = new ClientPlugin(Client_Node_outboundPortURI,Client_Registre_outboundPortURI);
+		ClientPlugin clientPlugin = new ClientPlugin(Client_Registre_outboundPortURI);
 		this.ClientPluginURI = AbstractPort.generatePortURI();
 		clientPlugin.setPluginURI(this.ClientPluginURI);
 		this.installPlugin(clientPlugin);
@@ -100,12 +99,11 @@ public class ClientComponent extends AbstractComponent {
 		// ---------------------------------------------------------------------
 		// Gestion des Port
 		// ---------------------------------------------------------------------
+		//Async port URI
+		 this.ClientAsyncInboundPortURI = AbstractPort.generatePortURI();
 		//publish InboundPort
-		 this.InboundPort_AsynRequest = new ClientAsynRequestInboundPort(Client_AsynRequest_inboundPortURI, this);
+		 this.InboundPort_AsynRequest = new ClientAsynRequestInboundPort(this.ClientAsyncInboundPortURI, this);
 		 this.InboundPort_AsynRequest.publishPort();
-        
-        //Async port URI
-        this.ClientAsyncInboundPortURI = Client_AsynRequest_inboundPortURI;
         
         this.getTracer().setTitle("client") ;
 		this.getTracer().setRelativePosition(0, 0) ;
