@@ -1,0 +1,19 @@
+<deployment>
+   <hosts>
+    <host name="localhost"
+          dir="/Users/zyu/Desktop/CPS/LY_CPS/deployment/"/>
+  </hosts>
+  <cyclicBarrier   hostname="localhost" port="55253"/>
+  <globalRegistry  hostname="localhost" port="55252"/>
+  <rmiRegistryPort no="55999"/>
+  <jvms2hostnames>
+    <jvm2hostname jvmuri="jvm1"
+        rmiRegistryCreator="true"
+        hostname="localhost"
+        mainclass="cvm.DistributedCVM"/>
+    <jvm2hostname jvmuri="jvm2"
+        rmiRegistryCreator="false"
+        hostname="localhost"
+        mainclass="cvm.DistributedCVM"/>
+  </jvms2hostnames>
+</deployment>

@@ -2,6 +2,7 @@ package nodes.plugins;
 
 import client.connectors.ClientAsynRequestConnector;
 import fr.sorbonne_u.components.AbstractPlugin;
+import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
@@ -55,6 +56,21 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
     protected String sensorNodeInboundPortURI;
     protected String node_node_InboundPortURI;
 
+    //pool thread pour traiter les requetes async provenant des nodes
+    protected int index_poolthread_receiveAsync;
+    protected String uri_pool_receiveAsync = AbstractPort.generatePortURI();
+    protected int nbThreads_poolReceiveAsync = 10;
+
+    //pool thread pour traiter les requetes async provenant du client
+    protected int index_poolthread_receiveAsync_Client;
+    protected String uri_pool_receiveAsync_Client = AbstractPort.generatePortURI();
+    protected int nbThreads_poolReceiveAsync_Client = 10;
+
+    //pool thread pour traiter les requetes de connection(askConnection,askDisconnection
+    protected int index_poolthread_ReceiveConnection;
+    protected String uri_pool_ReceiveConnection = AbstractPort.generatePortURI();
+    protected int nbThreads_Receiveconnection = 4;
+
     //gestion Concurrence
     //proteger neighbours avec 4 OutBoundPorts (NE,NW,SE,SW
     protected final ReentrantLock neighbours_OutPorts_lock = new ReentrantLock();
@@ -105,6 +121,13 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         this.node_node_SE_Outport.localPublishPort();
         this.node_node_SW_Outport = new NodeNodeOutboundPort(this.getOwner());
         this.node_node_SW_Outport.localPublishPort();
+
+        // ---------------------------------------------------------------------
+        // Configuration des pools de threads
+        // ---------------------------------------------------------------------
+        this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
+        this.index_poolthread_receiveAsync_Client = this.createNewExecutorService(this.uri_pool_receiveAsync_Client, this.nbThreads_poolReceiveAsync_Client,false);
+        this.index_poolthread_ReceiveConnection = this.createNewExecutorService(this.uri_pool_ReceiveConnection, this.nbThreads_Receiveconnection,false);
         super.initialise();
     }
 
@@ -170,6 +193,17 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
     // -------------------------------------------------------------------------
     public ReentrantLock getNeighbours_OutPorts_lock() {
         return this.neighbours_OutPorts_lock;
+    }
+
+    //pools de threads:
+    public int get_Index_poolthread_receiveAsync(){
+        return this.index_poolthread_receiveAsync;
+    }
+    public int get_Index_poolthread_receiveAsync_Client(){
+        return this.index_poolthread_receiveAsync_Client;
+    }
+    public int get_Index_poolthread_ReceiveConnection(){
+        return this.index_poolthread_ReceiveConnection;
     }
 
     // -------------------------------------------------------------------------

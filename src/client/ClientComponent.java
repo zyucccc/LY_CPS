@@ -137,6 +137,13 @@ public class ClientComponent extends AbstractComponent {
 		}
 
 	// ---------------------------------------------------------------------
+	// Partie getters pour fermer les pools des threads
+	// ---------------------------------------------------------------------
+		public void fermer_poolthread(String uri_pool) {
+		  this.shutdownExecutorService(uri_pool);
+		}
+
+	// ---------------------------------------------------------------------
 	// Partie Sync
 	// ---------------------------------------------------------------------
 	public void sendRequest_direction() throws Exception{
@@ -435,8 +442,8 @@ public class ClientComponent extends AbstractComponent {
 	public void shutdown() throws ComponentShutdownException {
 		try {
 			this.InboundPort_AsynRequest.unpublishPort();
-			this.shutdownExecutorService(this.get_Uri_pool_receiveAsync());
-			this.shutdownExecutorService(this.get_Uri_pool_sendAsync());
+//			this.shutdownExecutorService(this.get_Uri_pool_receiveAsync());
+//			this.shutdownExecutorService(this.get_Uri_pool_sendAsync());
 		}
 		catch (Exception e) {
 			throw new ComponentShutdownException(e);

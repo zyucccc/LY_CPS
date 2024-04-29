@@ -54,21 +54,6 @@ public class SensorNodeComponent extends AbstractComponent {
 
 	//plugin URI
 	protected String NodePluginURI;
-
-	//pool thread pour traiter les requetes async provenant des nodes
-	protected int index_poolthread_receiveAsync;
-	protected String uri_pool_receiveAsync = AbstractPort.generatePortURI();
-	protected int nbThreads_poolReceiveAsync = 10;
-
-	//pool thread pour traiter les requetes async provenant du client
-	protected int index_poolthread_receiveAsync_Client;
-	protected String uri_pool_receiveAsync_Client = AbstractPort.generatePortURI();
-	protected int nbThreads_poolReceiveAsync_Client = 10;
-
-	//pool thread pour traiter les requetes de connection(askConnection,askDisconnection
-	protected int index_poolthread_Receiveconnection;
-	protected String uri_pool_Receiveconnection = AbstractPort.generatePortURI();
-	protected int nbThreads_Receiveconnection = 4;
 	//gestion Concurrence
 	//proteger les donnees de sensors
 	protected final ReentrantReadWriteLock sensorData_lock = new ReentrantReadWriteLock();
@@ -126,13 +111,6 @@ public class SensorNodeComponent extends AbstractComponent {
         nodePlugin.setPluginURI(this.NodePluginURI);
 		this.installPlugin(nodePlugin);
 
-		// ---------------------------------------------------------------------
-		// Configuration des pools de threads
-		// ---------------------------------------------------------------------
-		this.index_poolthread_receiveAsync = this.createNewExecutorService(this.uri_pool_receiveAsync, this.nbThreads_poolReceiveAsync,false);
-		this.index_poolthread_receiveAsync_Client = this.createNewExecutorService(this.uri_pool_receiveAsync_Client, this.nbThreads_poolReceiveAsync_Client,false);
-        this.index_poolthread_Receiveconnection = this.createNewExecutorService(this.uri_pool_Receiveconnection, this.nbThreads_Receiveconnection,false);
-
 		this.nodeinfo = (NodeInfo) nodeInfo;
 	    
 	    String NodeID = this.nodeinfo.nodeIdentifier();
@@ -173,16 +151,18 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 	// Partie getters pour les pools threads
 	// ---------------------------------------------------------------------
 	public int getIndex_poolthread_receiveAsync() {
-		return this.index_poolthread_receiveAsync;
+		return ((NodePlugin)this.getPlugin(this.NodePluginURI)).get_Index_poolthread_receiveAsync();
 	}
 
 	public int getIndex_poolthread_receiveAsync_Client(){
-		return this.index_poolthread_receiveAsync_Client;
+		return ((NodePlugin)this.getPlugin(this.NodePluginURI)).get_Index_poolthread_receiveAsync_Client();
 	}
 
-	public int getIndex_poolthread_Receiveconnection() {
-		return this.index_poolthread_Receiveconnection;
+	public int getIndex_poolthread_ReceiveConnection() {
+		return ((NodePlugin)this.getPlugin(this.NodePluginURI)).get_Index_poolthread_ReceiveConnection();
+
 	}
+
 
 	// ---------------------------------------------------------------------
 	// Partie getters pour neighbours
@@ -357,9 +337,9 @@ assert	this.findPortFromURI(sensorNodeInboundPortURI).isPublished() :
 			 this.node_asynRequest_Outport.unpublishPort();
 
 			 //fermer les pools des threads explicitement
-			 this.shutdownExecutorService(this.uri_pool_receiveAsync);
-             this.shutdownExecutorService(this.uri_pool_receiveAsync_Client);
-			 this.shutdownExecutorService(this.uri_pool_Receiveconnection);
+//			 this.shutdownExecutorService(this.uri_pool_receiveAsync);
+//             this.shutdownExecutorService(this.uri_pool_receiveAsync_Client);
+//			 this.shutdownExecutorService(this.uri_pool_Receiveconnection);
 
 		 } catch (Exception e) {
 			 throw new ComponentShutdownException(e);

@@ -1,5 +1,6 @@
 package client.plugins;
 
+import client.ClientComponent;
 import client.ports.ClientOutboundPort;
 import client.ports.ClientRegistreOutboundPort;
 import fr.sorbonne_u.components.AbstractPlugin;
@@ -103,6 +104,10 @@ public class ClientPlugin extends AbstractPlugin {
 
         this.removeRequiredInterface(RequestingCI.class);
         this.removeRequiredInterface(LookupCI.class);
+
+        //fermer pool de thread
+//        ((ClientComponent)this.getOwner()).fermer_poolthread(this.uri_pool_receiveAsync);
+//        ((ClientComponent)this.getOwner()).fermer_poolthread(this.uri_pool_sendAsync);
 
 
         super.uninstall();

@@ -13,8 +13,8 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="jdk" jdkName="JavaSE-1.8" jdkType="JavaSDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
       <library name="sensor-network-interfaces.jar">
         <CLASSES>
@@ -27,11 +27,11 @@
     <orderEntry type="module-library">
       <library name="BCM4Java-23022024.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/BCM4Java-23022024.jar!/" />
+          <root url="jar://$MODULE_DIR$/deployment/jars/BCM4Java-23022024.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/BCM4Java-23022024.jar!/" />
+          <root url="jar://$MODULE_DIR$/deployment/jars/BCM4Java-23022024.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -65,6 +65,15 @@
           <root url="jar://$MAVEN_REPOSITORY$/org/junit/jupiter/junit-jupiter-params/5.8.1/junit-jupiter-params-5.8.1.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/junit/jupiter/junit-jupiter-engine/5.8.1/junit-jupiter-engine-5.8.1.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/junit/platform/junit-platform-engine/1.8.1/junit-platform-engine-1.8.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/deployment/jars/jing.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
