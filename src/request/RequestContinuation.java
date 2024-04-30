@@ -8,18 +8,22 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import request.ast.Direction;
 import request.ast.Query;
 //import request.interfaces.ExecutionStateI;
 
 public class RequestContinuation  extends Request implements RequestContinuationI {
     private static final long serialVersionUID = 1L;
-	private ExecutionState executionState; // 执行状态
-	private Set<NodeInfoI> visitedNodes = new HashSet<>();
+	private ExecutionState executionState;
+    //visitedNodes pour traiter les requete flooding, on ne veut pas visiter un noeud plus d'une fois
+//	private Set<NodeInfoI> visitedNodes = new HashSet<>();
+    private Set<String> visitedNodes = new HashSet<>();
+
+
 
     public RequestContinuation(String requestURI, Query<?> query, boolean isAsynchronous, ConnectionInfoI clientConnectionInfo, ExecutionState executionState) {
         super(requestURI, query, isAsynchronous, clientConnectionInfo);
         this.executionState = executionState;
-//         this.visitedNodes = new HashSet<>();
     }
     
     public RequestContinuation(RequestI request,ExecutionState data) {
@@ -33,28 +37,31 @@ public class RequestContinuation  extends Request implements RequestContinuation
         this.executionState = new ExecutionState(other.executionState);
         
         this.visitedNodes = new HashSet<>();
-        for (NodeInfoI node : other.visitedNodes) {
+//        for (NodeInfoI node : other.visitedNodes) {
+//            this.visitedNodes.add(node);
+//        }
+        for (String node : other.visitedNodes) {
             this.visitedNodes.add(node);
         }
+
     }
     
     @Override
     public ExecutionStateI getExecutionState() {
-//        if (!this.isAsynchronous()) {
-//            throw new IllegalStateException("getExecutionState() can only be called on asynchronous requests.");
-//        }
         return (ExecutionStateI) this.executionState;
     }
-    
-    public void setExecutionState(ExecutionState executionState) {
-        this.executionState = executionState;
-    }
  
-    public Set<NodeInfoI> getVisitedNodes() {
+//    public Set<NodeInfoI> getVisitedNodes() {
+//        return visitedNodes;
+//    }
+    public Set<String> getVisitedNodes() {
         return visitedNodes;
     }
 
-    public void addVisitedNode(NodeInfoI nodeInfo) {
+//    public void addVisitedNode(NodeInfoI nodeInfo) {
+//        visitedNodes.add(nodeInfo);
+//    }
+    public void addVisitedNode(String nodeInfo) {
         visitedNodes.add(nodeInfo);
     }
 }

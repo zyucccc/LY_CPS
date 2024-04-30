@@ -13,6 +13,21 @@ public enum Direction implements IASTvisitable, Serializable {
 	public Direction getDirection() {
         return this;
     }
+
+	public Direction calcul_inverse_Direction() {
+		switch(this) {
+		case NE:
+			return SW;
+		case NW:
+			return SE;
+		case SE:
+			return NW;
+		case SW:
+			return NE;
+		default:
+			return null;
+		}
+	}
 	
 	 @Override
 		public <Result, Data, Anomaly extends Throwable> 

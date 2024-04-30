@@ -401,12 +401,12 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
                     NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(dir);
                     if(selectedOutboundPort.connected()) {
                         if(!request.isAsynchronous()) {
-                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Sync Directional dir to :"+dir);
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Sync Directional: "+request.requestURI()+" dir to :"+dir);
                             selectedOutboundPort.execute(request);}
                         else {
                             //if async,on fait un copie du request
                             RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
-                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request ASync Directional dir to:"+dir);
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request ASync Directional: "+request.requestURI()+" dir to:"+dir);
                             selectedOutboundPort.executeAsync(copie_request);
                         }
                     }
@@ -415,16 +415,14 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         }else
             //deal with fooding
             if(data.isFlooding()){
-                //propager flooding query a tous les directions
                 for(Direction dir : Direction.values()) {
-                    //plugin:
                     NodeNodeOutboundPort selectedOutboundPort = this.getOutboundPortByDirection(dir);
                     if(selectedOutboundPort.connected()) {
                         if(!request.isAsynchronous()) {
-                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Sync flooding dir :"+dir);
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Sync flooding: "+request.requestURI()+" dir :"+dir);
                             selectedOutboundPort.execute(request);
                         }else {
-                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Async flooding dir :"+dir);
+                            this.logMessage(nodeinfo.nodeIdentifier()+" Sending request Async flooding: "+request.requestURI()+" dir :"+dir);
                             //if async,on fait un copie du request
                             RequestContinuation copie_request = new RequestContinuation((RequestContinuation) request);
                             selectedOutboundPort.executeAsync(copie_request);
@@ -459,8 +457,9 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
 
         if(data.isDirectional()||data.isFlooding()) {
             RequestContinuation requestCont = new RequestContinuation(request,data);
-            //pour enregister les nodes deja traite pour ce request
-            requestCont.addVisitedNode(nodeinfo);
+            //pour enregister les nodes deja traite pour ce request(Flooding)
+//            requestCont.addVisitedNode(nodeinfo);
+            requestCont.addVisitedNode(nodeinfo.nodeIdentifier());
             this.propagerQuery(requestCont);
         }
 
@@ -482,10 +481,11 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         //si cette node actuel est deja traite par cette request recu,on ignorer et return direct
         //pour eviter le Probleme: deadlock caused by Call_back
         //ex: node 1 send request flooding to node2,node2 send encore request to node1
-        if (((RequestContinuation)requestCont).getVisitedNodes().contains(nodeinfo)) {
+        if (((RequestContinuation)requestCont).getVisitedNodes().contains(nodeinfo.nodeIdentifier())) {
             return null;
         }
-        ((RequestContinuation) requestCont).addVisitedNode(nodeinfo);
+//        ((RequestContinuation) requestCont).addVisitedNode(nodeinfo);
+        ((RequestContinuation) requestCont).addVisitedNode(nodeinfo.nodeIdentifier());
         Interpreter interpreter = new Interpreter();
         ExecutionState data = (ExecutionState) requestCont.getExecutionState();
         //chaque fois on recevoit un request de flooding
@@ -493,10 +493,10 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         //si oui ,on continue a collecter les infos de node actuel
         //si non,on return le res precedent
         if(data.isFlooding()) {
-            this.logMessage(nodeinfo.nodeIdentifier()+" receive flooding request Sync");
+            this.logMessage(nodeinfo.nodeIdentifier()+" receive flooding request Sync: "+requestCont.requestURI());
             Position actuel_position = (Position) nodeinfo.nodePosition();
             if(!data.withinMaximalDistance(actuel_position)) {
-//				this.logMessage("Hors distance");
+				this.logMessage("Hors distance");
                 return data.getCurrentResult();
             }
         }
@@ -506,7 +506,7 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         }
 
         this.logMessage("---------------Receive Query Continuation Sync---------------");
-        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request sync");
+        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request sync: "+requestCont.requestURI());
         Query<?> query = (Query<?>) requestCont.getQueryCode();
         data.updateProcessingNode(processingNode);
 
@@ -536,7 +536,7 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         SensorNodeAsynRequestOutboundPort node_asynRequest_Outport = ((SensorNodeComponent)this.getOwner()).getNode_asynRequest_Outport();
 
         this.logMessage("----------------Receive Query Async------------------");
-        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request Async");
+        this.logMessage("SensorNodeComponent "+nodeinfo.nodeIdentifier()+" : receive request Async: "+request.requestURI());
         Interpreter interpreter = new Interpreter();
         Query<?> query = (Query<?>) request.getQueryCode();
         ExecutionState data = new ExecutionState();
@@ -553,7 +553,8 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
             //if cest un request continuation
             RequestContinuation requestCont = new RequestContinuation(request,data);
             //pour enregister les nodes deja traite pour ce request
-            requestCont.addVisitedNode(nodeinfo);
+//            requestCont.addVisitedNode(nodeinfo);
+            requestCont.addVisitedNode(nodeinfo.nodeIdentifier());
             //traiter la fin du request:
             if(data.isDirectional()){
                 //si no more hops ou pas de neighbours pour la direction demandé,on renvoie le resultat au client
@@ -603,10 +604,11 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         //si cette node actuel est deja traite par cette request recu,on ignorer et return direct
         //pour eviter le Probleme: deadlock caused by Call_back
         //ex: node 1 send request flooding to node2,node2 send encore request to node1
-        if (!((RequestContinuation)requestCont).getVisitedNodes().contains(nodeinfo)) {
+        if (!((RequestContinuation)requestCont).getVisitedNodes().contains(nodeinfo.nodeIdentifier())) {
 
 
-            ((RequestContinuation) requestCont).addVisitedNode(nodeinfo);
+//            ((RequestContinuation) requestCont).addVisitedNode(nodeinfo);
+            ((RequestContinuation) requestCont).addVisitedNode(nodeinfo.nodeIdentifier());
             Interpreter interpreter = new Interpreter();
             ExecutionState data = (ExecutionState) requestCont.getExecutionState();
             //chaque fois on recevoit un request de flooding
@@ -614,15 +616,15 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
             //si oui ,on continue a collecter les infos de node actuel
             //si non,on return le res precedent
             if(data.isFlooding()) {
-                this.logMessage(nodeinfo.nodeIdentifier()+" receive flooding request Async");
+                this.logMessage(nodeinfo.nodeIdentifier()+" receive flooding request Async: "+requestCont.requestURI());
                 Position actuel_position = (Position) nodeinfo.nodePosition();
                 if(!data.withinMaximalDistance(actuel_position)) {
-//				this.logMessage("Hors distance");
+				this.logMessage("Hors distance");
                     return;
                 }
             }
             if(data.isDirectional()){
-                this.logMessage(nodeinfo.nodeIdentifier()+" receive directional request Async");
+                this.logMessage(nodeinfo.nodeIdentifier()+" receive directional request Async: "+requestCont.requestURI());
                 data.incrementHops();
             }
 
@@ -695,7 +697,7 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
         for (Map.Entry<Direction, NodeInfoI> entry : self_neighbours.entrySet()) {
             NodeInfoI neighbour = entry.getValue();
             //si ce neighbours est deja visite
-            if (((RequestContinuation) requestCont).getVisitedNodes().contains(neighbour)) {
+            if (((RequestContinuation) requestCont).getVisitedNodes().contains(neighbour.nodeIdentifier())) {
                 continue;
             }
             // check les autres neighbours

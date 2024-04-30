@@ -311,10 +311,10 @@ public class ClientComponent extends AbstractComponent {
 	    public void execute() throws Exception {
 		Instant start_instant = this.ac.getStartInstant();
 		//3
-		Instant instant_findConnecter = start_instant.plusSeconds(6);
+		Instant instant_findConnecter = start_instant.plusSeconds(9);
 		//5,7
-		Instant instant_sendAsync = start_instant.plusSeconds(7);
-		Instant instant_sendAsync2 = start_instant.plusSeconds(7);
+		Instant instant_sendAsync = start_instant.plusSeconds(10);
+		Instant instant_sendAsync2 = start_instant.plusSeconds(10);
 		long delay_connect = 1L;
 		long delay_send = 1L;
 		long delay_send2 = 1L;
