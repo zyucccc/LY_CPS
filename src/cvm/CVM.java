@@ -31,7 +31,7 @@ public class CVM extends AbstractCVM {
 	// ---------------------------------------------------------------------
 	// URIs statiques
 	// ---------------------------------------------------------------------
-	private int nbNodes = 49;
+	private int nbNodes = 50;
 	private int nbClients = 5;
     //Clock
 	protected static final String CLOCK_URI = "global-clock";
@@ -100,7 +100,7 @@ public class CVM extends AbstractCVM {
 			this.toggleLogging(this.uriRegistreURI);
 
 		    //node ids lesquels les clients veulent connecter
-			String[] NodeIDs = {"node1","node13","node19","node36","node25"};
+			String[] NodeIDs = {"node1","node13","node44","node26","node38"};
             // creer client Component
 			for(int i = 0; i < nbClients; i++) {
 				//Client outbound port pour Registre
@@ -127,71 +127,69 @@ public class CVM extends AbstractCVM {
 			}//boucle pour creer des Clients
 
      		 Position[] positions = {
-					//node 1-13
-     		        new Position(0.0, 0.0),
-					//direction：Nord
-	 		        new Position(0.0, 10.0),
-					//direction: Sud
-					new Position(0.0, -10.0),
-					//direction: Est
-					new Position(10.0, 0.0),
-					//direction: Ouest
-					new Position(-10.0, 0.0),
-					//direction: NE
-					new Position(5.0, 5.0),
-					new Position(10.0, 10.0),
+					 //node 1-10
+     		         new Position(0.0, 0.0),
+					 //direction：Nord
+	 		         new Position(0.0, 10.0),
+					 //direction: Sud
+					 new Position(0.0, -10.0),
+					 //direction: Est
+					 new Position(10.0, 0.0),
+					 //direction: Ouest
+					 new Position(-10.0, 0.0),
+					 //direction: NE
+					 new Position(5.0, 5.0),
+					 new Position(10.0, 10.0),
 					 //direction: SE
 					 new Position(5.0,-5.0),
 					 new Position(10.0,-10.0),
 					 //direction: NW
 					 new Position(-5.0, 5.0),
+//					 10-20
 					 new Position(-10.0, 10.0),
 					 //direction: SW
 					 new Position(-5.0,-5.0),
 					 new Position(-10.0,-10.0),
-//					 node 14-50
-					new Position(0.0, 20.0),
-	 		        new Position(0.0, -20.0),
-					new Position(20.0, 0.0),
-					new Position(-20.0, 0.0),
-
-					new Position(15.0, 15.0),
-					new Position(20.0, 20.0),
-					new Position(25.0,25.0),
-					new Position(5.0,15.0),
-					new Position(15.0,5.0),
-					new Position(10.0,20.0),
-					new Position(20.0,10.0),
-					new Position(25.0,5.0),
-
-
-					new Position(15.0,-15.0),
-					new Position(20.0,-20.0),
+					 new Position(0.0, 20.0),
+	 		         new Position(0.0, -20.0),
+					 new Position(20.0, 0.0),
+					 new Position(-20.0, 0.0),
+					 new Position(15.0, 15.0),
+					 new Position(20.0, 20.0),
+					 new Position(25.0,25.0),
+//					 20-30
+					 new Position(5.0,15.0),
+					 new Position(15.0,5.0),
+					 new Position(10.0,20.0),
+					 new Position(20.0,10.0),
+					 new Position(25.0,5.0),
+					 new Position(15.0,-15.0),
+					 new Position(20.0,-20.0),
 					 new Position(25.0,-25.0),
 					 new Position(5.0,-15.0),
 					 new Position(15.0,-5.0),
+//					 30-40
 					 new Position(10.0,-20.0),
 					 new Position(20.0,-10.0),
 					 new Position(25.0,-5.0),
-
-				    new Position(-15.0, 15.0),
-				    new Position(-20.0, 20.0),
+				     new Position(-15.0, 15.0),
+				     new Position(-20.0, 20.0),
 					 new Position(-25.0,25.0),
 					 new Position(-5.0,15.0),
 					 new Position(-15.0,5.0),
 					 new Position(-10.0,20.0),
 					 new Position(-20.0,10.0),
+//					 40-50
 					 new Position(-25.0,5.0),
-
-					new Position(-15.0,-15.0),
-					new Position(-20.0,-20.0),
+					 new Position(-15.0,-15.0),
+					 new Position(-20.0,-20.0),
 					 new Position(-25.0,-25.0),
 					 new Position(-5.0,-15.0),
 					 new Position(-15.0,-5.0),
 					 new Position(-10.0,-20.0),
 					 new Position(-20.0,-10.0),
 					 new Position(-25.0,-5.0),
-
+					 new Position(-25.0, -15.0)
      		    };
 	 		//definir les temperatures
 			double[] temperatures = new double[nbNodes];

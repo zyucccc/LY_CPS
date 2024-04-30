@@ -31,7 +31,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
     // ---------------------------------------------------------------------
     // URIs statiques
     // ---------------------------------------------------------------------
-    private int nbNodes = 13;
+    private int nbNodes = 20;
     private int nbClients = 5;
     //Clock
     protected static final String CLOCK_URI = "global-clock";
@@ -66,7 +66,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
     @Override
     public void instantiateAndPublish() throws Exception {
         Position[] positions = {
-                //node 1-13
+                //node 1-10
                 new Position(0.0, 0.0),
                 //direction：Nord
                 new Position(0.0, 10.0),
@@ -84,26 +84,53 @@ public class DistributedCVM extends AbstractDistributedCVM {
                 new Position(10.0,-10.0),
                 //direction: NW
                 new Position(-5.0, 5.0),
+//					 10-20
                 new Position(-10.0, 10.0),
                 //direction: SW
                 new Position(-5.0,-5.0),
                 new Position(-10.0,-10.0),
-
+                new Position(0.0, 20.0),
+                new Position(0.0, -20.0),
+                new Position(20.0, 0.0),
+                new Position(-20.0, 0.0),
+                new Position(15.0, 15.0),
+                new Position(20.0, 20.0),
+                new Position(25.0,25.0),
+//					 20-30
+                new Position(5.0,15.0),
+                new Position(15.0,5.0),
+                new Position(10.0,20.0),
+                new Position(20.0,10.0),
+                new Position(25.0,5.0),
+                new Position(15.0,-15.0),
+                new Position(20.0,-20.0),
+                new Position(25.0,-25.0),
+                new Position(5.0,-15.0),
+                new Position(15.0,-5.0),
+//					 30-40
+                new Position(10.0,-20.0),
+                new Position(20.0,-10.0),
+                new Position(25.0,-5.0),
+                new Position(-15.0, 15.0),
+                new Position(-20.0, 20.0),
+                new Position(-25.0,25.0),
+                new Position(-5.0,15.0),
+                new Position(-15.0,5.0),
+                new Position(-10.0,20.0),
+                new Position(-20.0,10.0),
+//					 40-50
+                new Position(-25.0,5.0),
+                new Position(-15.0,-15.0),
+                new Position(-20.0,-20.0),
+                new Position(-25.0,-25.0),
+                new Position(-5.0,-15.0),
+                new Position(-15.0,-5.0),
+                new Position(-10.0,-20.0),
+                new Position(-20.0,-10.0),
+                new Position(-25.0,-5.0),
+                new Position(-25.0, -15.0)
         };
-//        this.SENSOR_Node_OUTBOUND_PORT_URI = new String[]{
-//                "sensor-node-outbound-port-uri1",
-//                "sensor-node-outbound-port-uri2",
-//                "sensor-node-outbound-port-uri3",
-//                "sensor-node-outbound-port-uri4",
-//                "sensor-node-outbound-port-uri5",
-//                "sensor-node-outbound-port-uri6",
-//                "sensor-node-outbound-port-uri7",
-//                "sensor-node-outbound-port-uri8",
-//                "sensor-node-outbound-port-uri9",
-//                "sensor-node-outbound-port-uri10",
-//                "sensor-node-outbound-port-uri11",
-//                "sensor-node-outbound-port-uri12",
-//                "sensor-node-outbound-port-uri13"};
+
 
         //definir les temperatures
         double[] temperatures = new double[nbNodes];
@@ -218,7 +245,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
             this.toggleLogging(this.uriClientURI);
 
             // creer des Nodes
-            for(int i = 10; i < nbNodes; i++) {
+            for(int i = 10; i < 20; i++) {
                 //les uris de noeuds
                 String NODE_P2P_INBOUND_PORT_URI = AbstractPort.generatePortURI();
                 this.SENSOR_Node_P2P_INBOUND_PORT_URI[i] = NODE_P2P_INBOUND_PORT_URI;
@@ -288,7 +315,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
                     this.CLIENT_Registre_OUTBOUND_PORT_URI[1],
                     Registre_LookupCI_INBOUND_PORT_URI,
                     ClientRegistreConnector.class.getCanonicalName());
-            for(int i = 10;i<nbNodes;i++) {
+            for(int i = 10;i<20;i++) {
                 this.doPortConnection(
                         this.SensorNode_URIs[i],
                         this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[i],
