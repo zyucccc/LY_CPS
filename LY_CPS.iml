@@ -18,10 +18,12 @@
     <orderEntry type="module-library">
       <library name="sensor-network-interfaces.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/sensor-network-interfaces.jar!/" />
+          <root url="jar://$MODULE_DIR$/deployment/jars/sensor-network-interfaces.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/deployment/jars/sensor-network-interfaces.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
