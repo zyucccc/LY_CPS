@@ -15,5 +15,17 @@
         rmiRegistryCreator="false"
         hostname="localhost"
         mainclass="cvm.DistributedCVM"/>
+    <jvm2hostname jvmuri="jvm3"
+        rmiRegistryCreator="false"
+        hostname="localhost"
+        mainclass="cvm.DistributedCVM"/>
+    <jvm2hostname jvmuri="jvm4"
+        rmiRegistryCreator="false"
+        hostname="localhost"
+        mainclass="cvm.DistributedCVM"/>
+    <jvm2hostname jvmuri="jvm5"
+        rmiRegistryCreator="false"
+        hostname="localhost"
+        mainclass="cvm.DistributedCVM"/>
   </jvms2hostnames>
 </deployment>

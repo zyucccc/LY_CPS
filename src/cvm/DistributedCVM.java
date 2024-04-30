@@ -31,7 +31,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
     // ---------------------------------------------------------------------
     // URIs statiques
     // ---------------------------------------------------------------------
-    private int nbNodes = 20;
+    private int nbNodes = 50;
     private int nbClients = 5;
     //Clock
     protected static final String CLOCK_URI = "global-clock";
@@ -58,6 +58,74 @@ public class DistributedCVM extends AbstractDistributedCVM {
 
     protected String	uriRegistreURI;
 
+    //configuration
+    protected Position[] positions = {
+            //node 1-10
+            new Position(0.0, 0.0),
+            //direction：Nord
+            new Position(0.0, 10.0),
+            //direction: Sud
+            new Position(0.0, -10.0),
+            //direction: Est
+            new Position(10.0, 0.0),
+            //direction: Ouest
+            new Position(-10.0, 0.0),
+            //direction: NE
+            new Position(5.0, 5.0),
+            new Position(10.0, 10.0),
+            //direction: SE
+            new Position(5.0,-5.0),
+            new Position(10.0,-10.0),
+            //direction: NW
+            new Position(-5.0, 5.0),
+//					 10-20
+            new Position(-10.0, 10.0),
+            //direction: SW
+            new Position(-5.0,-5.0),
+            new Position(-10.0,-10.0),
+            new Position(0.0, 20.0),
+            new Position(0.0, -20.0),
+            new Position(20.0, 0.0),
+            new Position(-20.0, 0.0),
+            new Position(15.0, 15.0),
+            new Position(20.0, 20.0),
+            new Position(25.0,25.0),
+//					 20-30
+            new Position(5.0,15.0),
+            new Position(15.0,5.0),
+            new Position(10.0,20.0),
+            new Position(20.0,10.0),
+            new Position(25.0,5.0),
+            new Position(15.0,-15.0),
+            new Position(20.0,-20.0),
+            new Position(25.0,-25.0),
+            new Position(5.0,-15.0),
+            new Position(15.0,-5.0),
+//					 30-40
+            new Position(10.0,-20.0),
+            new Position(20.0,-10.0),
+            new Position(25.0,-5.0),
+            new Position(-15.0, 15.0),
+            new Position(-20.0, 20.0),
+            new Position(-25.0,25.0),
+            new Position(-5.0,15.0),
+            new Position(-15.0,5.0),
+            new Position(-10.0,20.0),
+            new Position(-20.0,10.0),
+//					 40-50
+            new Position(-25.0,5.0),
+            new Position(-15.0,-15.0),
+            new Position(-20.0,-20.0),
+            new Position(-25.0,-25.0),
+            new Position(-5.0,-15.0),
+            new Position(-15.0,-5.0),
+            new Position(-10.0,-20.0),
+            new Position(-20.0,-10.0),
+            new Position(-25.0,-5.0),
+            new Position(-25.0, -15.0)
+    };
+
+
 
     public DistributedCVM(String[] args)throws Exception {
         super(args);
@@ -65,88 +133,9 @@ public class DistributedCVM extends AbstractDistributedCVM {
 
     @Override
     public void instantiateAndPublish() throws Exception {
-        Position[] positions = {
-                //node 1-10
-                new Position(0.0, 0.0),
-                //direction：Nord
-                new Position(0.0, 10.0),
-                //direction: Sud
-                new Position(0.0, -10.0),
-                //direction: Est
-                new Position(10.0, 0.0),
-                //direction: Ouest
-                new Position(-10.0, 0.0),
-                //direction: NE
-                new Position(5.0, 5.0),
-                new Position(10.0, 10.0),
-                //direction: SE
-                new Position(5.0,-5.0),
-                new Position(10.0,-10.0),
-                //direction: NW
-                new Position(-5.0, 5.0),
-//					 10-20
-                new Position(-10.0, 10.0),
-                //direction: SW
-                new Position(-5.0,-5.0),
-                new Position(-10.0,-10.0),
-                new Position(0.0, 20.0),
-                new Position(0.0, -20.0),
-                new Position(20.0, 0.0),
-                new Position(-20.0, 0.0),
-                new Position(15.0, 15.0),
-                new Position(20.0, 20.0),
-                new Position(25.0,25.0),
-//					 20-30
-                new Position(5.0,15.0),
-                new Position(15.0,5.0),
-                new Position(10.0,20.0),
-                new Position(20.0,10.0),
-                new Position(25.0,5.0),
-                new Position(15.0,-15.0),
-                new Position(20.0,-20.0),
-                new Position(25.0,-25.0),
-                new Position(5.0,-15.0),
-                new Position(15.0,-5.0),
-//					 30-40
-                new Position(10.0,-20.0),
-                new Position(20.0,-10.0),
-                new Position(25.0,-5.0),
-                new Position(-15.0, 15.0),
-                new Position(-20.0, 20.0),
-                new Position(-25.0,25.0),
-                new Position(-5.0,15.0),
-                new Position(-15.0,5.0),
-                new Position(-10.0,20.0),
-                new Position(-20.0,10.0),
-//					 40-50
-                new Position(-25.0,5.0),
-                new Position(-15.0,-15.0),
-                new Position(-20.0,-20.0),
-                new Position(-25.0,-25.0),
-                new Position(-5.0,-15.0),
-                new Position(-15.0,-5.0),
-                new Position(-10.0,-20.0),
-                new Position(-20.0,-10.0),
-                new Position(-25.0,-5.0),
-                new Position(-25.0, -15.0)
-        };
-
-
-        //definir les temperatures
-        double[] temperatures = new double[nbNodes];
-        Random rand = new Random();
-        for (int i = 0; i < nbNodes; i++) {
-            temperatures[i] = rand.nextInt(41);
-        }
-        //definir les ranges
-        double[] ranges = new double[nbNodes];
-        Arrays.fill(ranges, 9.0);
-        //definir les situations de fumée
-        boolean[] smokes = new boolean[nbNodes];
-        for (int i = 0; i < nbNodes; i++) {
-//				smokes[i] = rand.nextBoolean();
-            smokes[i] = true;
-        }
+        // ---------------------------------------------------------------------
+        // JVM1
+        // ---------------------------------------------------------------------
         if(AbstractCVM.getThisJVMURI().equals(JVM_URI1)){
             //clock
             long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
@@ -157,6 +146,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
                             unixEpochStartTimeInNanos, // moment du démarrage en temps réel Unix
                             START_INSTANT, // instant de démarrage du scénario
                             ACCELERATION_FACTOR}); // facteur d’acccélération
+
             // creer registre Component
             this.uriRegistreURI =
                     AbstractComponent.createComponent(
@@ -166,127 +156,47 @@ public class DistributedCVM extends AbstractDistributedCVM {
             this.toggleTracing(this.uriRegistreURI);
             this.toggleLogging(this.uriRegistreURI);
 
-                // creer client Component
-                //Client outbound port pour Registre
-                String CLIENT_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.CLIENT_Registre_OUTBOUND_PORT_URI[0] = CLIENT_Registre_OUTBOUND_PORT_URI;
-                //creer des Client Component
-                this.uriClientURI =
-                        AbstractComponent.createComponent(
-                                ClientComponent.class.getCanonicalName(),
-                                new Object[]{
-                                        CLIENT_Registre_OUTBOUND_PORT_URI,
-                                        CLOCK_URI,
-                                        "node1"});
-                this.Client_URIs[0] = this.uriClientURI;
-
-                assert this.isDeployedComponent(this.uriClientURI);
-                this.toggleTracing(this.uriClientURI);
-                this.toggleLogging(this.uriClientURI);
-
+            // creer client Component
+            this.createClient(0,"node1");
             // creer des Nodes
-            for(int i = 0; i < 10; i++) {
-                //les uris de noeuds
-                String NODE_P2P_INBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.SENSOR_Node_P2P_INBOUND_PORT_URI[i] = NODE_P2P_INBOUND_PORT_URI;
-                String SENSORNODE_INBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.SENSOR_Node_INBOUND_PORT_URI[i] = SENSORNODE_INBOUND_PORT_URI;
-                String SensorNode_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[i] = SensorNode_Registre_OUTBOUND_PORT_URI;
-                //les sensor data predefinis
-                Position position = positions[i];
-                double temperature = temperatures[i];
-                boolean smoke = smokes[i];
-                double range = ranges[i];
-                EndPointDescriptor clientEndPoint = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI);
-                EndPointDescriptor p2pEndPoint = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI);
-                NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,clientEndPoint);
-                Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,temperature);
-                Sensor SensorData_fumée = new Sensor("node"+(i+1),"fumée",Boolean.class,smoke);
-                HashMap<String, Sensor> sensorsData = new HashMap<>();
-                sensorsData.put("temperature",SensorData_temperature);
-                sensorsData.put("fumée",SensorData_fumée);
-
-                //creer des sensorNode Component
-//                this.uriSensorNodeURI=
-                this.SensorNode_URIs[i]=
-                        AbstractComponent.createComponent(
-                                SensorNodeComponent.class.getCanonicalName(),
-                                new Object[]{nodeinfo,
-                                        SENSORNODE_INBOUND_PORT_URI,
-                                        SensorNode_Registre_OUTBOUND_PORT_URI,
-                                        NODE_P2P_INBOUND_PORT_URI,
-                                        sensorsData,
-                                        CLOCK_URI});
-//                this.SensorNode_URIs[i] = this.uriSensorNodeURI;
-                assert this.isDeployedComponent(this.SensorNode_URIs[i]);
-                this.toggleTracing(this.SensorNode_URIs[i]);
-                this.toggleLogging(this.SensorNode_URIs[i]);
+            this.createSensorNodes(0,10);
             }
-
-            }
+        // ---------------------------------------------------------------------
+        // JVM2
+        // ---------------------------------------------------------------------
         else if (AbstractCVM.getThisJVMURI().equals(JVM_URI2)){
             // creer client Component
-            //Client outbound port pour Registre
-            String CLIENT_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
-            this.CLIENT_Registre_OUTBOUND_PORT_URI[1] = CLIENT_Registre_OUTBOUND_PORT_URI;
-            //creer des Client Component
-            this.uriClientURI =
-                    AbstractComponent.createComponent(
-                            ClientComponent.class.getCanonicalName(),
-                            new Object[]{
-                                    CLIENT_Registre_OUTBOUND_PORT_URI,
-                                    CLOCK_URI,
-                                    "node13"});
-            this.Client_URIs[1] = this.uriClientURI;
-
-            assert this.isDeployedComponent(this.uriClientURI);
-            this.toggleTracing(this.uriClientURI);
-            this.toggleLogging(this.uriClientURI);
-
+            this.createClient(1,"node13");
             // creer des Nodes
-            for(int i = 10; i < 20; i++) {
-                //les uris de noeuds
-                String NODE_P2P_INBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.SENSOR_Node_P2P_INBOUND_PORT_URI[i] = NODE_P2P_INBOUND_PORT_URI;
-                String SENSORNODE_INBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.SENSOR_Node_INBOUND_PORT_URI[i] = SENSORNODE_INBOUND_PORT_URI;
-                String SensorNode_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
-                this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[i] = SensorNode_Registre_OUTBOUND_PORT_URI;
-                //les sensor data predefinis
-                Position position = positions[i];
-                double temperature = temperatures[i];
-                boolean smoke = smokes[i];
-                double range = ranges[i];
-                EndPointDescriptor clientEndPoint = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI);
-                EndPointDescriptor p2pEndPoint = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI);
-                NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,clientEndPoint);
-                Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,temperature);
-                Sensor SensorData_fumée = new Sensor("node"+(i+1),"fumée",Boolean.class,smoke);
-                HashMap<String, Sensor> sensorsData = new HashMap<>();
-                sensorsData.put("temperature",SensorData_temperature);
-                sensorsData.put("fumée",SensorData_fumée);
-
-                //creer des sensorNode Component
-//                this.uriSensorNodeURI=
-                this.SensorNode_URIs[i]=
-                        AbstractComponent.createComponent(
-                                SensorNodeComponent.class.getCanonicalName(),
-                                new Object[]{nodeinfo,
-                                        SENSORNODE_INBOUND_PORT_URI,
-                                        SensorNode_Registre_OUTBOUND_PORT_URI,
-                                        NODE_P2P_INBOUND_PORT_URI,
-                                        sensorsData,
-                                        CLOCK_URI});
-//                this.SensorNode_URIs[i] = this.uriSensorNodeURI;
-                assert this.isDeployedComponent(this.SensorNode_URIs[i]);
-                this.toggleTracing(this.SensorNode_URIs[i]);
-                this.toggleLogging(this.SensorNode_URIs[i]);
-            }
+            this.createSensorNodes(10,20);
         }
-        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI3)){}
-        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI4)){}
-        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI5)){}
+        // ---------------------------------------------------------------------
+        // JVM3
+        // ---------------------------------------------------------------------
+        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI3)){
+            //creer client
+            this.createClient(2,"node44");
+            //creer des Nodes
+            this.createSensorNodes(20,30);
+        }
+        // ---------------------------------------------------------------------
+        // JVM4
+        // ---------------------------------------------------------------------
+        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI4)){
+            //creer client
+            this.createClient(3,"node26");
+            //creer des Nodes
+            this.createSensorNodes(30,40);
+        }
+        // ---------------------------------------------------------------------
+        // JVM5
+        // ---------------------------------------------------------------------
+        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI5)){
+            //creer client
+            this.createClient(4,"node38");
+            //creer des Nodes
+            this.createSensorNodes(40,50);
+        }
         else {
             System.out.println("Unknown JVM URI... " + AbstractCVM.getThisJVMURI());
         }
@@ -296,37 +206,37 @@ public class DistributedCVM extends AbstractDistributedCVM {
     @Override
     public void interconnect() throws Exception {
         if(AbstractCVM.getThisJVMURI().equals(JVM_URI1)){
-            this.doPortConnection(
-                    this.Client_URIs[0],
-                    this.CLIENT_Registre_OUTBOUND_PORT_URI[0],
-                    Registre_LookupCI_INBOUND_PORT_URI,
-                    ClientRegistreConnector.class.getCanonicalName());
+            //connecter client et registre
+            this.connectClientToRegistre(0);
             for(int i = 0;i<10;i++) {
-                this.doPortConnection(
-                        this.SensorNode_URIs[i],
-                        this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[i],
-                        Registre_RegistrationCI_INBOUND_PORT_URI,
-                        NodeRegistreConnector.class.getCanonicalName());
+                this.connectSensorNodeToRegistre(i);
             }
         }
         else if (AbstractCVM.getThisJVMURI().equals(JVM_URI2)){
-            this.doPortConnection(
-                    this.Client_URIs[1],
-                    this.CLIENT_Registre_OUTBOUND_PORT_URI[1],
-                    Registre_LookupCI_INBOUND_PORT_URI,
-                    ClientRegistreConnector.class.getCanonicalName());
+            this.connectClientToRegistre(1);
             for(int i = 10;i<20;i++) {
-                this.doPortConnection(
-                        this.SensorNode_URIs[i],
-                        this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[i],
-                        Registre_RegistrationCI_INBOUND_PORT_URI,
-                        NodeRegistreConnector.class.getCanonicalName());
+                this.connectSensorNodeToRegistre(i);
             }
 
         }
-        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI3)){}
-        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI4)){}
-        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI5)){}
+        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI3)){
+            this.connectClientToRegistre(2);
+            for(int i = 20;i<30;i++) {
+                this.connectSensorNodeToRegistre(i);
+            }
+        }
+        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI4)){
+            this.connectClientToRegistre(3);
+            for(int i = 30;i<40;i++) {
+                this.connectSensorNodeToRegistre(i);
+            }
+        }
+        else if (AbstractCVM.getThisJVMURI().equals(JVM_URI5)){
+            this.connectClientToRegistre(4);
+            for(int i = 40;i<50;i++) {
+                this.connectSensorNodeToRegistre(i);
+            }
+        }
         else {
             System.out.println("Unknown JVM URI... " + AbstractCVM.getThisJVMURI());
         }
@@ -343,4 +253,107 @@ public class DistributedCVM extends AbstractDistributedCVM {
             e.printStackTrace();
     }
     }
+
+    // ---------------------------------------------------------------------
+    // Creer des clients
+    // ---------------------------------------------------------------------
+    public void createClient(int index,String node_id) throws Exception{
+        // creer client Component
+        //Client outbound port pour Registre
+        String CLIENT_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
+        this.CLIENT_Registre_OUTBOUND_PORT_URI[index] = CLIENT_Registre_OUTBOUND_PORT_URI;
+        //creer des Client Component
+        this.uriClientURI =
+                AbstractComponent.createComponent(
+                        ClientComponent.class.getCanonicalName(),
+                        new Object[]{
+                                CLIENT_Registre_OUTBOUND_PORT_URI,
+                                CLOCK_URI,
+                                node_id});
+        this.Client_URIs[index] = this.uriClientURI;
+
+        assert this.isDeployedComponent(this.uriClientURI);
+        this.toggleTracing(this.uriClientURI);
+        this.toggleLogging(this.uriClientURI);
+    }
+
+    // ---------------------------------------------------------------------
+    // Connection client et registre
+    // ---------------------------------------------------------------------
+    public void connectClientToRegistre(int index) throws Exception {
+        this.doPortConnection(
+                this.Client_URIs[index],
+                this.CLIENT_Registre_OUTBOUND_PORT_URI[index],
+                Registre_LookupCI_INBOUND_PORT_URI,
+                ClientRegistreConnector.class.getCanonicalName());
+    }
+
+    // ---------------------------------------------------------------------
+    // Creer des SensorNodes
+    // ---------------------------------------------------------------------
+    public void createSensorNodes(int index1,int index2) throws Exception {
+            //definir les temperatures
+            double[] temperatures = new double[nbNodes];
+            Random rand = new Random();
+            for (int i = 0; i < nbNodes; i++) {
+                temperatures[i] = rand.nextInt(41);
+            }
+            //definir les ranges
+            double[] ranges = new double[nbNodes];
+            Arrays.fill(ranges, 9.0);
+            //definir les situations de fumée
+            boolean[] smokes = new boolean[nbNodes];
+            for (int i = 0; i < nbNodes; i++) {
+    //			smokes[i] = rand.nextBoolean();
+                smokes[i] = true;
+            }
+        for(int i = index1; i < index2; i++) {
+            //les uris de noeuds
+            String NODE_P2P_INBOUND_PORT_URI = AbstractPort.generatePortURI();
+            this.SENSOR_Node_P2P_INBOUND_PORT_URI[i] = NODE_P2P_INBOUND_PORT_URI;
+            String SENSORNODE_INBOUND_PORT_URI = AbstractPort.generatePortURI();
+            this.SENSOR_Node_INBOUND_PORT_URI[i] = SENSORNODE_INBOUND_PORT_URI;
+            String SensorNode_Registre_OUTBOUND_PORT_URI = AbstractPort.generatePortURI();
+            this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[i] = SensorNode_Registre_OUTBOUND_PORT_URI;
+            //les sensor data predefinis
+            Position position = positions[i];
+            double temperature = temperatures[i];
+            boolean smoke = smokes[i];
+            double range = ranges[i];
+            EndPointDescriptor clientEndPoint = new EndPointDescriptor(SENSORNODE_INBOUND_PORT_URI);
+            EndPointDescriptor p2pEndPoint = new EndPointDescriptor(NODE_P2P_INBOUND_PORT_URI);
+            NodeInfo nodeinfo = new NodeInfo("node"+(i+1),position,range,p2pEndPoint,clientEndPoint);
+            Sensor SensorData_temperature = new Sensor("node"+(i+1),"temperature",double.class,temperature);
+            Sensor SensorData_fumée = new Sensor("node"+(i+1),"fumée",Boolean.class,smoke);
+            HashMap<String, Sensor> sensorsData = new HashMap<>();
+            sensorsData.put("temperature",SensorData_temperature);
+            sensorsData.put("fumée",SensorData_fumée);
+
+            //creer des sensorNode Component
+            this.SensorNode_URIs[i]=
+                    AbstractComponent.createComponent(
+                            SensorNodeComponent.class.getCanonicalName(),
+                            new Object[]{nodeinfo,
+                                    SENSORNODE_INBOUND_PORT_URI,
+                                    SensorNode_Registre_OUTBOUND_PORT_URI,
+                                    NODE_P2P_INBOUND_PORT_URI,
+                                    sensorsData,
+                                    CLOCK_URI});
+            assert this.isDeployedComponent(this.SensorNode_URIs[i]);
+            this.toggleTracing(this.SensorNode_URIs[i]);
+            this.toggleLogging(this.SensorNode_URIs[i]);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Connection SensorNode et registre
+    // ---------------------------------------------------------------------
+    public void connectSensorNodeToRegistre(int index) throws Exception {
+        this.doPortConnection(
+                this.SensorNode_URIs[index],
+                this.SENSOR_Node_OUTBOUND_PORT_Registre_URI[index],
+                Registre_RegistrationCI_INBOUND_PORT_URI,
+                NodeRegistreConnector.class.getCanonicalName());
+    }
+
 }
