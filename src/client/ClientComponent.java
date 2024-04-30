@@ -318,6 +318,8 @@ public class ClientComponent extends AbstractComponent {
 		long delay_connect = 1L;
 		long delay_send = 1L;
 		long delay_send2 = 1L;
+		long delay_entre_2_requete = 12_000_000_000L;//4 second entre 2 requetes
+
 
 		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
 		delay_connect = ac.nanoDelayUntilInstant(instant_findConnecter);
@@ -355,78 +357,80 @@ public class ClientComponent extends AbstractComponent {
 			 }
 		 }, delay_connect, TimeUnit.NANOSECONDS);
 
-			//(en premier temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
-			this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-				@Override
-				public void run() {
-					try {
-						//request Async
-						((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri",Direction.NE,5) ;
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}, delay_send, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-			 @Override
-			 public void run() {
-				 try {
-					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri",8.0) ;
-				 } catch (Exception e) {
-					 e.printStackTrace();
-				 }
-			 }
-		 }, delay_send, TimeUnit.NANOSECONDS);
+		 //(en premier temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
+		 //uri1
+		 this.scheduleTaskWithFixedDelay(
+				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+					 @Override
+					 public void run() {
+						 try {
+							 //request Async
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri - "+AbstractPort.generatePortURI(),Direction.NE,5) ;
+						 } catch (Exception e) {
+							 e.printStackTrace();
+						 }
+					 }},delay_send,delay_entre_2_requete,TimeUnit.NANOSECONDS);
 
-		//(deuxieme temps)send async requete en utilisant pool thread distinct (pool thread_sendAsync)
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-			 @Override
-			 public void run() {
-				 try {
-					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2",Direction.NW,5) ;
-				 } catch (Exception e) {
-					 e.printStackTrace();
-				 }
-			 }
-		 }, delay_send2, TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-			 @Override
-			 public void run() {
-				 try {
-					 //request Async
-					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2",12.0) ;
-				 } catch (Exception e) {
-					 e.printStackTrace();
-				 }
-			 }
-		 }, delay_send2, TimeUnit.NANOSECONDS);
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-			 @Override
-			 public void run() {
-				 try {
-					 //request Async
-//					 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri3",Direction.SW,6) ;
-				 } catch (Exception e) {
-					 e.printStackTrace();
-				 }
-			 }
-		 }, delay_send2, TimeUnit.NANOSECONDS);
+		 this.scheduleTaskWithFixedDelay(
+				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+					 @Override
+					 public void run() {
+						 try {
+							 //request Async
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri - "+AbstractPort.generatePortURI(),8.0) ;
+						 } catch (Exception e) {
+							 e.printStackTrace();
+						 }
+					 }},delay_send,delay_entre_2_requete,TimeUnit.NANOSECONDS);
+         //uri2
+		 this.scheduleTaskWithFixedDelay(
+				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+					 @Override
+					 public void run() {
+						 try {
+							 //request Async
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2 - "+AbstractPort.generatePortURI(),Direction.NW,5) ;
+						 } catch (Exception e) {
+							 e.printStackTrace();
+						 }
+					 }},delay_send2,delay_entre_2_requete,TimeUnit.NANOSECONDS);
 
-		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-			 @Override
-			 public void run() {
-				 try {
-					 //request Async
+		 this.scheduleTaskWithFixedDelay(
+				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+					 @Override
+					 public void run() {
+						 try {
+							 //request Async
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2 - "+AbstractPort.generatePortURI(),12.0) ;
+						 } catch (Exception e) {
+							 e.printStackTrace();
+						 }
+					 }},delay_send2,delay_entre_2_requete,TimeUnit.NANOSECONDS);
+		 //uri3
+		 this.scheduleTaskWithFixedDelay(
+				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+					 @Override
+					 public void run() {
+						 try {
+							 //request Async
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri3 - "+AbstractPort.generatePortURI(),Direction.SW,7) ;
+						 } catch (Exception e) {
+							 e.printStackTrace();
+						 }
+					 }},delay_send2,delay_entre_2_requete,TimeUnit.NANOSECONDS);
+
+//		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+//			 @Override
+//			 public void run() {
+//				 try {
 //					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri3",16.0) ;
-				 } catch (Exception e) {
-					 e.printStackTrace();
-				 }
-			 }
-		 }, delay_send2, TimeUnit.NANOSECONDS);
+//				 } catch (Exception e) {
+//					 e.printStackTrace();
+//				 }
+//			 }
+//		 }, delay_send2, TimeUnit.NANOSECONDS);
 
 	 }
 	 
