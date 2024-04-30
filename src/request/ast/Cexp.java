@@ -2,7 +2,10 @@ package request.ast;
 import request.ast.interfaces.IASTvisitable;
 import request.ast.interfaces.IASTvisitor;
 
-public abstract class Cexp implements IASTvisitable{
+import java.io.Serializable;
+
+public abstract class Cexp implements IASTvisitable, Serializable {
+	private static final long serialVersionUID = 1L;
 	private Rand rand1;
 	private Rand rand2;
 	

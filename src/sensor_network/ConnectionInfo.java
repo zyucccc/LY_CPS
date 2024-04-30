@@ -4,6 +4,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 
 public class ConnectionInfo implements ConnectionInfoI {
+    private static final long serialVersionUID = 1L;
     private String nodeIdentifier;
     private EndPointDescriptorI endPointDescriptor;
 

@@ -3,7 +3,10 @@ package request.ast;
 import request.ast.interfaces.IASTvisitable;
 import request.ast.interfaces.IASTvisitor;
 
-public abstract class Dirs implements IASTvisitable {
+import java.io.Serializable;
+
+public abstract class Dirs implements IASTvisitable, Serializable {
+	private static final long serialVersionUID = 1L;
 	protected Direction dir;
 	protected Dirs dirs;
 	

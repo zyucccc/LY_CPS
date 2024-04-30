@@ -1,5 +1,6 @@
 package request;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,7 +13,8 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import nodes.sensor.Sensor;
 import sensor_network.Position;
 
-public class ProcessingNode implements ProcessingNodeI {
+public class ProcessingNode implements ProcessingNodeI, Serializable {
+    private static final long serialVersionUID = 1L;
     private String nodeId;
     private Position position;
     private Set<NodeInfoI> neighbours;
