@@ -101,6 +101,7 @@ public class CVM extends AbstractCVM {
 
 		    //node ids lesquels les clients veulent connecter
 			String[] NodeIDs = {"node1","node13","node44","node26","node38"};
+//        String[] NodeIDs = {"node1","node1","node1","node1","node1"};
             // creer client Component
 			for(int i = 0; i < nbClients; i++) {
 				//Client outbound port pour Registre

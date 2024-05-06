@@ -59,6 +59,9 @@ public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, Re
     //pool thread pour traiter les requetes async provenant des nodes
     protected int index_poolthread_receiveAsync;
     protected String uri_pool_receiveAsync = AbstractPort.generatePortURI();
+//    protected int nbThreads_poolReceiveAsync = 1;
+//    protected int nbThreads_poolReceiveAsync = 2;
+//    protected int nbThreads_poolReceiveAsync = 5;
     protected int nbThreads_poolReceiveAsync = 10;
 
     //pool thread pour traiter les requetes async provenant du client

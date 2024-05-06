@@ -5,7 +5,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import client.plugins.ClientPlugin;
@@ -66,6 +69,11 @@ public class ClientComponent extends AbstractComponent {
 
 	//le node id on va connecter
 	protected String NodeId = "";
+
+    //pour les tests de performance
+    private AtomicLong totalTime = new AtomicLong(0);
+    private AtomicInteger responseCount = new AtomicInteger(0);
+    private ConcurrentHashMap<String, Instant> request_send_time = new ConcurrentHashMap<>();
 
 	//plugin
 	protected String ClientPluginURI;
@@ -219,6 +227,17 @@ public class ClientComponent extends AbstractComponent {
 
 	
 	public void	acceptRequestResult(String requestURI,QueryResultI result) throws Exception{
+        //pour les tests de performance
+        Instant currentInstant = ac.currentInstant();
+        Instant send_instant = request_send_time.get(requestURI);
+        if(send_instant != null) {
+            long responseTime = Duration.between(send_instant, currentInstant).toMillis();
+            if (responseTime > 0) {
+                totalTime.addAndGet(responseTime);
+                responseCount.incrementAndGet();
+            }
+        }
+
 		this.logMessage("-----------------Receive Request Async Resultat ------------------\n"+
 				"Receive resultat du request: "+requestURI + "\n Query Result: " + result );
 		//fusionner les res,stocker dans hashmap
@@ -279,7 +298,11 @@ public class ClientComponent extends AbstractComponent {
 			                ((ClientComponent)this.getTaskOwner()).logMessage("Request " + requestURI + " has reached the maximum wait time. Final result fusionné: " + result);
 							toRemove.add(requestURI);
 							}
-						}}finally {
+						}
+                        //pour les tests de performance
+//                        ((ClientComponent)this.getTaskOwner()).logMessage("-----------------Test Performance: Temps Moyenne------------------");
+//                        ((ClientComponent)this.getTaskOwner()).logMessage("Temps moyenne actuel (Milli Second) : " + ((ClientComponent)this.getTaskOwner()).getAverageResponseTime());
+                        }finally {
 							requestTimes_lock.readLock().unlock();
 						}
 						requestTimes_lock.writeLock().lock();
@@ -314,19 +337,20 @@ public class ClientComponent extends AbstractComponent {
 		Instant instant_findConnecter = start_instant.plusSeconds(9);
 		//5,7
 		Instant instant_sendAsync = start_instant.plusSeconds(10);
-		Instant instant_sendAsync2 = start_instant.plusSeconds(10);
+//		Instant instant_sendAsync2 = start_instant.plusSeconds(10);
 		long delay_connect = 1L;
 		long delay_send = 1L;
-		long delay_send2 = 1L;
-		long delay_entre_2_requete = 12_000_000_000L;//4 second entre 2 requetes
+//		long delay_send2 = 1L;
+		long delay_entre_2_requete = 30_000_000_000L;//4 second entre 2 requetes
+
 
 
 		if(instant_findConnecter.isAfter(this.ac.currentInstant()))
 		delay_connect = ac.nanoDelayUntilInstant(instant_findConnecter);
 		if(instant_sendAsync.isAfter(this.ac.currentInstant()))
 		delay_send = ac.nanoDelayUntilInstant(instant_sendAsync);
-		if(instant_sendAsync2.isAfter(this.ac.currentInstant()))
-		delay_send2 = ac.nanoDelayUntilInstant(instant_sendAsync2);
+//		if(instant_sendAsync2.isAfter(this.ac.currentInstant()))
+//		delay_send2 = ac.nanoDelayUntilInstant(instant_sendAsync2);
 
 		    this.logMessage("ClientComponent executed.");
 
@@ -366,7 +390,11 @@ public class ClientComponent extends AbstractComponent {
 					 public void run() {
 						 try {
 							 //request Async
-							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri - "+AbstractPort.generatePortURI(),Direction.NE,5) ;
+                             String requestURI = "direction-requete-Async-uri - "+AbstractPort.generatePortURI();
+                             //nous enregistrons le temps d'envoi de la requete
+                             Instant currentInstant = ac.currentInstant();
+                             request_send_time.put(requestURI, currentInstant);
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn(requestURI,Direction.NE,5) ;
 						 } catch (Exception e) {
 							 e.printStackTrace();
 						 }
@@ -379,7 +407,10 @@ public class ClientComponent extends AbstractComponent {
 					 public void run() {
 						 try {
 							 //request Async
-							 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri - "+AbstractPort.generatePortURI(),8.0) ;
+                             String requestURI = "flooding-requete-Async-uri - "+AbstractPort.generatePortURI();
+                             Instant currentInstant = ac.currentInstant();
+                             request_send_time.put(requestURI, currentInstant);
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn(requestURI,8.0) ;
 						 } catch (Exception e) {
 							 e.printStackTrace();
 						 }
@@ -391,11 +422,14 @@ public class ClientComponent extends AbstractComponent {
 					 public void run() {
 						 try {
 							 //request Async
-							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri2 - "+AbstractPort.generatePortURI(),Direction.NW,5) ;
-						 } catch (Exception e) {
+                             String requestURI = "direction-requete-Async-uri2 - "+AbstractPort.generatePortURI();
+                             Instant currentInstant = ac.currentInstant();
+                             request_send_time.put(requestURI, currentInstant);
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn(requestURI,Direction.NW,5) ;
+                         } catch (Exception e) {
 							 e.printStackTrace();
 						 }
-					 }},delay_send2,delay_entre_2_requete,TimeUnit.NANOSECONDS);
+					 }},delay_send,delay_entre_2_requete,TimeUnit.NANOSECONDS);
 
 		 this.scheduleTaskWithFixedDelay(
 				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
@@ -403,11 +437,14 @@ public class ClientComponent extends AbstractComponent {
 					 public void run() {
 						 try {
 							 //request Async
-							 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri2 - "+AbstractPort.generatePortURI(),12.0) ;
+                             String requestURI = "flooding-requete-Async-uri2 - "+AbstractPort.generatePortURI();
+                             Instant currentInstant = ac.currentInstant();
+                             request_send_time.put(requestURI, currentInstant);
+							 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn(requestURI,12.0) ;
 						 } catch (Exception e) {
 							 e.printStackTrace();
 						 }
-					 }},delay_send2,delay_entre_2_requete,TimeUnit.NANOSECONDS);
+					 }},delay_send,delay_entre_2_requete,TimeUnit.NANOSECONDS);
 		 //uri3
 		 this.scheduleTaskWithFixedDelay(
 				 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
@@ -415,22 +452,29 @@ public class ClientComponent extends AbstractComponent {
 					 public void run() {
 						 try {
 							 //request Async
-							 ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn("direction-requete-Async-uri3 - "+AbstractPort.generatePortURI(),Direction.SW,7) ;
-						 } catch (Exception e) {
+                             String requestURI = "direction-requete-Async-uri3 - "+AbstractPort.generatePortURI();
+                             Instant currentInstant = ac.currentInstant();
+                             request_send_time.put(requestURI, currentInstant);
+                             ((ClientComponent)this.getTaskOwner()).sendRequest_direction_Asyn(requestURI,Direction.SW,7) ;
+                         } catch (Exception e) {
 							 e.printStackTrace();
 						 }
-					 }},delay_send2,delay_entre_2_requete,TimeUnit.NANOSECONDS);
+					 }},delay_send,delay_entre_2_requete,TimeUnit.NANOSECONDS);
 
-//		 this.scheduleTask(this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
-//			 @Override
-//			 public void run() {
-//				 try {
-//					 ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn("flooding-requete-Async-uri3",16.0) ;
-//				 } catch (Exception e) {
-//					 e.printStackTrace();
-//				 }
-//			 }
-//		 }, delay_send2, TimeUnit.NANOSECONDS);
+         this.scheduleTaskWithFixedDelay(
+                 this.get_Index_poolthread_sendAsync(),new AbstractComponent.AbstractTask(this.ClientPluginURI) {
+                     @Override
+                     public void run() {
+                         try {
+                             //request Async
+                             String requestURI = "flooding-requete-Async-uri3 - "+AbstractPort.generatePortURI();
+                             Instant currentInstant = ac.currentInstant();
+                             request_send_time.put(requestURI, currentInstant);
+                             ((ClientComponent)this.getTaskOwner()).sendRequest_flooding_Asyn(requestURI,15.0) ;
+                         } catch (Exception e) {
+                             e.printStackTrace();
+                         }
+                     }},delay_send,delay_entre_2_requete,TimeUnit.NANOSECONDS);
 
 	 }
 	 
@@ -454,6 +498,16 @@ public class ClientComponent extends AbstractComponent {
 		}
 			super.shutdown();
 	    }
+
+    // ---------------------------------------------------------------------
+    // les test de performance
+    // ---------------------------------------------------------------------
+    public double getAverageResponseTime() {
+        if (responseCount.get() > 0) {
+            return (double) totalTime.get() / responseCount.get();
+        }
+        return 0.0;
+    }
 	
 	
 	
