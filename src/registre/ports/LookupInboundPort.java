@@ -9,6 +9,10 @@ import registre.RegistreComponent;
 
 import java.util.Set;
 
+/**
+ * The class <code>LookupInboundPort</code> implements the inbound port
+ * for the registration component to receive requests from the client component.
+ */
 public class LookupInboundPort extends AbstractInboundPort implements LookupCI {
 
     private static final long serialVersionUID = 1L;

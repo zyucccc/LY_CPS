@@ -7,8 +7,11 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
 
-
-
+/**
+ * The class <code>NodeNodeConnector</code> implements the connector between
+ * the sensor node component and the sensor node component.
+ *
+ */
 public class NodeNodeConnector extends AbstractConnector implements SensorNodeP2PCI{
 	
 

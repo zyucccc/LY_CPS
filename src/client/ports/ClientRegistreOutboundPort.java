@@ -9,6 +9,10 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 
 import java.util.Set;
 
+/**
+ * The class <code>ClientRegistreOutboundPort</code> implements the outbound port
+ * for the client component to send a request to the registration component.
+ */
 public class ClientRegistreOutboundPort extends AbstractOutboundPort implements LookupCI {
     
     private static final long serialVersionUID = 1L;

@@ -29,6 +29,10 @@ import request.ast.interpreter.Interpreter;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
+/**
+ * The class <code>Test</code> implements the test for the langage request.
+ * c'est la premiere version pour tester l'interprete comparé avec les tests unitaires.
+ */
 public class Test {
     @SuppressWarnings("unchecked")
 	public static void main(String[] args) {

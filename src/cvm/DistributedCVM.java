@@ -21,6 +21,16 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The class <code>DistributedCVM</code> implements the distributed CVM for the
+ * sensor network simulation.
+ *
+ * There are five JVMs in this distributed CVM
+ * chaque cvm possede un client et 10 nodes
+ *
+ * d'ailleur,
+ * le premier JVM possede le registre global et l'horloge
+ */
 public class DistributedCVM extends AbstractDistributedCVM {
     protected static final String JVM_URI1 = "jvm1";
     protected static final String JVM_URI2 = "jvm2";

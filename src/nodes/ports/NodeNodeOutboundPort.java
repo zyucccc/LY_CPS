@@ -10,6 +10,11 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 import nodes.SensorNodeComponent;
 
+/**
+ * The class <code>NodeNodeOutboundPort</code> implements the outbound port
+ * for the sensor node component to send a request to another sensor node component.
+ *
+ */
 public class NodeNodeOutboundPort extends AbstractOutboundPort implements SensorNodeP2PCI{
 	private static final long serialVersionUID = 1L;
 

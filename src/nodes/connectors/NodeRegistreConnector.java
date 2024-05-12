@@ -7,6 +7,18 @@ import request.ast.Direction;
 
 import java.util.Set;
 
+/**
+ * The class <code>NodeRegistreConnector</code> implements the connector between
+ * the sensor node component and the registration component.
+ *
+ * <p><strong>Description</strong></p>
+ *
+ * <p>
+ * The connector implements the <code>RegistrationCI</code> interface and
+ * delegates the calls to the registration component.
+ * </p>
+ *
+ */
 public class NodeRegistreConnector extends AbstractConnector implements RegistrationCI {
     @Override
     public boolean registered(String nodeIdentifier) throws Exception {

@@ -7,6 +7,11 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 
 import java.util.Set;
 
+/**
+ * The class <code>ClientRegistreConnector</code> implements the connector
+ * for the client component to send a request to the registration component.
+
+ */
 public class ClientRegistreConnector extends AbstractConnector implements LookupCI {
 
     @Override

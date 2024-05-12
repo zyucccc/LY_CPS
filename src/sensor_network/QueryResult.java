@@ -6,6 +6,9 @@ import java.util.*;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 
+/**
+ * The class <code>QueryResult</code> implements the query result information.
+ */
 public class QueryResult implements QueryResultI,Serializable{	
 	
 	private static final long serialVersionUID = 1L;

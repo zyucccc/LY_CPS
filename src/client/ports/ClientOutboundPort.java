@@ -20,6 +20,10 @@ import fr.sorbonne_u.exceptions.PreconditionException;
 import nodes.SensorNodeComponent;
 import sensor_network.QueryResult;
 
+/**
+ * The class <code>ClientOutboundPort</code> implements the outbound port
+ * for the client component to send a request to the server component.
+ */
 public class ClientOutboundPort extends	AbstractOutboundPort implements RequestingCI{
 	
 	private static final long serialVersionUID = 1L;

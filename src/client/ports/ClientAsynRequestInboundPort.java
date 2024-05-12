@@ -6,6 +6,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import client.ClientComponent;
 
+/**
+ * The class <code>ClientAsynRequestInboundPort</code> implements the inbound port
+ * for the client component to receive the result of a request.
+ */
 public class ClientAsynRequestInboundPort extends AbstractInboundPort implements RequestResultCI {
     private static final long serialVersionUID = 1L;
 
@@ -18,7 +22,7 @@ public class ClientAsynRequestInboundPort extends AbstractInboundPort implements
         super(RequestResultCI.class, owner);
         assert owner instanceof ClientComponent;
     }
-// ((ClientComponent)getOwner()).getIndex_poolthread_receiveAsync()
+
     @Override
     public void acceptRequestResult(String requestURI, QueryResultI result) throws Exception {
         this.getOwner().runTask(((ClientComponent)getOwner()).get_Index_poolthread_receiveAsync(),new AbstractComponent.AbstractTask() {

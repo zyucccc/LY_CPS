@@ -6,6 +6,14 @@ package registre.interfaces;
 //du coup pour correspondre a notre propre class Direction
 //nous devons redefinir registrationCI
 
+/**
+ * nous redefinissons registrationCI
+ * car nous avons cree notre propre class Direction
+ * et nous ne utilisons pas celui du package fourni(Direction dans sorbonne_u.cps.sensor_network.interfaces)
+ * du coup pour correspondre a notre propre class Direction
+ * nous devons redefinir registrationCI
+ */
+
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;

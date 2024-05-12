@@ -1,5 +1,4 @@
 package cvm;
-//uri plus automatique
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.AbstractPort;
@@ -27,6 +26,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import client.ClientComponent;
 import client.connectors.ClientRegistreConnector;
 
+/**
+ * The class <code>CVM</code> implements the single JVM assembly for the
+ * sensor network simulation.
+ *
+ * There are 50 nodes in the network, 5 clients, and 1 registry.
+ * we will set the temperature of the nodes to a random value
+ * for the smoke, we will set it to true for all nodes,because it can help us to test
+ * the network more effectively.
+ */
 public class CVM extends AbstractCVM {
 	// ---------------------------------------------------------------------
 	// URIs statiques

@@ -12,6 +12,10 @@ import request.ast.Direction;
 import sensor_network.Position;
 import sensor_network.QueryResult;
 
+/**
+ * The class <code>ExecutionState</code> implements the execution state information.
+ * pour instancier une execution state d'une requete
+ */
 public class ExecutionState implements ExecutionStateI {
     private static final long serialVersionUID = 1L;
 	private ProcessingNode processingNode;

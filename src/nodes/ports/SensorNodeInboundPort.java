@@ -11,6 +11,10 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingImplI;
 import nodes.SensorNodeComponent;
 import nodes.plugins.NodePlugin;
 
+/**
+ * The class <code>SensorNodeInboundPort</code> implements the inbound port
+ * for the sensor node component to treat the request from the client component.
+ */
 public class SensorNodeInboundPort extends	AbstractInboundPort implements RequestingCI{
 	
 	private static final long serialVersionUID = 1L;

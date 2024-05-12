@@ -49,6 +49,14 @@ import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import nodes.connectors.NodeClientConnector;
 
+/**
+ * The class <code>ClientComponent</code> implements the client component.
+ *
+ * Le client possède un plugin qui lui permet de communiquer avec le registre.
+ * Le client possède un hashmap pour stocker les résultats des requêtes asynchrones.
+ * et un autre hashmap pour stocker les temps de début des requêtes asynchrones pour
+ * evaluer la performance du network.
+ */
 @RequiredInterfaces(required = {ClocksServerCI.class})
 @OfferedInterfaces(offered = {RequestResultCI.class})
 public class ClientComponent extends AbstractComponent {

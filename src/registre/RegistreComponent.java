@@ -23,6 +23,11 @@ import request.ast.Direction;
 import sensor_network.Position;
 import sensor_network.ConnectionInfo;
 
+/**
+ * The class <code>RegistreComponent</code> implements the registration component
+ * that registers sensor nodes and provides lookup services to clients.
+ */
+
 //nous redefinissons registrationCI
 //car nous avons cree notre propre class Direction
 //et nous ne utilisons pas celui du package fourni(Direction dans sorbonne_u.cps.sensor_network.interfaces)

@@ -8,6 +8,11 @@ import request.ast.Direction;
 
 import java.util.Set;
 
+/**
+ * The class <code>SensorNodeRegistreOutboundPort</code> implements the outbound port
+ * for the sensor node component to send a request of register,unregister to the registration component.
+ *
+ */
 public class SensorNodeRegistreOutboundPort extends AbstractOutboundPort implements RegistrationCI {
     private static final long serialVersionUID = 1L;
 

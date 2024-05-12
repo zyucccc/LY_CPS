@@ -6,6 +6,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import sensor_network.EndPointDescriptor;
 import sensor_network.Position;
 
+/**
+ * The class <code>NodeInfo</code> implements the node information.
+ * for the sensor node component
+ */
 public class NodeInfo implements NodeInfoI {
     private static final long serialVersionUID = 1L;
     

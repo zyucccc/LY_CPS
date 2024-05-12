@@ -41,8 +41,13 @@ import sensor_network.Position;
 import sensor_network.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
 
-//@OfferedInterfaces(offered = {RequestingCI.class,SensorNodeP2PCI.class})
-//@RequiredInterfaces(required = {RegistrationCI.class,SensorNodeP2PCI.class,RequestResultCI.class,ClocksServerCI.class})
+/**
+ * The class <code>SensorNodeComponent</code> implements the sensor node component
+ * in the sensor network.
+ *
+ * ici,on garde les fonctions de changer ses propres valeurs des capteurs et de renvoyer les resultats aux clients
+ * Pour d'autre fonctions concernant les requetes de clients/nodes, on les delegue a NodePlugin
+ */
 @RequiredInterfaces(required = {RequestResultCI.class,ClocksServerCI.class})
 public class SensorNodeComponent extends AbstractComponent {
 	protected AcceleratedClock ac;

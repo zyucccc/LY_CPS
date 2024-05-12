@@ -36,6 +36,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * The class <code>NodePlugin</code> implements a plug-in for the sensor node
+ * component that provides the sensor node with the services to connect to the
+ * sensor network and to envoyer/traiter requests to the nodes in the network
+ */
 public class NodePlugin extends AbstractPlugin implements SensorNodeP2PImplI, RequestingImplI {
     private static final long serialVersionUID = 1L;
 

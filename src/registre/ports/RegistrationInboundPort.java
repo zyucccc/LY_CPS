@@ -9,6 +9,11 @@ import request.ast.Direction;
 
 import java.util.Set;
 
+/**
+ * The class <code>RegistrationInboundPort</code> implements the inbound port
+ * for the registration component to receive requests from the client component.
+
+ */
 public class RegistrationInboundPort extends AbstractInboundPort implements RegistrationCI {
     
     private static final long serialVersionUID = 1L;

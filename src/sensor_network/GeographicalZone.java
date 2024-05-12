@@ -5,6 +5,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 
 import java.io.Serializable;
 
+/**
+ * The class <code>GeographicalZone</code> implements the geographical zone information.
+ * for the network
+ */
 public class GeographicalZone implements GeographicalZoneI, Serializable {
     private static final long serialVersionUID = 1L;
     private double minX;

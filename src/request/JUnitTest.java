@@ -32,6 +32,10 @@ import sensor_network.Position;
 import sensor_network.QueryResult;
 import nodes.sensor.Sensor;
 
+/**
+ * The class <code>JUnitTest</code> implements the JUnit test for the langage request.
+ * il y a 17 tests pour tester l'interprete de manière complète.
+ */
 @SuppressWarnings("unused")
 class JUnitTest {
 

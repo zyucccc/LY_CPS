@@ -13,6 +13,10 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import nodes.sensor.Sensor;
 import sensor_network.Position;
 
+/**
+ * The class <code>ProcessingNode</code> implements the processing node information.
+ * for the sensor node component
+ */
 public class ProcessingNode implements ProcessingNodeI, Serializable {
     private static final long serialVersionUID = 1L;
     private String nodeId;

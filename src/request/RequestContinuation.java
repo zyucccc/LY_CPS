@@ -16,7 +16,6 @@ public class RequestContinuation  extends Request implements RequestContinuation
     private static final long serialVersionUID = 1L;
 	private ExecutionState executionState;
     //visitedNodes pour traiter les requete flooding, on ne veut pas visiter un noeud plus d'une fois
-//	private Set<NodeInfoI> visitedNodes = new HashSet<>();
     private Set<String> visitedNodes = new HashSet<>();
 
 
@@ -37,9 +36,6 @@ public class RequestContinuation  extends Request implements RequestContinuation
         this.executionState = new ExecutionState(other.executionState);
         
         this.visitedNodes = new HashSet<>();
-//        for (NodeInfoI node : other.visitedNodes) {
-//            this.visitedNodes.add(node);
-//        }
         for (String node : other.visitedNodes) {
             this.visitedNodes.add(node);
         }
@@ -50,17 +46,11 @@ public class RequestContinuation  extends Request implements RequestContinuation
     public ExecutionStateI getExecutionState() {
         return (ExecutionStateI) this.executionState;
     }
- 
-//    public Set<NodeInfoI> getVisitedNodes() {
-//        return visitedNodes;
-//    }
+
     public Set<String> getVisitedNodes() {
         return visitedNodes;
     }
 
-//    public void addVisitedNode(NodeInfoI nodeInfo) {
-//        visitedNodes.add(nodeInfo);
-//    }
     public void addVisitedNode(String nodeInfo) {
         visitedNodes.add(nodeInfo);
     }

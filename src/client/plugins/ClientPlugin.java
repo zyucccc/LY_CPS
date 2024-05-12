@@ -19,7 +19,11 @@ import sensor_network.EndPointDescriptor;
 
 import java.util.Set;
 
-//@RequiredInterfaces(required = {RequestingCI.class, LookupCI.class})
+/**
+ * The class <code>ClientPlugin</code> implements a plug-in for the client
+ * component that provides the client with the services to connect to the
+ * sensor network and to send requests to the nodes in the network.
+ */
 public class ClientPlugin extends AbstractPlugin {
     private static final long serialVersionUID = 1L;
     protected ClientOutboundPort client_node_port;

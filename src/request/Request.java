@@ -7,6 +7,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 
 import java.io.Serializable;
 
+/**
+ * The class <code>Request</code> implements the request interface.
+ * pour instancier une requete
+ */
 public class Request implements RequestI {
     private static final long serialVersionUID = 1L;
 	private final String requestURI;

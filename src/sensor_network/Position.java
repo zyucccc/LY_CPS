@@ -5,6 +5,14 @@ package sensor_network;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import request.ast.Direction;
 
+/**
+ * The class <code>Position</code> implements the position information.
+ * pour instancier une position
+ *
+ * ici nous avons redefinis les 2 fonctions directionFrom et directionTo
+ * car nous utilisons la class Direction cree par nous-meme
+ * mais pas celui du package fourni(Direction dans sorbonne_u.cps.sensor_network.interfaces)
+ */
 public class Position implements PositionI {
     private static final long serialVersionUID = 1L;
 
